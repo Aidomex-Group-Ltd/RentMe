@@ -23,10 +23,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isR2Configured()) {
+      const missing = [
+        !process.env.CLOUDFLARE_S3_ACCESS_KEY_ID && "CLOUDFLARE_S3_ACCESS_KEY_ID",
+        !process.env.CLOUDFLARE_S3_SECRET_ACCESS_KEY && "CLOUDFLARE_S3_SECRET_ACCESS_KEY",
+        !process.env.CLOUDFLARE_R2_ENDPOINT && "CLOUDFLARE_R2_ENDPOINT",
+        !(process.env.CLOUDFLARE_R2_BUCKET || process.env.R2_BUCKET) && "CLOUDFLARE_R2_BUCKET",
+        !(
+          process.env.CLOUDFLARE_R2_PUBLIC_URL ||
+          process.env.S3_API ||
+          process.env.NEXT_PUBLIC_R2_PUBLIC_URL
+        ) && "CLOUDFLARE_R2_PUBLIC_URL (or S3_API)",
+      ].filter(Boolean);
+
       return NextResponse.json(
         {
-          error:
-            "Cloudflare R2 is not configured. Add CLOUDFLARE_R2_BUCKET and CLOUDFLARE_R2_PUBLIC_URL (or S3_API) in Vercel.",
+          error: `Cloudflare R2 is not fully configured. Missing: ${missing.join(", ") || "R2 settings"}.`,
         },
         { status: 503 }
       );

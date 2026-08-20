@@ -14,7 +14,8 @@ export function isR2Configured(): boolean {
     process.env.CLOUDFLARE_S3_ACCESS_KEY_ID &&
       process.env.CLOUDFLARE_S3_SECRET_ACCESS_KEY &&
       process.env.CLOUDFLARE_R2_ENDPOINT &&
-      (process.env.CLOUDFLARE_R2_BUCKET || process.env.R2_BUCKET)
+      (process.env.CLOUDFLARE_R2_BUCKET || process.env.R2_BUCKET) &&
+      getR2PublicBaseUrl()
   );
 }
 
