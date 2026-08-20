@@ -1,10 +1,135 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import {
+  checkRateLimit,
+  getClientIp,
+  RateLimits,
+} from "@/lib/rate-limit";
+
+/** Check that state-changing requests originate from our own origin. */
+function isInvalidOrigin(req: Request): boolean {
+  const method = req.method.toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return false;
+  }
+
+  const origin = req.headers.get("origin");
+  const referer = req.headers.get("referer");
+  const host = req.headers.get("host");
+
+  // Allow requests with no origin (same-origin browser requests, server-to-server)
+  if (!origin && !referer) return false;
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "";
+  if (siteUrl) {
+    const siteHost = new URL(siteUrl).host;
+    if (origin && !origin.includes(siteHost)) return true;
+    if (referer && !referer.includes(siteHost)) return true;
+    if (host && !host.includes(siteHost)) return true;
+  }
+
+  return false;
+}
+
+function applyRateLimit(
+  req: Request,
+  config: typeof RateLimits[keyof typeof RateLimits]
+): NextResponse | null {
+  const ip = getClientIp(req.headers);
+  const result = checkRateLimit(ip, config);
+
+  if (!result.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "RATE_LIMITED",
+          message: "Too many requests. Please try again later.",
+        },
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil(result.resetMs / 1000)),
+          "X-RateLimit-Limit": String(config.maxRequests),
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
+
+  return null; // allowed
+}
+
+const PRODUCTION_HOST = (
+  process.env.PRODUCTION_DOMAIN || "rentme.ug"
+).replace(/\/$/, "");
+
+/** Domains that should 301-redirect to production. */
+const REDIRECT_HOSTS = new Set([
+  "rent-me-seven.vercel.app",
+  "rent-me-seven.vercel.app",
+]);
 
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
+
+    // ── Domain redirect (old Vercel preview → production) ──────
+    const host = req.headers.get("host") || "";
+    if (REDIRECT_HOSTS.has(host)) {
+      const target = new URL(req.url);
+      target.host = PRODUCTION_HOST;
+      target.protocol = "https:";
+      return NextResponse.redirect(target, 301);
+    }
+
+    // ── CSRF Origin check for state-changing API routes ────────
+    if (
+      pathname.startsWith("/api/") &&
+      req.method !== "GET" &&
+      req.method !== "HEAD" &&
+      req.method !== "OPTIONS"
+    ) {
+      if (isInvalidOrigin(req)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "CSRF_REJECTED",
+              message: "Request origin is not allowed.",
+            },
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // ── Rate limiting for sensitive API endpoints ───────────────
+
+    // Auth endpoints (register, login, credentials callback)
+    if (
+      pathname.startsWith("/api/auth/register") ||
+      pathname.startsWith("/api/auth/callback/credentials")
+    ) {
+      const blocked = applyRateLimit(req, RateLimits.auth);
+      if (blocked) return blocked;
+    }
+
+    // Property creation
+    if (pathname.startsWith("/api/properties") && req.method === "POST") {
+      const blocked = applyRateLimit(req, RateLimits.propertyCreate);
+      if (blocked) return blocked;
+    }
+
+    // Upload
+    if (pathname.startsWith("/api/upload") && req.method === "POST") {
+      const blocked = applyRateLimit(req, RateLimits.upload);
+      if (blocked) return blocked;
+    }
+
+    // ── Page-level auth checks ─────────────────────────────────
 
     // Admin-only routes
     if (pathname.startsWith("/admin")) {
@@ -27,28 +152,42 @@ export default withAuth(
       }
     }
 
-    // Protected API routes
+    // ── API auth checks ────────────────────────────────────────
+
+    // Protected API routes — property creation
     if (pathname.startsWith("/api/properties") && req.method === "POST") {
       if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
       }
     }
 
     if (pathname.startsWith("/api/upload")) {
       if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
       }
     }
 
     if (pathname.startsWith("/api/conversations") && req.method === "POST") {
       if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
       }
     }
 
     if (pathname.startsWith("/api/reports") && req.method === "POST") {
       if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
       }
     }
 
@@ -80,5 +219,7 @@ export const config = {
     "/api/applications/:path*",
     "/api/notifications",
     "/api/notifications/:path*",
+    "/api/auth/register",
+    "/api/auth/callback/credentials",
   ],
 };
