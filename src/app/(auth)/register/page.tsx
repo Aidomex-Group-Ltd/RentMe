@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { Home, Eye, EyeOff, Loader2, User, Building, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -68,8 +69,28 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Account created! Please sign in.");
-      router.push("/login");
+      const signInResult = await signIn("credentials", {
+        email: email || undefined,
+        phone,
+        password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        toast.success("Account created! Please sign in.");
+        router.push("/login");
+        return;
+      }
+
+      toast.success("Welcome to RentMe!");
+      const destination =
+        role === "TENANT"
+          ? "/dashboard/tenant"
+          : role === "LANDLORD"
+            ? "/dashboard/landlord"
+            : "/dashboard/landlord";
+      router.push(destination);
+      router.refresh();
     } catch (error) {
       toast.error("Something went wrong");
     } finally {

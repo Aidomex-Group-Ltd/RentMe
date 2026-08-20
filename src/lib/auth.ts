@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { formatPhoneNumber } from "@/lib/utils";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,14 +16,17 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.password) return null;
 
-        const identifier = credentials.email || credentials.phone;
-        if (!identifier) return null;
+        const email = credentials.email?.trim().toLowerCase() || undefined;
+        const phoneInput = credentials.phone?.trim() || undefined;
+        const phone = phoneInput ? formatPhoneNumber(phoneInput) : undefined;
+
+        if (!email && !phone) return null;
 
         const user = await prisma.user.findFirst({
           where: {
             OR: [
-              { email: identifier.toLowerCase() },
-              { phone: identifier },
+              ...(email ? [{ email }] : []),
+              ...(phone ? [{ phone }, { phone: phoneInput }] : []),
             ],
             deletedAt: null,
           },

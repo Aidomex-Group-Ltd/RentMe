@@ -179,12 +179,12 @@ model Profile {
   gender         Gender?
   dateOfBirth    DateTime?
   bio            String?
-  preferredLocations String[]
+  preferredLocations String[] @default([])
   budgetMin      Int?
   budgetMax      Int?
   preferredPropertyType String?
   preferredBedrooms     Int?
-  preferredAmenities    String[]
+  preferredAmenities    String[] @default([])
   moveInTimeframe String?
   occupation     String?
   createdAt      DateTime  @default(now())
