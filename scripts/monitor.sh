@@ -1,15 +1,14 @@
 #!/bin/sh
 # ─── RentMe Production Monitor ───────────────────────────
 # Usage: ./scripts/monitor.sh [base_url]
-# Reports: app health, container status, database, Redis, disk, memory, SSL
 set -eu
 
-BASE_URL="${1:-http://localhost:3000}"
+BASE_URL="${1:-http://127.0.0.1:3000}"
 PROD_URL="${PROD_URL:-https://rentme.ug}"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 pass() { echo "${GREEN}✓${NC} $1"; }
 fail() { echo "${RED}✗${NC} $1"; }
@@ -27,7 +26,7 @@ echo ""
 # ─── 1. Application Health ──────────────────────────────
 echo "── Application Health ──"
 HEALTH_RESPONSE=$(curl -sf "${BASE_URL}/api/health" 2>/dev/null || echo '{"status":"unreachable"}')
-HEALTH_STATUS=$(echo "${HEALTH_RESPONSE}" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+HEALTH_STATUS=$(echo "${HEALTH_RESPONSE}" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
 
 if [ "${HEALTH_STATUS}" = "healthy" ]; then
   pass "Application health: healthy"
@@ -39,19 +38,35 @@ else
   ISSUES=$((ISSUES + 1))
 fi
 
-# DB status from health endpoint
-DB_STATUS=$(echo "${HEALTH_RESPONSE}" | grep -o '"status":"[^"]*"' | tail -1 | cut -d'"' -f4)
-if [ "${DB_STATUS}" = "healthy" ]; then
+if echo "${HEALTH_RESPONSE}" | grep -q '"database".*"status":"healthy"\|"status":"healthy".*"latencyMs"'; then
   pass "Database connectivity: healthy"
-else
-  fail "Database connectivity: ${DB_STATUS:-unknown}"
+elif echo "${HEALTH_RESPONSE}" | grep -q '"status":"unhealthy"'; then
+  fail "Database connectivity: unhealthy"
   ISSUES=$((ISSUES + 1))
+else
+  # Fallback: parse database.status from nested JSON loosely
+  if echo "${HEALTH_RESPONSE}" | grep -q '"latencyMs"'; then
+    pass "Database connectivity: responding"
+  else
+    warn "Database connectivity: unknown"
+  fi
 fi
 
-# ─── 2. Container Status ────────────────────────────────
+# ─── 2. Container / Pod Status ──────────────────────────
 echo ""
-echo "── Container Status ──"
-if command -v docker >/dev/null 2>&1; then
+echo "── Orchestrator Status ──"
+if command -v kubectl >/dev/null 2>&1 && kubectl -n rentme get deploy rentme-app >/dev/null 2>&1; then
+  pass "k3s namespace rentme reachable"
+  kubectl -n rentme get deploy,po,svc,ingress 2>/dev/null || true
+  READY=$(kubectl -n rentme get deploy rentme-app -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+  DESIRED=$(kubectl -n rentme get deploy rentme-app -o jsonpath='{.status.replicas}' 2>/dev/null || echo "0")
+  if [ "${READY}" = "${DESIRED}" ] && [ "${READY}" != "0" ]; then
+    pass "Deployment ready: ${READY}/${DESIRED}"
+  else
+    fail "Deployment not ready: ${READY:-0}/${DESIRED:-0}"
+    ISSUES=$((ISSUES + 1))
+  fi
+elif command -v docker >/dev/null 2>&1; then
   CONTAINERS=$(docker compose ps --format "{{.Name}} {{.Status}}" 2>/dev/null || echo "")
   if [ -n "${CONTAINERS}" ]; then
     echo "${CONTAINERS}" | while read -r name status; do
@@ -62,13 +77,18 @@ if command -v docker >/dev/null 2>&1; then
       fi
     done
   else
-    warn "Could not list containers (not running via docker compose?)"
+    warn "No k3s rentme deploy and no compose containers"
   fi
 else
-  warn "Docker not available"
+  warn "Neither kubectl rentme nor Docker compose available"
 fi
 
-# ─── 3. Disk Usage ──────────────────────────────────────
+# ─── 3. Redis (not required by current app) ─────────────
+echo ""
+echo "── Redis ──"
+warn "Redis not used (NextAuth JWT sessions). Skipped."
+
+# ─── 4. Disk Usage ──────────────────────────────────────
 echo ""
 echo "── Disk Usage ──"
 DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
@@ -81,7 +101,7 @@ else
   ISSUES=$((ISSUES + 1))
 fi
 
-# ─── 4. Memory Usage ────────────────────────────────────
+# ─── 5. Memory Usage ────────────────────────────────────
 echo ""
 echo "── Memory Usage ──"
 if command -v free >/dev/null 2>&1; then
@@ -98,7 +118,7 @@ else
   warn "free not available"
 fi
 
-# ─── 5. SSL Certificate Expiry ──────────────────────────
+# ─── 6. SSL Certificate Expiry ──────────────────────────
 echo ""
 echo "── SSL Certificate ──"
 DOMAIN=$(echo "${PROD_URL}" | sed 's|https://||' | sed 's|/.*||')
@@ -106,7 +126,7 @@ CERT_EXPIRY=$(echo | openssl s_client -servername "${DOMAIN}" -connect "${DOMAIN
   openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || echo "")
 
 if [ -n "${CERT_EXPIRY}" ]; then
-  EXPIRY_EPOCH=$(date -d "${CERT_EXPIRY}" +%s 2>/dev/null || date -j -f "%b %d %H:%M:%S %Y %Z" "${CERT_EXPIRY}" +%s 2>/dev/null || echo "0")
+  EXPIRY_EPOCH=$(date -d "${CERT_EXPIRY}" +%s 2>/dev/null || echo "0")
   NOW_EPOCH=$(date +%s)
   DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
 
@@ -122,11 +142,12 @@ else
   warn "Could not check SSL certificate for ${DOMAIN}"
 fi
 
-# ─── 6. Recent Application Logs ─────────────────────────
+# ─── 7. Recent Application Logs ─────────────────────────
 echo ""
 echo "── Recent Errors (last 50 log lines) ──"
 if command -v docker >/dev/null 2>&1; then
-  ERRORS=$(docker compose logs --tail=50 app 2>/dev/null | grep -ic "error\|fatal\|exception" || echo "0")
+  ERRORS=$(docker compose logs --tail=50 app 2>/dev/null | grep -icE "error|fatal|exception" || echo "0")
+  ERRORS=$(echo "${ERRORS}" | tr -d '[:space:]')
   if [ "${ERRORS}" -gt 10 ]; then
     fail "Found ${ERRORS} error entries in recent logs"
     ISSUES=$((ISSUES + 1))
@@ -139,23 +160,23 @@ else
   warn "Docker not available - cannot check application logs"
 fi
 
-# ─── 7. Deployment Status ───────────────────────────────
+# ─── 8. Deployment Status ───────────────────────────────
 echo ""
 echo "── Deployment Status ──"
+if docker compose ps --status running app >/dev/null 2>&1; then
+  pass "Docker Compose app service is configured"
+fi
 if [ -f ".vercel/project.json" ]; then
-  pass "Vercel deployment configured"
-else
-  warn "No Vercel deployment detected"
+  warn "Vercel project metadata present (app may also deploy via Vercel)"
 fi
 
-# ─── Summary ────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════"
-if [ ${ISSUES} -eq 0 ]; then
+if [ "${ISSUES}" -eq 0 ]; then
   pass "All checks passed. No issues detected."
 else
   fail "${ISSUES} issue(s) detected. Review above."
 fi
 echo "════════════════════════════════════════════════════"
 
-exit ${ISSUES}
+exit "${ISSUES}"

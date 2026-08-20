@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Standalone output for minimal production Docker images
+  output: "standalone",
+
   // Security headers (applied in production)
   async headers() {
     return [

@@ -44,6 +44,13 @@ backup_data/
 backups/
 *.sql.gz
 
+# k3s secrets (never commit real values)
+k8s/base/secret.yaml
+k8s/**/secret.yaml
+
+# local tooling
+.bin/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

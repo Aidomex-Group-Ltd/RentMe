@@ -1,0 +1,45 @@
+# One-shot schema sync Job (prisma db push). Run before/during deploy.
+# Usage: kubectl apply -f migrate-job.yaml && kubectl wait --for=condition=complete job/rentme-migrate -n rentme
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rentme-migrate
+  namespace: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+    app.kubernetes.io/component: migrate
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rentme
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+      containers:
+        - name: migrate
+          image: ghcr.io/aidomex-group-ltd/rentme:latest
+          imagePullPolicy: Always
+          command: ["npx", "prisma", "db", "push", "--skip-generate"]
+          envFrom:
+            - configMapRef:
+                name: rentme-config
+            - secretRef:
+                name: rentme-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

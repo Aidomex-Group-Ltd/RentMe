@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backups
+  namespace: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+    app.kubernetes.io/component: backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-path
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: rentme
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: postgres:15-alpine
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: rentme-secrets
+                      key: POSTGRES_PASSWORD
+                - name: POSTGRES_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: rentme-config
+                      key: POSTGRES_USER
+                - name: POSTGRES_DB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: rentme-config
+                      key: POSTGRES_DB
+                - name: RETENTION_DAYS
+                  value: "7"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  FILE="/backups/${POSTGRES_DB}_${TIMESTAMP}.sql.gz"
+                  echo "Backing up ${POSTGRES_DB} to ${FILE}"
+                  until pg_isready -h postgres -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"; do sleep 2; done
+                  pg_dump -h postgres -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
+                    --no-owner --no-privileges --clean --if-exists | gzip > "${FILE}"
+                  ls -lh "${FILE}"
+                  find /backups -name "${POSTGRES_DB}_*.sql.gz" -mtime +"${RETENTION_DAYS}" -delete -print || true
+                  echo "Backup complete. Count: $(find /backups -name "${POSTGRES_DB}_*.sql.gz" | wc -l)"
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: postgres-backups

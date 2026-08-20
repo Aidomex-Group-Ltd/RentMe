@@ -1,33 +1,58 @@
-# ─── Upstream ─────────────────────────────────────────────
-upstream app {
-    server app:3000;
-    keepalive 32;
-}
+# Enable AFTER certificates exist:
+#   make ssl-init DOMAIN=rentme.ug EMAIL=admin@rentme.ug
+#   cp nginx/conf.d/ssl.conf.example nginx/conf.d/ssl.conf
+#   # Update HTTP location / in default.conf to redirect to HTTPS
+#   docker compose exec nginx nginx -s reload
+#
+# Or: make ssl-enable DOMAIN=rentme.ug
 
-# Domain: rentme.ug (production target from project defaults).
-# Change server_name if deploying under a different hostname.
-
-# ─── HTTP Server (ACME + reverse proxy; HTTPS via ssl.conf) ─
 server {
-    listen 80;
-    listen [::]:80;
-    server_name rentme.ug www.rentme.ug _;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name rentme.ug www.rentme.ug;
 
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-        allow all;
-    }
+    ssl_certificate /etc/letsencrypt/live/rentme.ug/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/rentme.ug/privkey.pem;
 
-    location /nginx-health {
-        access_log off;
-        return 200 "ok\n";
-        add_header Content-Type text/plain;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 1.1.1.1 8.8.8.8 valid=300s;
+    resolver_timeout 5s;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'self';" always;
+
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+        internal;
     }
 
     location ~ /\. {
         deny all;
         access_log off;
         log_not_found off;
+    }
+
+    location = /favicon.ico {
+        proxy_pass http://app;
+        proxy_cache_valid 200 1d;
+    }
+
+    location = /robots.txt {
+        proxy_pass http://app;
     }
 
     location /api/health {
@@ -37,6 +62,12 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         access_log off;
+    }
+
+    location /nginx-health {
+        access_log off;
+        return 200 "ok\n";
+        add_header Content-Type text/plain;
     }
 
     location ~ ^/api/auth/(callback|signin|register|providers|session|csrf|signout|error) {
@@ -52,12 +83,12 @@ server {
     location = /api/upload {
         limit_req zone=upload burst=2 nodelay;
         limit_req_status 429;
-        client_max_body_size 12M;
         proxy_pass http://app;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 12M;
     }
 
     location /api/ {
@@ -78,8 +109,6 @@ server {
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
-    # After SSL is enabled, replace this block with:
-    #   return 301 https://$host$request_uri;
     location / {
         proxy_pass http://app;
         proxy_set_header Host $host;

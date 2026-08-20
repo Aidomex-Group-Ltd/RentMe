@@ -13,5 +13,7 @@ Dockerfile*
 Makefile
 scripts/
 nginx/
+backups/
 backup_data/
 certbot-*/
+

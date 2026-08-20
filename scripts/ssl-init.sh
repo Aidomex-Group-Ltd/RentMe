@@ -10,31 +10,46 @@ STAGING="${SSL_STAGING:-0}"
 
 echo "==> Initializing SSL certificate for ${DOMAIN}"
 
-# Validate DNS resolution
 echo "==> Checking DNS resolution..."
-if ! nslookup "${DOMAIN}" > /dev/null 2>&1; then
+if ! getent hosts "${DOMAIN}" >/dev/null 2>&1 && ! nslookup "${DOMAIN}" >/dev/null 2>&1; then
   echo "ERROR: Cannot resolve ${DOMAIN}. Ensure DNS is configured."
   exit 1
 fi
 
-# Build certbot args
-CERTBOT_ARGS="--webroot -w /var/www/certbot --non-interactive --agree-tos --email ${EMAIL} -d ${DOMAIN}"
+# Ensure nginx + certbot volumes are up (HTTP bootstrap mode)
+docker compose up -d nginx certbot
+
+CERTBOT_ARGS="certonly --webroot -w /var/www/certbot --non-interactive --agree-tos --email ${EMAIL} -d ${DOMAIN} -d www.${DOMAIN}"
 
 if [ "${STAGING}" = "1" ]; then
-  echo "==> Using Let's Encrypt STAGING environment (for testing)"
+  echo "==> Using Let's Encrypt STAGING environment"
   CERTBOT_ARGS="${CERTBOT_ARGS} --staging"
 fi
 
-# Run certbot via docker compose
-docker compose exec certbot certbot certonly ${CERTBOT_ARGS}
+echo "==> Requesting certificate..."
+# certbot service entrypoint wraps renew loop; run a one-shot container instead
+docker compose run --rm --entrypoint certbot certbot ${CERTBOT_ARGS}
 
-echo "==> SSL certificate acquired for ${DOMAIN}"
-echo "==> Certificate files at /etc/letsencrypt/live/${DOMAIN}/"
+echo "==> Enabling HTTPS nginx config..."
+if [ -f "nginx/conf.d/ssl.conf.example" ]; then
+  sed "s/rentme.ug/${DOMAIN}/g" nginx/conf.d/ssl.conf.example > nginx/conf.d/ssl.conf
+fi
 
-# Reload nginx to pick up new certificates
+# Switch HTTP to redirect once certificates exist
+if grep -q "proxy_pass http://app" nginx/conf.d/default.conf; then
+  # Replace the final location / proxy with HTTPS redirect (keep ACME + health)
+  awk '
+    BEGIN { in_final=0 }
+    /^    location \/ \{/ { in_final=1; print "    location / {"; print "        return 301 https://$host$request_uri;"; print "    }"; next }
+    in_final && /^    \}/ { in_final=0; next }
+    in_final { next }
+    { print }
+  ' nginx/conf.d/default.conf > nginx/conf.d/default.conf.tmp \
+    && mv nginx/conf.d/default.conf.tmp nginx/conf.d/default.conf
+fi
+
+docker compose exec nginx nginx -t
 docker compose exec nginx nginx -s reload
-echo "==> Nginx reloaded with new certificates"
 
-echo ""
-echo "Certificate details:"
-docker compose exec certbot certbot certificates 2>/dev/null || true
+echo "==> SSL certificate acquired and HTTPS enabled for ${DOMAIN}"
+docker compose run --rm --entrypoint certbot certbot certificates || true

@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: rentme
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres.yaml
+  - app.yaml
+  - ingress.yaml
+  - backup-cronjob.yaml
+  - networkpolicy.yaml
+
+# migrate-job.yaml is applied on-demand by scripts/k3s-deploy.sh (not on every apply)
+
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/part-of: rentme
+    includeSelectors: false
+
+images:
+  - name: ghcr.io/aidomex-group-ltd/rentme
+    newTag: latest

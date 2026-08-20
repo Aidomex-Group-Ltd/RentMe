@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Include ClusterIssuer after cert-manager is installed:
+#   kubectl apply -f cluster-issuer.yaml
+resources:
+  - ../../base
+
+namespace: rentme
+
+images:
+  - name: ghcr.io/aidomex-group-ltd/rentme
+    newName: ghcr.io/aidomex-group-ltd/rentme
+    newTag: latest
+
+replicas:
+  - name: rentme-app
+    count: 2
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: rentme-config
+    patch: |-
+      - op: replace
+        path: /data/NEXT_PUBLIC_SITE_URL
+        value: https://rentme.ug
+      - op: replace
+        path: /data/NEXTAUTH_URL
+        value: https://rentme.ug

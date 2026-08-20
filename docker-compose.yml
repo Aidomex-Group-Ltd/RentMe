@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ─── PostgreSQL Database ──────────────────────────────
   db:
@@ -23,13 +21,15 @@ services:
       - backend
 
   # ─── Next.js Application ─────────────────────────────
+  # Redis is intentionally omitted: NextAuth uses JWT sessions (no Redis in app code).
+  # Uploads use Cloudflare R2 object storage (no local upload volume).
   app:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://rentme.ug}
-        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in .env}
+    image: ${RENTME_IMAGE:-rentme:local}
     restart: unless-stopped
     depends_on:
       db:
@@ -37,22 +37,26 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-rentme}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-rentme}?schema=public
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAUTH_URL: ${NEXT_PUBLIC_SITE_URL:-https://rentme.ug}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in .env}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://rentme.ug}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://rentme.ug}
       CLOUDFLARE_R2_ENDPOINT: ${CLOUDFLARE_R2_ENDPOINT:-}
       CLOUDFLARE_S3_ACCESS_KEY_ID: ${CLOUDFLARE_S3_ACCESS_KEY_ID:-}
       CLOUDFLARE_S3_SECRET_ACCESS_KEY: ${CLOUDFLARE_S3_SECRET_ACCESS_KEY:-}
       CLOUDFLARE_R2_BUCKET: ${CLOUDFLARE_R2_BUCKET:-}
       CLOUDFLARE_R2_PUBLIC_URL: ${CLOUDFLARE_R2_PUBLIC_URL:-}
+      S3_API: ${S3_API:-}
+    # Host-local health/smoke access only (not public)
+    ports:
+      - "127.0.0.1:3000:3000"
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 20s
+      start_period: 25s
 
   # ─── Nginx Reverse Proxy ─────────────────────────────
   nginx:
@@ -69,11 +73,10 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot-conf:/etc/letsencrypt:ro
       - certbot-www:/var/www/certbot:ro
-      - upload_data:/var/www/uploads:ro
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/nginx-health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/nginx-health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -81,15 +84,16 @@ services:
   # ─── Certbot (SSL Certificates) ──────────────────────
   certbot:
     image: certbot/certbot:latest
+    restart: unless-stopped
     volumes:
       - certbot-conf:/etc/letsencrypt
       - certbot-www:/var/www/certbot
-    # Run renewal every 12 hours
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 43200 & wait $${!}; done'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet && echo renewed || true; sleep 43200 & wait $${!}; done'"
 
-  # ─── Database Backup ──────────────────────────────────
+  # ─── Database Backup (daily pg_dump, 7-day retention) ─
   backup:
     image: postgres:15-alpine
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -109,7 +113,6 @@ volumes:
   certbot-conf:
   certbot-www:
   backup_data:
-  upload_data:
 
 networks:
   backend:

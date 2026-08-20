@@ -1,18 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const inter = Inter({
+// Self-hosted Inter + Plus Jakarta Sans (same families as before) so production
+// builds do not depend on fonts.gstatic.com at build time.
+const inter = localFont({
+  src: [
+    { path: "../fonts/inter-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/inter-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-inter",
-  subsets: ["latin"],
   display: "swap",
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+const plusJakarta = localFont({
+  src: [
+    {
+      path: "../fonts/plus-jakarta-sans-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/plus-jakarta-sans-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-plus-jakarta",
-  subsets: ["latin"],
   display: "swap",
 });
 

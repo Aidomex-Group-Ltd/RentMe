@@ -1,0 +1,35 @@
+# Optional HTTP → HTTPS redirect Ingress (apply after TLS works).
+# Keep separate so ACME HTTP-01 challenges on :80 still succeed.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rentme-http-redirect
+  namespace: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.middlewares: rentme-redirect-https@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: rentme.ug
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rentme-app
+                port:
+                  number: 80
+    - host: www.rentme.ug
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rentme-app
+                port:
+                  number: 80

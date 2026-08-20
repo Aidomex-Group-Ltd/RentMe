@@ -1,39 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RentMe
 
-## Getting Started
+Next.js 14 rental marketplace for Uganda. **UI is unchanged** by infrastructure work.
 
-First, run the development server:
+## Local development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Optional Dockerized Postgres:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker compose -f docker-compose.dev.yml up
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Production orchestrator: k3s
 
-## Learn More
+Primary production target is **k3s** (Kubernetes) with Traefik ingress and cert-manager TLS.
 
-To learn more about Next.js, take a look at the following resources:
+| Component | Implementation |
+|-----------|----------------|
+| App | Deployment (2 replicas, rolling, non-root) |
+| DB | PostgreSQL 15 StatefulSet + PVC |
+| Ingress | Traefik + security headers + rate limit |
+| TLS | cert-manager Let's Encrypt |
+| Backups | CronJob `pg_dump` (7-day retention) |
+| Uploads | Cloudflare R2 (existing app behavior) |
+| Sessions | NextAuth JWT (no Redis) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# One-time
+export POSTGRES_PASSWORD=... NEXTAUTH_SECRET=...
+make k3s-secrets
+make k3s-cert-manager
+make k3s-apply
+make k3s-migrate
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Ongoing
+make build
+docker push ghcr.io/aidomex-group-ltd/rentme:latest   # or CI
+make k3s-deploy TAG=latest
+make k3s-health
+make k3s-rollback   # if needed
+```
 
-## Deploy on Vercel
+Domain defaults to `rentme.ug` (override in ConfigMap / Ingress if DNS differs). Current Vercel preview remains `rent-me-seven.vercel.app` and is separate from k3s.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Docker Compose (`make prod`) remains available for single-node / lab use; **production deploy defaults to k3s**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# RentMe
-# RentMe
-# RentMe
+## Validation
+
+```bash
+npm ci
+npm test
+npm run build
+docker build -t rentme:local .
+docker compose config
+kubectl kustomize k8s/overlays/production
+```
+
+## Secrets
+
+Never commit real secrets. Use `.env.example` locally and `k8s/base/secret.example.yaml` / `make k3s-secrets` for the cluster. CI needs `KUBE_CONFIG` (and optional `PRODUCTION_DOMAIN`).

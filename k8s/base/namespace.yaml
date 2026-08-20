@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+    app.kubernetes.io/part-of: rentme

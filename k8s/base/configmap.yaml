@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rentme-config
+  namespace: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+data:
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  # Override in overlays/production if DNS differs
+  NEXT_PUBLIC_SITE_URL: "https://rentme.ug"
+  NEXTAUTH_URL: "https://rentme.ug"
+  POSTGRES_DB: "rentme"
+  POSTGRES_USER: "rentme"

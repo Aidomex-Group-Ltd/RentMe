@@ -1,0 +1,82 @@
+# Traefik Ingress (k3s default). TLS via cert-manager Certificate in overlays/production.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rentme
+  namespace: rentme
+  labels:
+    app.kubernetes.io/name: rentme
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: rentme-headers@kubernetescrd,rentme-ratelimit@kubernetescrd
+    # HTTP→HTTPS: configure Traefik entrypoint redirect or a separate :80 Ingress with rentme-redirect-https
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - rentme.ug
+        - www.rentme.ug
+      secretName: rentme-tls
+  rules:
+    - host: rentme.ug
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rentme-app
+                port:
+                  number: 80
+    - host: www.rentme.ug
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rentme-app
+                port:
+                  number: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: headers
+  namespace: rentme
+spec:
+  headers:
+    stsSeconds: 63072000
+    stsIncludeSubdomains: true
+    stsPreload: true
+    forceSTSHeader: true
+    frameDeny: true
+    contentTypeNosniff: true
+    browserXssFilter: true
+    referrerPolicy: "strict-origin-when-cross-origin"
+    customResponseHeaders:
+      Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+      X-Robots-Tag: "index, follow"
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ratelimit
+  namespace: rentme
+spec:
+  rateLimit:
+    average: 50
+    burst: 100
+---
+# Redirect HTTP → HTTPS (Traefik entrypoint web)
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: rentme
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
