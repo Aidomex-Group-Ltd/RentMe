@@ -59,6 +59,11 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/login",
   },
+  theme: {
+    colorScheme: "light",
+    brandColor: "#172554",
+    logo: "/icons/icon-192.png",
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
