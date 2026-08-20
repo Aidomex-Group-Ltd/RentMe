@@ -32,9 +32,17 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
+
+# Docker
+backup_data/
+
+# Backups
+backups/
+*.sql.gz
 
 # typescript
 *.tsbuildinfo

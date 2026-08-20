@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  # ─── PostgreSQL Database ──────────────────────────────
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rentme
+      POSTGRES_PASSWORD: rentme_dev_password
+      POSTGRES_DB: rentme
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rentme -d rentme"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Next.js Dev Server ──────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://rentme:rentme_dev_password@db:5432/rentme?schema=public
+      NEXTAUTH_SECRET: dev-secret-not-for-production
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge

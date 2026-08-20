@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.vercel
+*.md
+*.log
+.env
+.env.*
+!.env.example
+docker-compose*.yml
+Dockerfile*
+Makefile
+scripts/
+nginx/
+backup_data/
+certbot-*/
