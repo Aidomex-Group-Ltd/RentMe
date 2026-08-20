@@ -1,11 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, MapPin, Grid3X3, Map } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin, Grid3X3, Map, Loader2 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import PropertyCard from "@/components/property/property-card";
 import { PROPERTY_TYPES, UGANDA_DISTRICTS } from "@/lib/utils";
+
+const PAGE_SIZE = 20;
 
 export default function SearchPage() {
   return (
@@ -45,11 +47,14 @@ function SearchPageFallback() {
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<"grid" | "map">("grid");
 
@@ -65,8 +70,13 @@ function SearchPageContent() {
   const [parking, setParking] = useState(searchParams.get("parking") || "");
   const [security, setSecurity] = useState(searchParams.get("security") || "");
 
-  const fetchProperties = useCallback(async () => {
-    setLoading(true);
+  const fetchProperties = useCallback(async (targetPage: number, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const params = new URLSearchParams();
       if (q) params.set("q", q);
@@ -79,29 +89,59 @@ function SearchPageContent() {
       if (furnished) params.set("furnished", furnished);
       if (parking) params.set("parking", parking);
       if (security) params.set("security", security);
-      params.set("page", String(page));
-      params.set("limit", "20");
+      params.set("page", String(targetPage));
+      params.set("limit", String(PAGE_SIZE));
       params.set("status", "ACTIVE");
 
       const res = await fetch(`/api/properties?${params.toString()}`);
       const data = await res.json();
-      setProperties(data.properties || []);
-      setTotal(data.pagination?.total || 0);
+      const newProperties = data.properties || [];
+      const totalResults = data.pagination?.total || 0;
+
+      if (append) {
+        setProperties((prev) => [...prev, ...newProperties]);
+      } else {
+        setProperties(newProperties);
+      }
+      setTotal(totalResults);
+      setHasMore(targetPage * PAGE_SIZE < totalResults);
     } catch (error) {
       console.error("Search error:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [q, propertyType, minRent, maxRent, bedrooms, district, sort, furnished, parking, security, page]);
+  }, [q, propertyType, minRent, maxRent, bedrooms, district, sort, furnished, parking, security]);
 
+  // Reset and fetch page 1 when filters change
   useEffect(() => {
-    fetchProperties();
+    setPage(1);
+    setHasMore(true);
+    fetchProperties(1, false);
   }, [fetchProperties]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchProperties(nextPage, true);
+        }
+      },
+      { rootMargin: "200px" } // Start loading 200px before sentinel is visible
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [page, hasMore, loading, loadingMore, fetchProperties]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    fetchProperties();
+    // Filter change triggers useEffect above
   };
 
   const clearFilters = () => {
@@ -115,7 +155,6 @@ function SearchPageContent() {
     setFurnished("");
     setParking("");
     setSecurity("");
-    setPage(1);
   };
 
   const activeFilters = [q, propertyType, minRent, maxRent, bedrooms, district, furnished, parking, security].filter(Boolean).length;
@@ -300,7 +339,6 @@ function SearchPageContent() {
                     value={sort}
                     onChange={(e) => {
                       setSort(e.target.value);
-                      setPage(1);
                     }}
                     className="input w-auto py-1.5 text-sm"
                   >
@@ -340,11 +378,31 @@ function SearchPageContent() {
                   ))}
                 </div>
               ) : properties.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {properties.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {properties.map((property) => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </div>
+
+                  {/* Infinite scroll sentinel */}
+                  <div ref={sentinelRef} className="py-8" />
+
+                  {/* Loading more indicator */}
+                  {loadingMore && (
+                    <div className="flex items-center justify-center gap-2 py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
+                      <span className="text-sm text-gray-500">Loading more properties…</span>
+                    </div>
+                  )}
+
+                  {/* End of results */}
+                  {!hasMore && properties.length > 0 && (
+                    <p className="py-6 text-center text-sm text-gray-400">
+                      You&apos;ve seen all {total} properties
+                    </p>
+                  )}
+                </>
               ) : (
                 <div className="card p-12 text-center">
                   <MapPin className="mx-auto mb-4 h-12 w-12 text-gray-300" />
@@ -356,29 +414,6 @@ function SearchPageContent() {
                   </p>
                   <button onClick={clearFilters} className="btn-secondary mt-4">
                     Clear Filters
-                  </button>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {total > 20 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="btn-secondary text-sm"
-                  >
-                    Previous
-                  </button>
-                  <span className="px-4 text-sm text-gray-600">
-                    Page {page} of {Math.ceil(total / 20)}
-                  </span>
-                  <button
-                    onClick={() => setPage(p => p + 1)}
-                    disabled={page >= Math.ceil(total / 20)}
-                    className="btn-secondary text-sm"
-                  >
-                    Next
                   </button>
                 </div>
               )}

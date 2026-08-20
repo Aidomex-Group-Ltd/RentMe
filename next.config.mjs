@@ -29,6 +29,36 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              // Scripts: only same-origin, no eval, no inline
+              "script-src 'self'",
+              // Styles: allow inline (Tailwind utility classes) + same-origin
+              "style-src 'self' 'unsafe-inline'",
+              // Images: self, Unsplash, Cloudflare R2, data: URIs (for small icons)
+              "img-src 'self' https://images.unsplash.com https://plus.unsplash.com https://*.r2.dev https://*.r2.cloudflarestorage.com data:",
+              // Fonts: self-hosted woff2 only
+              "font-src 'self'",
+              // API / XHR: same-origin only
+              "connect-src 'self'",
+              // Media: self + Unsplash video
+              "media-src 'self' https://images.unsplash.com",
+              // Frame: same-origin only (no embedding elsewhere)
+              "frame-src 'self'",
+              // Base tag
+              "base-uri 'self'",
+              // Form targets: same-origin
+              "form-action 'self'",
+              // Prevent iframe clickjacking (redundant with X-Frame-Options)
+              "frame-ancestors 'self'",
+            ].join("; "),
+          },
         ],
       },
       {

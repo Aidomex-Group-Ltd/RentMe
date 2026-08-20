@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { cachePropertyList, invalidatePropertyCaches } from "@/lib/cache";
 import { slugify } from "@/lib/utils";
+import { notifyLandlordListingSubmitted, notifyAdminNewListing } from "@/lib/notifications";
 
 // GET /api/properties - List properties with search & filters
 export async function GET(req: NextRequest) {
@@ -413,6 +414,26 @@ export async function POST(req: NextRequest) {
     });
 
     invalidatePropertyCaches(property.id, property.slug);
+
+    // ── Fire-and-forget email notifications ─────────────────────
+    const notificationData = {
+      propertyId: property.id,
+      propertyTitle: data.title,
+      rent: data.rent,
+      district: data.district,
+      city: data.city || undefined,
+      neighborhood: data.neighborhood || undefined,
+      landlordName: session.user.name || "Landlord",
+      landlordEmail: session.user.email || undefined,
+      landlordPhone: session.user.phone || undefined,
+      bedrooms: data.bedrooms,
+      bathrooms: data.bathrooms,
+      propertyType: data.propertyType,
+      submittedAt: new Date().toISOString(),
+    };
+    // Never await — fire-and-forget so the response is not delayed
+    notifyLandlordListingSubmitted(notificationData).catch(() => {});
+    notifyAdminNewListing(notificationData).catch(() => {});
 
     return NextResponse.json({ property }, { status: 201 });
   } catch (error) {
