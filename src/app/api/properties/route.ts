@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { slugify } from "@/lib/utils";
 
 // GET /api/properties - List properties with search & filters
 export async function GET(req: NextRequest) {
@@ -19,9 +20,11 @@ export async function GET(req: NextRequest) {
     const district = searchParams.get("district") || "";
     const city = searchParams.get("city") || "";
     const sort = searchParams.get("sort") || "newest";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const status = searchParams.get("status") || "ACTIVE";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const statusParam = searchParams.get("status");
+    const mine =
+      searchParams.get("mine") === "1" || searchParams.get("mine") === "true";
     const furnished = searchParams.get("furnished") || "";
     const hasParking = searchParams.get("parking") || "";
     const hasSecurity = searchParams.get("security") || "";
@@ -31,8 +34,21 @@ export async function GET(req: NextRequest) {
       deletedAt: null,
     };
 
-    if (status) {
-      where.status = status as any;
+    if (mine) {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      where.userId = session.user.id;
+
+      // Landlord dashboard: show all own statuses unless a specific status is requested
+      if (statusParam && statusParam.toUpperCase() !== "ALL") {
+        where.status = statusParam as Prisma.EnumPropertyStatusFilter;
+      }
+    } else if (statusParam && statusParam.toUpperCase() !== "ALL") {
+      where.status = statusParam as Prisma.EnumPropertyStatusFilter;
+    } else if (!statusParam) {
+      where.status = "ACTIVE";
     }
 
     if (q) {
@@ -52,17 +68,17 @@ export async function GET(req: NextRequest) {
 
     if (minRent || maxRent) {
       const rentFilter: Prisma.IntFilter = {};
-      if (minRent) rentFilter.gte = parseInt(minRent);
-      if (maxRent) rentFilter.lte = parseInt(maxRent);
+      if (minRent) rentFilter.gte = parseInt(minRent, 10);
+      if (maxRent) rentFilter.lte = parseInt(maxRent, 10);
       where.rent = rentFilter;
     }
 
     if (bedrooms) {
-      where.bedrooms = parseInt(bedrooms);
+      where.bedrooms = parseInt(bedrooms, 10);
     }
 
     if (bathrooms) {
-      where.bathrooms = parseInt(bathrooms);
+      where.bathrooms = parseInt(bathrooms, 10);
     }
 
     if (district) {
@@ -89,7 +105,7 @@ export async function GET(req: NextRequest) {
       where.isSelfContained = true;
     }
 
-    let orderBy: Prisma.PropertyOrderByWithRelationInput = {};
+    let orderBy: Prisma.PropertyOrderByWithRelationInput = { listedAt: "desc" };
     switch (sort) {
       case "newest":
         orderBy = { listedAt: "desc" };
@@ -120,8 +136,8 @@ export async function GET(req: NextRequest) {
         take: limit,
         include: {
           images: {
-            where: { isCover: true },
-            take: 1,
+            orderBy: [{ isCover: "desc" }, { order: "asc" }],
+            take: 5,
           },
           user: {
             select: {
@@ -159,19 +175,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/properties - Create a new property listing
 const createPropertySchema = z.object({
   title: z.string().min(5).max(200),
   description: z.string().min(20).max(5000),
-  propertyType: z.string(),
+  propertyType: z.string().min(1),
   bedrooms: z.number().min(0).max(20),
   bathrooms: z.number().min(0).max(20),
   rent: z.number().min(1000),
   deposit: z.number().optional(),
   agencyFee: z.number().optional(),
   serviceCharge: z.number().optional(),
-  paymentFrequency: z.enum(["MONTHLY", "WEEKLY", "DAILY", "QUARTERLY", "ANNUALLY"]).default("MONTHLY"),
-  district: z.string(),
+  paymentFrequency: z
+    .enum(["MONTHLY", "WEEKLY", "DAILY", "QUARTERLY", "ANNUALLY"])
+    .default("MONTHLY"),
+  district: z.string().min(1),
   city: z.string().optional(),
   neighborhood: z.string().optional(),
   address: z.string().optional(),
@@ -193,19 +210,29 @@ const createPropertySchema = z.object({
   isGatedCommunity: z.boolean().default(false),
   allowsPets: z.boolean().default(false),
   availableFrom: z.string().optional(),
+  imageUrls: z.array(z.string().url()).max(20).optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await import("next-auth").then(({ getServerSession }) =>
-      getServerSession(authOptions)
-    );
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        { error: "Database is not configured" },
+        { status: 503 }
+      );
+    }
 
-    if (!session?.user) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "LANDLORD" && session.user.role !== "AGENT" && session.user.role !== "ADMIN") {
+    if (
+      session.user.role !== "LANDLORD" &&
+      session.user.role !== "AGENT" &&
+      session.user.role !== "ADMIN"
+    ) {
       return NextResponse.json(
         { error: "Only landlords and agents can create listings" },
         { status: 403 }
@@ -214,8 +241,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const data = createPropertySchema.parse(body);
-
-    const slug = slugify(data.title) + "-" + Date.now().toString(36);
+    const slug = `${slugify(data.title)}-${Date.now().toString(36)}`;
+    const imageUrls = data.imageUrls ?? [];
 
     const property = await prisma.property.create({
       data: {
@@ -255,42 +282,65 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         isAgentListing: session.user.role === "AGENT",
         status: "PENDING_REVIEW",
-        images: {
-          create: [],
-        },
+        images:
+          imageUrls.length > 0
+            ? {
+                create: imageUrls.map((url, index) => ({
+                  url,
+                  alt: data.title,
+                  order: index,
+                  isCover: index === 0,
+                })),
+              }
+            : undefined,
       },
       include: {
-        images: true,
+        images: {
+          orderBy: [{ isCover: "desc" }, { order: "asc" }],
+        },
       },
     });
 
-    // Update listing counts
     if (session.user.role === "LANDLORD") {
-      await prisma.landlord.update({
+      await prisma.landlord.upsert({
         where: { userId: session.user.id },
-        data: {
+        create: {
+          userId: session.user.id,
+          totalListings: 1,
+          activeListings: 1,
+        },
+        update: {
           totalListings: { increment: 1 },
           activeListings: { increment: 1 },
         },
       });
     } else if (session.user.role === "AGENT") {
-      await prisma.agent.update({
+      await prisma.agent.upsert({
         where: { userId: session.user.id },
-        data: {
+        create: {
+          userId: session.user.id,
+          totalProperties: 1,
+          activeProperties: 1,
+        },
+        update: {
           totalProperties: { increment: 1 },
           activeProperties: { increment: 1 },
         },
       });
     }
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
         action: "CREATE",
         entity: "Property",
         entityId: property.id,
-        newData: { title: data.title, rent: data.rent, district: data.district },
+        newData: {
+          title: data.title,
+          rent: data.rent,
+          district: data.district,
+          imageCount: imageUrls.length,
+        },
       },
     });
 

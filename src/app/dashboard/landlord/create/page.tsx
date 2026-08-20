@@ -85,29 +85,75 @@ export default function CreatePropertyPage() {
     isGatedCommunity: false,
     allowsPets: false,
   });
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   const updateForm = (updates: Partial<typeof form>) => {
     setForm((prev) => ({ ...prev, ...updates }));
   };
 
+  const handlePhotosSelected = (files: FileList | null) => {
+    if (!files?.length) return;
+    const next = [...photoFiles, ...Array.from(files)].slice(0, 20);
+    setPhotoFiles(next);
+    setPhotoPreviews(next.map((file) => URL.createObjectURL(file)));
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  async function uploadPhotos(): Promise<string[]> {
+    const urls: string[] = [];
+    for (const file of photoFiles) {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("folder", `properties/${session?.user?.id || "drafts"}`);
+      const res = await fetch("/api/upload", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Photo upload failed");
+      }
+      urls.push(data.url as string);
+    }
+    return urls;
+  }
+
   const handleSubmit = async () => {
+    if (!form.title || !form.description || !form.propertyType || !form.district || !form.rent) {
+      toast.error("Please complete the required fields before submitting");
+      return;
+    }
+
     setLoading(true);
     try {
+      let imageUrls: string[] = [];
+      if (photoFiles.length > 0) {
+        toast.message("Uploading photos to Cloudflare R2…");
+        imageUrls = await uploadPhotos();
+      }
+
       const res = await fetch("/api/properties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, imageUrls }),
       });
 
       const data = await res.json();
       if (res.ok) {
         toast.success("Property listing submitted for review!");
         router.push("/dashboard/landlord");
+        router.refresh();
       } else {
         toast.error(data.error || "Failed to create listing");
       }
     } catch (error) {
-      toast.error("Something went wrong");
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -369,14 +415,43 @@ export default function CreatePropertyPage() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Property Photos</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Upload photos after your listing is approved. You can add up to 20 photos.
+                Photos are stored on Cloudflare R2. You can add up to 20 images (JPEG, PNG, WebP).
               </p>
-              <div className="mt-6 rounded-xl border-2 border-dashed border-gray-300 p-12 text-center">
-                <Upload className="mx-auto h-12 w-12 text-gray-300" />
-                <p className="mt-4 text-sm text-gray-500">
-                  Photo upload will be available after listing approval.
-                </p>
-              </div>
+
+              <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-10 text-center hover:border-brand-400 hover:bg-brand-50/40">
+                <Upload className="h-12 w-12 text-gray-300" />
+                <p className="mt-4 text-sm font-medium text-gray-700">Click to upload photos</p>
+                <p className="mt-1 text-xs text-gray-500">Max 8MB per image</p>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handlePhotosSelected(e.target.files)}
+                />
+              </label>
+
+              {photoPreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {photoPreviews.map((src, index) => (
+                    <div key={src} className="relative overflow-hidden rounded-lg bg-gray-100">
+                      <img src={src} alt="" className="h-28 w-full object-cover" />
+                      {index === 0 && (
+                        <span className="absolute left-2 top-2 rounded bg-brand-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          Cover
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute right-2 top-2 rounded bg-black/60 px-2 py-0.5 text-[10px] text-white"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

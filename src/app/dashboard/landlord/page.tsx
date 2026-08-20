@@ -44,7 +44,8 @@ export default function LandlordDashboard() {
   async function fetchData() {
     try {
       const [propsRes, viewingsRes, appsRes] = await Promise.all([
-        fetch("/api/properties?limit=50"),
+        // Own listings across all statuses (new ones start as PENDING_REVIEW)
+        fetch("/api/properties?mine=1&limit=50"),
         fetch("/api/viewings?role=landlord"),
         fetch("/api/applications?role=landlord"),
       ]);
