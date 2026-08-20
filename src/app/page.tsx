@@ -166,7 +166,7 @@ const FALLBACK_PROPERTIES: CarouselProperty[] = [
     isVerified: false,
     images: [
       {
-        url: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cd40?w=800&q=80",
+        url: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80",
         alt: "Duplex",
       },
     ],
