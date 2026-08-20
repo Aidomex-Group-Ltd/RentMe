@@ -272,8 +272,8 @@ export default function HomePage() {
               Find a place you&apos;ll love to call home
             </h2>
             <p className="mb-8 text-base text-white/80 sm:text-lg">
-              Discover rental houses, apartments, and rooms across Kampala,
-              Entebbe, Jinja, and all of Uganda.
+              Connecting tenants with homes and landlords with tenants across
+              Uganda. Find your perfect match today.
             </p>
           </div>
 
