@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          phone: user.phone,
+          phone: user.phone ?? "",
           image: user.avatar,
         };
       },
@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
         });
         if (dbUser) {
           token.role = dbUser.role;
-          token.phone = dbUser.phone;
+          token.phone = dbUser.phone ?? "";
           token.status = dbUser.status;
         }
       }
