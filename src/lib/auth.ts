@@ -2,7 +2,10 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { ensureAuthEnv } from "@/lib/env";
 import { formatPhoneNumber } from "@/lib/utils";
+
+ensureAuthEnv();
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -22,36 +25,46 @@ export const authOptions: NextAuthOptions = {
 
         if (!email && !phone) return null;
 
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              ...(email ? [{ email }] : []),
-              ...(phone ? [{ phone }, { phone: phoneInput }] : []),
-            ],
-            deletedAt: null,
-          },
-        });
+        try {
+          if (!process.env.DATABASE_URL) {
+            console.error("Auth error: DATABASE_URL is not configured");
+            return null;
+          }
 
-        if (!user || !user.passwordHash) return null;
-        if (user.status === "BANNED" || user.status === "SUSPENDED") return null;
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                ...(email ? [{ email }] : []),
+                ...(phone ? [{ phone }, { phone: phoneInput }] : []),
+              ],
+              deletedAt: null,
+            },
+          });
 
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!isValid) return null;
+          if (!user || !user.passwordHash) return null;
+          if (user.status === "BANNED" || user.status === "SUSPENDED") return null;
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!isValid) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          phone: user.phone ?? null,
-          status: user.status,
-          image: user.avatar,
-        };
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          });
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            phone: user.phone ?? null,
+            status: user.status,
+            image: user.avatar,
+          };
+        } catch (error) {
+          console.error("Auth authorize error:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -77,14 +90,18 @@ export const authOptions: NextAuthOptions = {
         token.status = user.status ?? token.status;
       }
       if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, phone: true, status: true },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.phone = dbUser.phone ?? null;
-          token.status = dbUser.status;
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true, phone: true, status: true },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.phone = dbUser.phone ?? null;
+            token.status = dbUser.status;
+          }
+        } catch (error) {
+          console.error("Auth jwt refresh error:", error);
         }
       }
       return token;
@@ -99,5 +116,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET,
 };
