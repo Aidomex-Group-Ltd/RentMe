@@ -1,15 +1,50 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Search, SlidersHorizontal, X, MapPin, Grid3X3, Map } from "lucide-react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { Search, SlidersHorizontal, MapPin, Grid3X3, Map } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import PropertyCard from "@/components/property/property-card";
 import { PROPERTY_TYPES, UGANDA_DISTRICTS } from "@/lib/utils";
 
 export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchPageFallback />}>
+      <SearchPageContent />
+    </Suspense>
+  );
+}
+
+function SearchPageFallback() {
+  return (
+    <MainLayout>
+      <div className="bg-gray-50 min-h-screen">
+        <div className="border-b border-gray-200 bg-white">
+          <div className="page-container py-4">
+            <div className="skeleton h-10 w-full rounded-lg" />
+          </div>
+        </div>
+        <div className="page-container py-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="card overflow-hidden">
+                <div className="skeleton aspect-[4/3] w-full" />
+                <div className="space-y-3 p-4">
+                  <div className="skeleton h-5 w-3/4" />
+                  <div className="skeleton h-4 w-1/2" />
+                  <div className="skeleton h-8 w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
+
+function SearchPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
