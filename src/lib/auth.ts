@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { cacheAuthUser, invalidateAuthUserCache } from "@/lib/cache";
 import { ensureAuthEnv } from "@/lib/env";
 import { formatPhoneNumber } from "@/lib/utils";
 
@@ -52,6 +53,8 @@ export const authOptions: NextAuthOptions = {
             data: { lastLoginAt: new Date() },
           });
 
+          invalidateAuthUserCache(user.id);
+
           return {
             id: user.id,
             email: user.email,
@@ -72,6 +75,10 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  useSecureCookies:
+    (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL || "").startsWith(
+      "https://"
+    ),
   pages: {
     signIn: "/login",
     error: "/login",
@@ -91,10 +98,12 @@ export const authOptions: NextAuthOptions = {
       }
       if (token.id) {
         try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { role: true, phone: true, status: true },
-          });
+          const dbUser = await cacheAuthUser(token.id as string, () =>
+            prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { role: true, phone: true, status: true },
+            })
+          );
           if (dbUser) {
             token.role = dbUser.role;
             token.phone = dbUser.phone ?? null;

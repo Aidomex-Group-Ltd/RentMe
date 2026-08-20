@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { getCacheStats } from "@/lib/cache";
 
+// Health returns 503 when the database is unreachable so orchestrators fail the check.
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -11,7 +13,6 @@ export async function GET() {
     environment: process.env.NODE_ENV || "development",
   };
 
-  // Check database connectivity
   let dbStatus = "healthy";
   let dbLatencyMs: number | null = null;
   try {
@@ -21,14 +22,24 @@ export async function GET() {
     dbLatencyMs = Date.now() - start;
   } catch (error) {
     dbStatus = "unhealthy";
-    health.status = "degraded";
-    health.dbError =
-      error instanceof Error ? error.message : "Unknown database error";
+    health.status = "unhealthy";
+    // Do not leak connection strings or credentials
+    health.dbError = "database_unreachable";
+    if (process.env.NODE_ENV !== "production") {
+      health.dbErrorDetail =
+        error instanceof Error ? error.message : "Unknown database error";
+    }
   }
 
   health.database = {
     status: dbStatus,
     latencyMs: dbLatencyMs,
+  };
+
+  // In-process LRU memory cache — free, no external account
+  health.cache = {
+    backend: "memory",
+    ...getCacheStats(),
   };
 
   const statusCode = health.status === "healthy" ? 200 : 503;

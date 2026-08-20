@@ -4,6 +4,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { cachePropertyList, invalidatePropertyCaches } from "@/lib/cache";
 import { slugify } from "@/lib/utils";
 
 // GET /api/properties - List properties with search & filters
@@ -128,42 +129,65 @@ export async function GET(req: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const [properties, total] = await Promise.all([
-      prisma.property.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          images: {
-            orderBy: [{ isCover: "desc" }, { order: "asc" }],
-            take: 5,
-          },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-              landlord: {
-                select: { verificationStatus: true, responseRate: true },
-              },
-              agent: {
-                select: { verificationStatus: true, responseRate: true },
+    const loadProperties = async () => {
+      const [properties, total] = await Promise.all([
+        prisma.property.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            images: {
+              orderBy: [{ isCover: "desc" }, { order: "asc" }],
+              take: 5,
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                landlord: {
+                  select: { verificationStatus: true, responseRate: true },
+                },
+                agent: {
+                  select: { verificationStatus: true, responseRate: true },
+                },
               },
             },
           },
-        },
-      }),
-      prisma.property.count({ where }),
-    ]);
+        }),
+        prisma.property.count({ where }),
+      ]);
 
-    return NextResponse.json({
-      properties,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+      return {
+        properties,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    };
+
+    // Public listings are cached in-process (no Redis / no paid service).
+    // Owner "mine" views stay uncached so landlords always see fresh PENDING_REVIEW rows.
+    let payload: Awaited<ReturnType<typeof loadProperties>>;
+    let cacheStatus: "HIT" | "MISS" | "BYPASS" = "BYPASS";
+
+    if (mine) {
+      payload = await loadProperties();
+    } else {
+      const queryKey = searchParams.toString();
+      const result = await cachePropertyList(queryKey, loadProperties);
+      payload = result.data;
+      cacheStatus = result.cache;
+    }
+
+    return NextResponse.json(payload, {
+      headers: {
+        "X-RentMe-Cache": cacheStatus,
+        "Cache-Control": mine ? "private, no-store" : "public, s-maxage=30, stale-while-revalidate=60",
       },
     });
   } catch (error) {
@@ -343,6 +367,8 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    invalidatePropertyCaches(property.id, property.slug);
 
     return NextResponse.json({ property }, { status: 201 });
   } catch (error) {
