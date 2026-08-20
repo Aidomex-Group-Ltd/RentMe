@@ -85,11 +85,30 @@ export default function CreatePropertyPage() {
     isGatedCommunity: false,
     allowsPets: false,
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   const updateForm = (updates: Partial<typeof form>) => {
     setForm((prev) => ({ ...prev, ...updates }));
+    // Clear field error when user edits the field
+    const key = Object.keys(updates)[0];
+    if (key && fieldErrors[key]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const FieldError = ({ field }: { field: string }) => {
+    if (!fieldErrors[field]) return null;
+    return (
+      <p className="mt-1 text-xs text-red-600" data-field-error>
+        {fieldErrors[field]}
+      </p>
+    );
   };
 
   const handlePhotosSelected = (files: FileList | null) => {
@@ -124,13 +143,56 @@ export default function CreatePropertyPage() {
     return urls;
   }
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!form.title || form.title.length < 5) {
+      errors.title = "Title must be at least 5 characters.";
+    } else if (form.title.length > 200) {
+      errors.title = "Title must be 200 characters or fewer.";
+    }
+
+    if (!form.description || form.description.length < 20) {
+      errors.description = "Description must be at least 20 characters.";
+    } else if (form.description.length > 5000) {
+      errors.description = "Description must be 5,000 characters or fewer.";
+    }
+
+    if (!form.propertyType) {
+      errors.propertyType = "Please select a property type.";
+    }
+
+    if (!form.district) {
+      errors.district = "Please select a district.";
+    }
+
+    if (!form.rent || form.rent < 1000) {
+      errors.rent = "Rent must be at least UGX 1,000.";
+    }
+
+    if (form.bedrooms < 0 || form.bedrooms > 20) {
+      errors.bedrooms = "Bedrooms must be between 0 and 20.";
+    }
+
+    if (form.bathrooms < 0 || form.bathrooms > 20) {
+      errors.bathrooms = "Bathrooms must be between 0 and 20.";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
-    if (!form.title || !form.description || !form.propertyType || !form.district || !form.rent) {
-      toast.error("Please complete the required fields before submitting");
+    if (!validateForm()) {
+      toast.error("Please fix the errors below before submitting.");
+      // Scroll to first error
+      const firstErrorField = document.querySelector("[data-field-error]");
+      firstErrorField?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     setLoading(true);
+    setFieldErrors({});
     try {
       let imageUrls: string[] = [];
       if (photoFiles.length > 0) {
@@ -145,12 +207,26 @@ export default function CreatePropertyPage() {
       });
 
       const data = await res.json();
+
       if (res.ok) {
         toast.success("Property listing submitted for review!");
         router.push("/dashboard/landlord");
         router.refresh();
+      } else if (res.status === 403) {
+        toast.error(
+          data.error?.message || "You don't have permission to create listings. Please register as a landlord or agent.",
+          { duration: 10000 }
+        );
+      } else if (res.status === 400 && data.error?.fields) {
+        // Map backend field errors to local state
+        const backendErrors: Record<string, string> = {};
+        for (const [field, message] of Object.entries(data.error.fields)) {
+          backendErrors[field] = message as string;
+        }
+        setFieldErrors(backendErrors);
+        toast.error("Please fix the validation errors below.");
       } else {
-        toast.error(data.error || "Failed to create listing");
+        toast.error(data.error?.message || "Failed to create listing");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
@@ -214,13 +290,16 @@ export default function CreatePropertyPage() {
                     className={`rounded-xl border-2 p-4 text-left text-sm transition-all ${
                       form.propertyType === type.value
                         ? "border-brand-500 bg-brand-50 text-brand-700 font-semibold"
-                        : "border-gray-200 hover:border-gray-300"
+                        : fieldErrors.propertyType
+                          ? "border-red-300 hover:border-red-400"
+                          : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     {type.label}
                   </button>
                 ))}
               </div>
+              <FieldError field="propertyType" />
             </div>
           )}
 
@@ -233,13 +312,14 @@ export default function CreatePropertyPage() {
                 <select
                   value={form.district}
                   onChange={(e) => updateForm({ district: e.target.value })}
-                  className="input"
+                  className={`input ${fieldErrors.district ? "input-error" : ""}`}
                 >
                   <option value="">Select district</option>
                   {UGANDA_DISTRICTS.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
+                <FieldError field="district" />
               </div>
               <div>
                 <label className="label">City / Municipality</label>
@@ -284,10 +364,11 @@ export default function CreatePropertyPage() {
                   type="number"
                   value={form.rent || ""}
                   onChange={(e) => updateForm({ rent: parseInt(e.target.value) || 0 })}
-                  className="input"
+                  className={`input ${fieldErrors.rent ? "input-error" : ""}`}
                   placeholder="500000"
                   min="0"
                 />
+                <FieldError field="rent" />
               </div>
               <div>
                 <label className="label">Security Deposit (UGX)</label>
@@ -333,21 +414,23 @@ export default function CreatePropertyPage() {
                   type="text"
                   value={form.title}
                   onChange={(e) => updateForm({ title: e.target.value })}
-                  className="input"
+                  className={`input ${fieldErrors.title ? "input-error" : ""}`}
                   placeholder="2 Bedroom House in Ntinda"
                   maxLength={200}
                 />
+                <FieldError field="title" />
               </div>
               <div>
                 <label className="label">Description *</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => updateForm({ description: e.target.value })}
-                  className="input"
+                  className={`input ${fieldErrors.description ? "input-error" : ""}`}
                   rows={5}
                   placeholder="Describe your property in detail..."
                   maxLength={5000}
                 />
+                <FieldError field="description" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -356,9 +439,10 @@ export default function CreatePropertyPage() {
                     type="number"
                     value={form.bedrooms}
                     onChange={(e) => updateForm({ bedrooms: parseInt(e.target.value) || 0 })}
-                    className="input"
+                    className={`input ${fieldErrors.bedrooms ? "input-error" : ""}`}
                     min="0"
                   />
+                  <FieldError field="bedrooms" />
                 </div>
                 <div>
                   <label className="label">Bathrooms</label>
@@ -366,9 +450,10 @@ export default function CreatePropertyPage() {
                     type="number"
                     value={form.bathrooms}
                     onChange={(e) => updateForm({ bathrooms: parseInt(e.target.value) || 0 })}
-                    className="input"
+                    className={`input ${fieldErrors.bathrooms ? "input-error" : ""}`}
                     min="0"
                   />
+                  <FieldError field="bathrooms" />
                 </div>
               </div>
               <div>

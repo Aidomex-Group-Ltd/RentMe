@@ -57,8 +57,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
+      const matchedField =
+        normalizedEmail && existingUser.email === normalizedEmail
+          ? "email"
+          : "phone";
       return NextResponse.json(
-        { error: "An account with this email or phone already exists" },
+        {
+          success: false,
+          error: {
+            code: "ACCOUNT_EXISTS",
+            message: `An account with this ${matchedField} already exists. Please sign in instead.`,
+          },
+        },
         { status: 409 }
       );
     }
@@ -115,7 +125,13 @@ export async function POST(req: NextRequest) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         return NextResponse.json(
-          { error: "An account with this email or phone already exists" },
+          {
+            success: false,
+            error: {
+              code: "ACCOUNT_EXISTS",
+              message: "An account with this email or phone already exists. Please sign in instead.",
+            },
+          },
           { status: 409 }
         );
       }

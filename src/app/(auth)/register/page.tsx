@@ -65,7 +65,20 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Registration failed");
+        if (res.status === 409) {
+          toast.error(
+            data.error?.message || "An account with this email or phone already exists. Please sign in.",
+            {
+              action: {
+                label: "Sign In",
+                onClick: () => router.push("/login"),
+              },
+              duration: 8000,
+            }
+          );
+        } else {
+          toast.error(data.error?.message || data.error || "Registration failed");
+        }
         return;
       }
 

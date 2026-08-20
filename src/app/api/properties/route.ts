@@ -241,7 +241,13 @@ export async function POST(req: NextRequest) {
   try {
     if (!process.env.DATABASE_URL) {
       return NextResponse.json(
-        { error: "Database is not configured" },
+        {
+          success: false,
+          error: {
+            code: "SERVICE_UNAVAILABLE",
+            message: "Database is not configured",
+          },
+        },
         { status: 503 }
       );
     }
@@ -249,7 +255,16 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "You must be signed in to create a listing",
+          },
+        },
+        { status: 401 }
+      );
     }
 
     if (
@@ -258,13 +273,42 @@ export async function POST(req: NextRequest) {
       session.user.role !== "ADMIN"
     ) {
       return NextResponse.json(
-        { error: "Only landlords and agents can create listings" },
+        {
+          success: false,
+          error: {
+            code: "FORBIDDEN",
+            message: "Only landlords and agents can create property listings. Please register as a landlord or agent.",
+          },
+        },
         { status: 403 }
       );
     }
 
     const body = await req.json();
-    const data = createPropertySchema.parse(body);
+    const parseResult = createPropertySchema.safeParse(body);
+
+    if (!parseResult.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parseResult.error.issues) {
+        const field = issue.path.join(".");
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = issue.message;
+        }
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Please correct the highlighted fields.",
+            fields: fieldErrors,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = parseResult.data;
     const slug = `${slugify(data.title)}-${Date.now().toString(36)}`;
     const imageUrls = data.imageUrls ?? [];
 
@@ -373,14 +417,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ property }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of error.issues) {
+        const field = issue.path.join(".");
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = issue.message;
+        }
+      }
       return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Please correct the highlighted fields.",
+            fields: fieldErrors,
+          },
+        },
         { status: 400 }
       );
     }
     console.error("Property creation error:", error);
     return NextResponse.json(
-      { error: "Failed to create property" },
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Failed to create property. Please try again.",
+        },
+      },
       { status: 500 }
     );
   }
