@@ -34,6 +34,12 @@ export const metadata: Metadata = {
     "Wakiso rentals",
   ],
   authors: [{ name: "RentMe" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "RentMe",
+  },
   openGraph: {
     type: "website",
     locale: "en_UG",
@@ -46,8 +52,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "RentMe — Find Your Next Home in Uganda",
-    description:
-      "Uganda's trusted rental housing marketplace.",
+    description: "Uganda's trusted rental housing marketplace.",
   },
   robots: {
     index: true,
@@ -59,7 +64,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#1e40af",
+  themeColor: "#172554",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

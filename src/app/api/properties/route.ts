@@ -3,6 +3,7 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
+import { authOptions } from "@/lib/auth";
 
 // GET /api/properties - List properties with search & filters
 export async function GET(req: NextRequest) {
@@ -49,12 +50,11 @@ export async function GET(req: NextRequest) {
       where.propertyType = propertyType;
     }
 
-    if (minRent) {
-      where.rent = { ...where.rent, gte: parseInt(minRent) };
-    }
-
-    if (maxRent) {
-      where.rent = { ...where.rent, lte: parseInt(maxRent) };
+    if (minRent || maxRent) {
+      const rentFilter: Prisma.IntFilter = {};
+      if (minRent) rentFilter.gte = parseInt(minRent);
+      if (maxRent) rentFilter.lte = parseInt(maxRent);
+      where.rent = rentFilter;
     }
 
     if (bedrooms) {
