@@ -1,38 +1,31 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Search,
   Shield,
-  Star,
-  MapPin,
   ArrowRight,
-  TrendingUp,
   Home,
-  Users,
+  MapPin,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  BedDouble,
-  Bath,
-  Heart,
-  ArrowUpRight,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import SearchBar from "@/components/property/search-bar";
 import PropertyCard from "@/components/property/property-card";
-import { formatUGX, cn } from "@/lib/utils";
+import PropertyCarousel, {
+  type CarouselProperty,
+} from "@/components/property/property-carousel";
+import { cn } from "@/lib/utils";
 
 const popularLocations = [
-  { name: "Kampala", slug: "Kampala", description: "Find homes in the capital", emoji: "🏙️" },
-  { name: "Kololo", slug: "Kololo", description: "Premium hilltop living", emoji: "🌳" },
-  { name: "Ntinda", slug: "Ntinda", description: "Modern apartments & houses", emoji: "🏢" },
-  { name: "Naguru", slug: "Naguru", description: "Quiet residential area", emoji: "🏡" },
-  { name: "Bugolobi", slug: "Bugolobi", description: "Convenient city living", emoji: "🏘️" },
-  { name: "Entebbe", slug: "Entebbe", description: "Live near Lake Victoria", emoji: "🏖️" },
-  { name: "Jinja", slug: "Jinja", description: "Discover properties in Jinja", emoji: "🌊" },
-  { name: "Muyenga", slug: "Muyenga", description: "Scenic hillside homes", emoji: "🌄" },
+  { name: "Kampala", slug: "Kampala", description: "Find homes in the capital" },
+  { name: "Kololo", slug: "Kololo", description: "Premium hilltop living" },
+  { name: "Ntinda", slug: "Ntinda", description: "Modern apartments & houses" },
+  { name: "Naguru", slug: "Naguru", description: "Quiet residential area" },
+  { name: "Bugolobi", slug: "Bugolobi", description: "Convenient city living" },
+  { name: "Entebbe", slug: "Entebbe", description: "Live near Lake Victoria" },
+  { name: "Jinja", slug: "Jinja", description: "Discover properties in Jinja" },
+  { name: "Muyenga", slug: "Muyenga", description: "Scenic hillside homes" },
 ];
 
 const propertyTypeChips = [
@@ -51,44 +44,175 @@ const steps = [
   {
     step: "1",
     title: "Search",
-    description: "Browse thousands of properties across Uganda with advanced filters.",
+    description:
+      "Browse thousands of properties across Uganda with advanced filters.",
   },
   {
     step: "2",
     title: "Connect",
-    description: "Message landlords directly and schedule viewings at your convenience.",
+    description:
+      "Message landlords directly and schedule viewings at your convenience.",
   },
   {
     step: "3",
     title: "Move In",
-    description: "Submit your application, get approved, and move into your new home.",
+    description:
+      "Submit your application, get approved, and move into your new home.",
   },
 ];
 
+/** Demo showcase listings when the API has no active properties yet */
+const FALLBACK_PROPERTIES: CarouselProperty[] = [
+  {
+    id: "demo-1",
+    slug: "luxury-villa-kololo",
+    title: "Luxury Villa Kololo",
+    rent: 8500000,
+    bedrooms: 5,
+    bathrooms: 4,
+    neighborhood: "Kololo",
+    district: "Kampala",
+    propertyType: "villa",
+    isVerified: true,
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80",
+        alt: "Luxury villa",
+      },
+    ],
+  },
+  {
+    id: "demo-2",
+    slug: "modern-apt-naguru",
+    title: "Modern Apt Naguru",
+    rent: 3200000,
+    bedrooms: 3,
+    bathrooms: 2,
+    neighborhood: "Naguru",
+    district: "Kampala",
+    propertyType: "apartment",
+    isVerified: true,
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
+        alt: "Modern apartment",
+      },
+    ],
+  },
+  {
+    id: "demo-3",
+    slug: "entebbe-waterfront",
+    title: "Entebbe Waterfront",
+    rent: 12000000,
+    bedrooms: 6,
+    bathrooms: 5,
+    neighborhood: "Lake shore",
+    district: "Entebbe",
+    propertyType: "villa",
+    isVerified: true,
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+        alt: "Waterfront home",
+      },
+    ],
+  },
+  {
+    id: "demo-4",
+    slug: "jinja-riverside",
+    title: "Jinja Riverside",
+    rent: 4700000,
+    bedrooms: 4,
+    bathrooms: 3,
+    neighborhood: "Nile view",
+    district: "Jinja",
+    propertyType: "house",
+    isVerified: false,
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+        alt: "Riverside house",
+      },
+    ],
+  },
+  {
+    id: "demo-5",
+    slug: "muyenga-penthouse",
+    title: "Muyenga Penthouse",
+    rent: 6800000,
+    bedrooms: 4,
+    bathrooms: 3,
+    neighborhood: "Muyenga",
+    district: "Kampala",
+    propertyType: "apartment",
+    isVerified: true,
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
+        alt: "Penthouse",
+      },
+    ],
+  },
+  {
+    id: "demo-6",
+    slug: "bugolobi-duplex",
+    title: "Bugolobi Duplex",
+    rent: 5300000,
+    bedrooms: 5,
+    bathrooms: 4,
+    neighborhood: "Bugolobi",
+    district: "Kampala",
+    propertyType: "duplex",
+    isVerified: false,
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cd40?w=800&q=80",
+        alt: "Duplex",
+      },
+    ],
+  },
+];
+
+interface ListedProperty extends CarouselProperty {
+  deposit?: number | null;
+  paymentFrequency: string;
+  propertyType: string;
+  isVerified: boolean;
+  viewCount: number;
+  saveCount: number;
+  listedAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+    landlord?: { verificationStatus?: string } | null;
+    agent?: { verificationStatus?: string } | null;
+  };
+}
+
 export default function HomePage() {
-  const [featuredProperties, setFeaturedProperties] = useState<any[]>([]);
-  const [newestProperties, setNewestProperties] = useState<any[]>([]);
+  const [featuredProperties, setFeaturedProperties] = useState<ListedProperty[]>(
+    []
+  );
+  const [newestProperties, setNewestProperties] = useState<ListedProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState("");
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const carouselTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const carouselContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchProperties() {
+      setLoading(true);
       try {
         const typeParam = activeType ? `&type=${activeType}` : "";
         const [featured, newest] = await Promise.all([
-          fetch(`/api/properties?limit=10&sort=most_viewed&status=ACTIVE${typeParam}`).then(
-            (r) => r.json()
-          ),
-          fetch(`/api/properties?limit=6&sort=newest&status=ACTIVE${typeParam}`).then(
-            (r) => r.json()
-          ),
+          fetch(
+            `/api/properties?limit=10&sort=most_viewed&status=ACTIVE${typeParam}`
+          ).then((r) => r.json()),
+          fetch(
+            `/api/properties?limit=6&sort=newest&status=ACTIVE${typeParam}`
+          ).then((r) => r.json()),
         ]);
         setFeaturedProperties(featured.properties || []);
         setNewestProperties(newest.properties || []);
-        setCarouselIndex(0);
       } catch (error) {
         console.error("Failed to fetch properties:", error);
       } finally {
@@ -98,74 +222,63 @@ export default function HomePage() {
     fetchProperties();
   }, [activeType]);
 
-  // Auto-rotate carousel
-  const startCarouselTimer = useCallback(() => {
-    if (carouselTimerRef.current) clearInterval(carouselTimerRef.current);
-    carouselTimerRef.current = setInterval(() => {
-      setCarouselIndex((prev) => {
-        const max = featuredProperties.length;
-        if (max <= 1) return 0;
-        return (prev + 1) % max;
-      });
-    }, 6000);
-  }, [featuredProperties.length]);
-
-  useEffect(() => {
-    if (featuredProperties.length > 1 && !loading) {
-      startCarouselTimer();
-    }
-    return () => {
-      if (carouselTimerRef.current) clearInterval(carouselTimerRef.current);
-    };
-  }, [featuredProperties.length, loading, startCarouselTimer]);
-
-  const pauseCarousel = () => {
-    if (carouselTimerRef.current) clearInterval(carouselTimerRef.current);
-  };
-
-  const resumeCarousel = () => {
-    startCarouselTimer();
-  };
-
-  const goToSlide = (index: number) => {
-    setCarouselIndex(index);
-    startCarouselTimer();
-  };
-
-  const prevSlide = () => {
-    setCarouselIndex((prev) => (prev === 0 ? featuredProperties.length - 1 : prev - 1));
-    startCarouselTimer();
-  };
-
-  const nextSlide = () => {
-    setCarouselIndex((prev) => (prev + 1) % featuredProperties.length);
-    startCarouselTimer();
-  };
+  const carouselProperties: CarouselProperty[] =
+    featuredProperties.length > 0 ? featuredProperties : FALLBACK_PROPERTIES;
 
   return (
     <MainLayout>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="page-container relative py-14 sm:py-16 lg:py-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/90 backdrop-blur-sm">
-              <Shield className="h-4 w-4" />
-              Uganda&apos;s Most Trusted Rental Marketplace
+      {/* Mobile-first premium showcase */}
+      <section className="bg-[#f4f6fa] pb-8 pt-5 md:pt-8">
+        <div className="mb-4 px-5 text-center md:mb-6">
+          <p className="text-sm font-medium text-[#385a4b]">
+            Property showcase
+          </p>
+          <h1 className="mt-1 bg-gradient-to-br from-[#1a4d42] to-[#2f8b76] bg-clip-text text-2xl font-bold tracking-tight text-transparent font-display sm:text-3xl">
+            Browse homes across Uganda
+          </h1>
+          <p className="mt-1.5 text-sm text-[#5b6f7a]">
+            Swipe, tap, or let listings rotate — key details at a glance
+          </p>
+        </div>
+
+        <div className="px-3 md:px-4">
+          {loading ? (
+            <div className="mx-auto max-w-[500px] overflow-hidden rounded-[36px] bg-white p-1 pb-4 shadow-lg">
+              <div className="skeleton aspect-[1.2/1] w-full rounded-[28px]" />
+              <div className="space-y-3 px-3 pt-4">
+                <div className="skeleton h-6 w-3/4" />
+                <div className="skeleton h-8 w-1/2 rounded-full" />
+                <div className="skeleton h-10 w-full" />
+              </div>
             </div>
-            <h1 className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl font-display">
-              Find a place you&apos;ll{" "}
-              <span className="text-accent-400">love</span> to call home
-            </h1>
+          ) : (
+            <PropertyCarousel properties={carouselProperties} />
+          )}
+        </div>
+
+        <div className="mt-2.5 flex justify-center">
+          <span className="inline-flex items-center rounded-full bg-white/40 px-6 py-1.5 text-xs tracking-wide text-[#6b808e] backdrop-blur-sm">
+            <Shield className="mr-1.5 h-3.5 w-3.5" />
+            verified listings · 300+ properties
+          </span>
+        </div>
+      </section>
+
+      {/* Search hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1a4d42] via-[#1f6d5e] to-[#2f8b76]">
+        <div className="page-container relative py-12 sm:py-14 lg:py-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl font-display">
+              Find a place you&apos;ll love to call home
+            </h2>
             <p className="mb-8 text-base text-white/80 sm:text-lg">
               Discover rental houses, apartments, and rooms across Kampala,
-              Wakiso, Mukono, and all of Uganda.
+              Entebbe, Jinja, and all of Uganda.
             </p>
           </div>
 
           <SearchBar />
 
-          {/* Location chips */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {popularLocations.slice(0, 6).map((loc) => (
               <Link
@@ -181,15 +294,15 @@ export default function HomePage() {
 
           <div className="mt-6 flex flex-wrap justify-center gap-5 text-sm text-white/70">
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-emerald-300" />
               Verified Listings
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-emerald-300" />
               Secure Messaging
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-emerald-300" />
               Direct Contact
             </span>
           </div>
@@ -207,7 +320,7 @@ export default function HomePage() {
                 className={cn(
                   "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all",
                   activeType === chip.value
-                    ? "bg-brand-500 text-white shadow-sm"
+                    ? "bg-[#1f6d5e] text-white shadow-sm"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
@@ -218,7 +331,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Properties Carousel */}
+      {/* Featured grid (desktop / secondary) */}
       <section className="section">
         <div className="page-container">
           <div className="mb-8 flex items-end justify-between">
@@ -232,7 +345,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/search"
-              className="hidden items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700 sm:flex"
+              className="hidden items-center gap-1 text-sm font-semibold text-[#1f6d5e] hover:text-[#1a4d42] sm:flex"
             >
               View all
               <ArrowRight className="h-4 w-4" />
@@ -244,7 +357,7 @@ export default function HomePage() {
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="card overflow-hidden">
                   <div className="skeleton aspect-[4/3] w-full" />
-                  <div className="p-4 space-y-3">
+                  <div className="space-y-3 p-4">
                     <div className="skeleton h-5 w-3/4" />
                     <div className="skeleton h-4 w-1/2" />
                     <div className="skeleton h-8 w-1/3" />
@@ -253,73 +366,11 @@ export default function HomePage() {
               ))}
             </div>
           ) : featuredProperties.length > 0 ? (
-            <>
-              {/* Mobile carousel */}
-              <div
-                className="relative sm:hidden"
-                onMouseEnter={pauseCarousel}
-                onMouseLeave={resumeCarousel}
-                onTouchStart={pauseCarousel}
-                onTouchEnd={resumeCarousel}
-              >
-                <div className="overflow-hidden">
-                  <div
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
-                  >
-                    {featuredProperties.map((property) => (
-                      <div key={property.id} className="w-full shrink-0 px-0.5">
-                        <PropertyCard property={property} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Carousel controls */}
-                {featuredProperties.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevSlide}
-                      className="absolute left-2 top-1/3 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
-                      aria-label="Previous property"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={nextSlide}
-                      className="absolute right-2 top-1/3 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
-                      aria-label="Next property"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-
-                    {/* Dots */}
-                    <div className="mt-4 flex items-center justify-center gap-1.5">
-                      {featuredProperties.slice(0, 8).map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => goToSlide(i)}
-                          className={cn(
-                            "h-2 rounded-full transition-all",
-                            i === carouselIndex
-                              ? "w-6 bg-brand-500"
-                              : "w-2 bg-gray-300 hover:bg-gray-400"
-                          )}
-                          aria-label={`Go to slide ${i + 1}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Desktop grid */}
-              <div className="hidden grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {featuredProperties.slice(0, 6).map((property) => (
-                  <PropertyCard key={property.id} property={property} />
-                ))}
-              </div>
-            </>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredProperties.slice(0, 6).map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
           ) : (
             <div className="card p-12 text-center">
               <Home className="mx-auto mb-4 h-12 w-12 text-gray-300" />
@@ -327,7 +378,8 @@ export default function HomePage() {
                 No properties yet
               </h3>
               <p className="mt-1 text-gray-500">
-                Be the first to list a property on RentMe.
+                Be the first to list a property on RentMe. Showcase above uses
+                sample listings until yours go live.
               </p>
               <Link href="/register" className="btn-primary mt-4">
                 List Your Property
@@ -338,7 +390,7 @@ export default function HomePage() {
           <div className="mt-6 text-center sm:hidden">
             <Link
               href="/search"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-[#1f6d5e]"
             >
               View all properties
               <ArrowRight className="h-4 w-4" />
@@ -348,7 +400,7 @@ export default function HomePage() {
       </section>
 
       {/* Explore by Location */}
-      <section className="section bg-gray-50">
+      <section className="section bg-[#f4f6fa]">
         <div className="page-container">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
@@ -364,20 +416,15 @@ export default function HomePage() {
               <Link
                 key={loc.name}
                 href={`/search?district=${loc.slug}`}
-                className="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+                className="group rounded-2xl bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="flex h-32 items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 text-5xl">
-                  {loc.emoji}
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#e3f0ed] text-[#2a7f6e]">
+                  <MapPin className="h-5 w-5" />
                 </div>
-                <div className="p-3">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-brand-600">
-                    {loc.name}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {loc.description}
-                  </p>
-                </div>
-                <ArrowUpRight className="absolute right-3 top-3 h-4 w-4 text-gray-300 transition-colors group-hover:text-brand-500" />
+                <h3 className="font-semibold text-gray-900 group-hover:text-[#1f6d5e]">
+                  {loc.name}
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-500">{loc.description}</p>
               </Link>
             ))}
           </div>
@@ -399,7 +446,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/search?sort=newest"
-                className="hidden items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700 sm:flex"
+                className="hidden items-center gap-1 text-sm font-semibold text-[#1f6d5e] hover:text-[#1a4d42] sm:flex"
               >
                 View all
                 <ArrowRight className="h-4 w-4" />
@@ -416,7 +463,7 @@ export default function HomePage() {
       )}
 
       {/* How it works */}
-      <section className="section bg-gray-50">
+      <section className="section bg-[#f4f6fa]">
         <div className="page-container">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
@@ -430,7 +477,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {steps.map((s) => (
               <div key={s.step} className="text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-xl font-bold text-white">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1f6d5e] text-xl font-bold text-white">
                   {s.step}
                 </div>
                 <h3 className="mb-2 text-lg font-semibold text-gray-900">
@@ -444,19 +491,19 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="section bg-brand-700">
+      <section className="section bg-[#1a4d42]">
         <div className="page-container text-center">
           <h2 className="mb-4 text-3xl font-bold text-white font-display sm:text-4xl">
             Are you a landlord or agent?
           </h2>
           <p className="mb-8 text-lg text-white/80">
-            List your properties on RentMe and reach thousands of potential tenants
-            across Uganda.
+            List your properties on RentMe and reach thousands of potential
+            tenants across Uganda.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/register"
-              className="inline-flex items-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-brand-700 shadow-sm transition-all hover:bg-gray-50"
+              className="inline-flex items-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[#1a4d42] shadow-sm transition-all hover:bg-gray-50"
             >
               List Your Property
               <ArrowRight className="ml-2 h-4 w-4" />
