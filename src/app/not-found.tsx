@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Home, ArrowLeft } from "lucide-react";
+import { Search, Home } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -16,15 +16,6 @@ export default function NotFound() {
         </p>
 
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined") window.history.back();
-            }}
-            className="btn-secondary"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Go Back
-          </button>
           <Link href="/" className="btn-primary">
             <Home className="mr-2 h-4 w-4" />
             Homepage

@@ -3,7 +3,7 @@
  * E2E persistence checks against a live RentMe deployment.
  * Usage: node scripts/e2e-auth-listings.mjs [baseUrl]
  */
-const BASE = (process.argv[2] || process.env.E2E_BASE_URL || "https://rent-me-seven.vercel.app").replace(
+const BASE = (process.argv[2] || process.env.E2E_BASE_URL || "http://localhost:3000").replace(
   /\/$/,
   ""
 );
@@ -50,6 +50,21 @@ async function main() {
 
   console.log(`E2E base: ${BASE}`);
 
+  // 0) Footer / marketing routes must resolve (no RSC 404s)
+  const publicRoutes = [
+    "/about",
+    "/contact",
+    "/pricing",
+    "/guides/landlord",
+    "/stories",
+    "/safety",
+  ];
+  for (const path of publicRoutes) {
+    const res = await fetch(`${BASE}${path}`);
+    assert(res.status === 200, `Expected 200 for ${path}, got ${res.status}`);
+  }
+  console.log("✓ public footer routes resolve");
+
   // 1) Register landlord
   const regRes = await fetch(`${BASE}/api/auth/register`, {
     method: "POST",
@@ -66,6 +81,27 @@ async function main() {
   assert(regRes.status === 201, `Register failed: ${regRes.status} ${JSON.stringify(regBody)}`);
   assert(regBody.user?.id, "Register did not return user id");
   console.log("✓ register persisted user", regBody.user.id);
+
+  // 1b) Duplicate register must return structured 409
+  const dupRes = await fetch(`${BASE}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "E2E Landlord",
+      email,
+      phone,
+      password,
+      role: "LANDLORD",
+    }),
+  });
+  const dupBody = await parseJson(dupRes);
+  assert(dupRes.status === 409, `Expected 409 on duplicate register, got ${dupRes.status}`);
+  assert(
+    dupBody.error?.code === "ACCOUNT_EXISTS" ||
+      String(dupBody.error?.message || dupBody.error || "").toLowerCase().includes("already"),
+    `Duplicate register missing ACCOUNT_EXISTS UX: ${JSON.stringify(dupBody)}`
+  );
+  console.log("✓ duplicate register returns 409 with clear message");
 
   // 2) CSRF + credentials login
   const csrfRes = await fetch(`${BASE}/api/auth/csrf`);
@@ -99,7 +135,34 @@ async function main() {
   assert(session.user.role === "LANDLORD", `Unexpected role: ${session.user.role}`);
   console.log("✓ authentication session persisted");
 
-  // 3) Create listing
+  // 3a) Short description must be rejected with field-level error
+  const shortRes = await fetch(`${BASE}/api/properties`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Cookie: cookieHeader(),
+    },
+    body: JSON.stringify({
+      title: `E2E Short ${stamp}`,
+      description: "fully furnished ",
+      propertyType: "2_bedroom",
+      bedrooms: 3,
+      bathrooms: 1,
+      rent: 1500000,
+      district: "Wakiso",
+    }),
+  });
+  const shortBody = await parseJson(shortRes);
+  assert(shortRes.status === 400, `Expected 400 for short description, got ${shortRes.status}`);
+  assert(
+    shortBody.error?.fields?.description ||
+      (Array.isArray(shortBody.details) &&
+        shortBody.details.some((d) => d.path?.includes?.("description"))),
+    `Short description missing field error: ${JSON.stringify(shortBody)}`
+  );
+  console.log("✓ short description rejected with field error");
+
+  // 3b) Create listing with valid payload
   const createRes = await fetch(`${BASE}/api/properties`, {
     method: "POST",
     headers: {

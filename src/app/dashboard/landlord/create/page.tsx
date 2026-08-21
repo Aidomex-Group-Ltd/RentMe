@@ -143,6 +143,30 @@ export default function CreatePropertyPage() {
     return urls;
   }
 
+  const fieldStep: Record<string, number> = {
+    propertyType: 0,
+    district: 1,
+    rent: 2,
+    title: 3,
+    description: 3,
+    bedrooms: 3,
+    bathrooms: 3,
+  };
+
+  const jumpToFirstError = (errors: Record<string, string>) => {
+    const firstField = Object.keys(errors)[0];
+    if (!firstField) return;
+    const step = fieldStep[firstField];
+    if (typeof step === "number") {
+      setCurrentStep(step);
+    }
+    // Wait a tick so the target step mounts before scrolling
+    requestAnimationFrame(() => {
+      const firstErrorField = document.querySelector("[data-field-error]");
+      firstErrorField?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -152,7 +176,7 @@ export default function CreatePropertyPage() {
       errors.title = "Title must be 200 characters or fewer.";
     }
 
-    if (!form.description || form.description.length < 20) {
+    if (!form.description || form.description.trim().length < 20) {
       errors.description = "Description must be at least 20 characters.";
     } else if (form.description.length > 5000) {
       errors.description = "Description must be 5,000 characters or fewer.";
@@ -179,15 +203,16 @@ export default function CreatePropertyPage() {
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (Object.keys(errors).length > 0) {
+      jumpToFirstError(errors);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fix the errors below before submitting.");
-      // Scroll to first error
-      const firstErrorField = document.querySelector("[data-field-error]");
-      firstErrorField?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -217,16 +242,29 @@ export default function CreatePropertyPage() {
           data.error?.message || "You don't have permission to create listings. Please register as a landlord or agent.",
           { duration: 10000 }
         );
-      } else if (res.status === 400 && data.error?.fields) {
-        // Map backend field errors to local state
+      } else if (res.status === 400) {
         const backendErrors: Record<string, string> = {};
-        for (const [field, message] of Object.entries(data.error.fields)) {
-          backendErrors[field] = message as string;
+        if (data.error?.fields && typeof data.error.fields === "object") {
+          for (const [field, message] of Object.entries(data.error.fields)) {
+            backendErrors[field] = message as string;
+          }
+        } else if (Array.isArray(data.details)) {
+          for (const issue of data.details) {
+            const field = Array.isArray(issue.path) ? issue.path.join(".") : "";
+            if (field && !backendErrors[field]) {
+              backendErrors[field] = issue.message as string;
+            }
+          }
         }
-        setFieldErrors(backendErrors);
-        toast.error("Please fix the validation errors below.");
+        if (Object.keys(backendErrors).length > 0) {
+          setFieldErrors(backendErrors);
+          jumpToFirstError(backendErrors);
+          toast.error(data.error?.message || "Please fix the validation errors below.");
+        } else {
+          toast.error(data.error?.message || data.error || "Failed to create listing");
+        }
       } else {
-        toast.error(data.error?.message || "Failed to create listing");
+        toast.error(data.error?.message || data.error || "Failed to create listing");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
@@ -427,9 +465,18 @@ export default function CreatePropertyPage() {
                   onChange={(e) => updateForm({ description: e.target.value })}
                   className={`input ${fieldErrors.description ? "input-error" : ""}`}
                   rows={5}
-                  placeholder="Describe your property in detail..."
+                  placeholder="Describe your property in detail (at least 20 characters)..."
                   maxLength={5000}
                 />
+                <p
+                  className={`mt-1 text-xs ${
+                    form.description.trim().length < 20
+                      ? "text-amber-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {form.description.trim().length}/20 characters minimum
+                </p>
                 <FieldError field="description" />
               </div>
               <div className="grid grid-cols-2 gap-4">

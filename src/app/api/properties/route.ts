@@ -201,19 +201,27 @@ export async function GET(req: NextRequest) {
 }
 
 const createPropertySchema = z.object({
-  title: z.string().min(5).max(200),
-  description: z.string().min(20).max(5000),
-  propertyType: z.string().min(1),
+  title: z
+    .string()
+    .trim()
+    .min(5, "Title must be at least 5 characters.")
+    .max(200, "Title must be 200 characters or fewer."),
+  description: z
+    .string()
+    .trim()
+    .min(20, "Description must be at least 20 characters.")
+    .max(5000, "Description must be 5,000 characters or fewer."),
+  propertyType: z.string().min(1, "Please select a property type."),
   bedrooms: z.number().min(0).max(20),
   bathrooms: z.number().min(0).max(20),
-  rent: z.number().min(1000),
+  rent: z.number().min(1000, "Rent must be at least UGX 1,000."),
   deposit: z.number().optional(),
   agencyFee: z.number().optional(),
   serviceCharge: z.number().optional(),
   paymentFrequency: z
     .enum(["MONTHLY", "WEEKLY", "DAILY", "QUARTERLY", "ANNUALLY"])
     .default("MONTHLY"),
-  district: z.string().min(1),
+  district: z.string().min(1, "Please select a district."),
   city: z.string().optional(),
   neighborhood: z.string().optional(),
   address: z.string().optional(),

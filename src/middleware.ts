@@ -61,24 +61,31 @@ function applyRateLimit(
   return null; // allowed
 }
 
-const PRODUCTION_HOST = (
-  process.env.PRODUCTION_DOMAIN || "rentme.ug"
-).replace(/\/$/, "");
-
-/** Domains that should 301-redirect to production. */
-const REDIRECT_HOSTS = new Set([
-  "rent-me-seven.vercel.app",
-  "rent-me-seven.vercel.app",
-]);
+/**
+ * Optional apex redirect. Only enabled when PRODUCTION_DOMAIN is set and
+ * differs from the request host — keeps rent-me-seven.vercel.app usable
+ * until the custom domain is cut over.
+ */
+const PRODUCTION_HOST = (process.env.PRODUCTION_DOMAIN || "").replace(/\/$/, "");
+const REDIRECT_HOSTS = new Set(
+  (process.env.REDIRECT_FROM_HOSTS || "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    // ── Domain redirect (old Vercel preview → production) ──────
-    const host = req.headers.get("host") || "";
-    if (REDIRECT_HOSTS.has(host)) {
+    // ── Domain redirect (opt-in via PRODUCTION_DOMAIN + REDIRECT_FROM_HOSTS)
+    const host = (req.headers.get("host") || "").toLowerCase();
+    if (
+      PRODUCTION_HOST &&
+      REDIRECT_HOSTS.has(host) &&
+      host !== PRODUCTION_HOST.toLowerCase()
+    ) {
       const target = new URL(req.url);
       target.host = PRODUCTION_HOST;
       target.protocol = "https:";
