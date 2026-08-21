@@ -6,7 +6,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Home, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { dashboardPathForRole } from "@/lib/utils";
+import { dashboardPathForRole, formatPhoneNumber } from "@/lib/utils";
 
 function LoginForm() {
   const router = useRouter();
@@ -18,12 +18,16 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
 
     try {
-      const isEmail = identifier.includes("@");
+      const trimmed = identifier.trim();
+      const isEmail = trimmed.includes("@");
       const result = await signIn("credentials", {
-        [isEmail ? "email" : "phone"]: identifier,
+        [isEmail ? "email" : "phone"]: isEmail
+          ? trimmed.toLowerCase()
+          : formatPhoneNumber(trimmed),
         password,
         redirect: false,
       });
@@ -53,9 +57,28 @@ function LoginForm() {
     }
   };
 
+  const callbackUrl = searchParams.get("callbackUrl");
+  const isAdminCallback =
+    !!callbackUrl &&
+    (callbackUrl === "/admin" || callbackUrl.startsWith("/admin/"));
+
   return (
     <>
-      <h1 className="text-2xl font-bold text-gray-900 font-display">Sign in</h1>
+      {isAdminCallback && (
+        <div
+          role="status"
+          className="mb-6 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800"
+        >
+          <p className="font-semibold">Admin Console</p>
+          <p className="mt-0.5 text-brand-700/80">
+            Sign in with an administrator account to continue. This is not a missing
+            page — access is restricted to the ADMIN role.
+          </p>
+        </div>
+      )}
+      <h1 className="text-2xl font-bold text-gray-900 font-display">
+        {isAdminCallback ? "Admin sign in" : "Sign in"}
+      </h1>
       <p className="mt-2 text-gray-500">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="font-semibold text-brand-600 hover:text-brand-700">
