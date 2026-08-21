@@ -90,8 +90,7 @@ async function run() {
     }
 
     // Check password hash
-    if (adminUser.passwordHash) {
-      const testPw = process.argv[3] || "2aae411472b717df952593bf481e53cbfd5c75a19e50ec430209dc23bb32330d";
+    if (adminUser.passwordHash) {        const testPw = process.argv[3] || "Programming@26";
       try {
         const valid = await bcrypt.compare(testPw, adminUser.passwordHash);
         if (valid) ok("Password hash validates correctly");
