@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import { PROPERTY_TYPES, UGANDA_DISTRICTS, dashboardPathForRole } from "@/lib/utils";
+import { preparePropertyImage } from "@/lib/client-image";
 import { toast } from "sonner";
 
 const steps = [
@@ -88,6 +89,8 @@ export default function CreatePropertyPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [preparingPhotos, setPreparingPhotos] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateForm = (updates: Partial<typeof form>) => {
     setForm((prev) => ({ ...prev, ...updates }));
@@ -111,11 +114,38 @@ export default function CreatePropertyPage() {
     );
   };
 
-  const handlePhotosSelected = (files: FileList | null) => {
+  const handlePhotosSelected = async (files: FileList | null) => {
     if (!files?.length) return;
-    const next = [...photoFiles, ...Array.from(files)].slice(0, 20);
-    setPhotoFiles(next);
-    setPhotoPreviews(next.map((file) => URL.createObjectURL(file)));
+
+    setPreparingPhotos(true);
+    try {
+      const prepared: File[] = [];
+      for (const file of Array.from(files)) {
+        try {
+          prepared.push(await preparePropertyImage(file));
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Could not add photo");
+        }
+      }
+
+      if (prepared.length === 0) return;
+
+      setPhotoFiles((prev) => {
+        const next = [...prev, ...prepared].slice(0, 20);
+        // Replace previews after files settle (avoid nested setState races)
+        requestAnimationFrame(() => {
+          setPhotoPreviews((old) => {
+            old.forEach((url) => URL.revokeObjectURL(url));
+            return next.map((file) => URL.createObjectURL(file));
+          });
+        });
+        return next;
+      });
+    } finally {
+      setPreparingPhotos(false);
+      // Allow re-selecting the same file on Android
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -129,23 +159,35 @@ export default function CreatePropertyPage() {
 
   async function uploadPhotos(): Promise<string[]> {
     const urls: string[] = [];
-    for (const file of photoFiles) {
+    for (let i = 0; i < photoFiles.length; i++) {
+      const file = photoFiles[i];
+      toast.message(`Uploading photo ${i + 1} of ${photoFiles.length}…`);
       const body = new FormData();
       body.append("file", file);
       body.append("folder", `properties/${session?.user?.id || "drafts"}`);
       const res = await fetch("/api/upload", { method: "POST", body });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Photo upload failed");
+      let data: { error?: string; url?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Photo upload failed. Check your connection and try again.");
       }
-      urls.push(data.url as string);
+      if (!res.ok) {
+        throw new Error(
+          (typeof data.error === "string" && data.error) ||
+            `Photo ${i + 1} failed to upload (${res.status}).`
+        );
+      }
+      if (!data.url) {
+        throw new Error(`Photo ${i + 1} upload returned no URL.`);
+      }
+      urls.push(data.url);
     }
     return urls;
   }
 
   const fieldStep: Record<string, number> = {
     propertyType: 0,
-    district: 1,
     rent: 2,
     title: 3,
     description: 3,
@@ -170,24 +212,19 @@ export default function CreatePropertyPage() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!form.title || form.title.length < 5) {
+    // Required: title, property type, rent
+    if (!form.title || form.title.trim().length < 5) {
       errors.title = "Title must be at least 5 characters.";
     } else if (form.title.length > 200) {
       errors.title = "Title must be 200 characters or fewer.";
     }
 
-    if (!form.description || form.description.trim().length < 20) {
-      errors.description = "Description must be at least 20 characters.";
-    } else if (form.description.length > 5000) {
+    if (form.description.trim().length > 5000) {
       errors.description = "Description must be 5,000 characters or fewer.";
     }
 
     if (!form.propertyType) {
       errors.propertyType = "Please select a property type.";
-    }
-
-    if (!form.district) {
-      errors.district = "Please select a district.";
     }
 
     if (!form.rent || form.rent < 1000) {
@@ -211,6 +248,8 @@ export default function CreatePropertyPage() {
   };
 
   const handleSubmit = async () => {
+    if (loading || preparingPhotos) return;
+
     if (!validateForm()) {
       toast.error("Please fix the errors below before submitting.");
       return;
@@ -221,30 +260,57 @@ export default function CreatePropertyPage() {
     try {
       let imageUrls: string[] = [];
       if (photoFiles.length > 0) {
-        toast.message("Uploading photos to Cloudflare R2…");
         imageUrls = await uploadPhotos();
       }
+
+      const payload = {
+        ...form,
+        title: form.title.trim(),
+        description: form.description.trim(),
+        district: form.district.trim() || undefined,
+        city: form.city.trim() || undefined,
+        neighborhood: form.neighborhood.trim() || undefined,
+        address: form.address.trim() || undefined,
+        availableFrom: form.availableFrom || undefined,
+        deposit: form.deposit || undefined,
+        agencyFee: form.agencyFee || undefined,
+        serviceCharge: form.serviceCharge || undefined,
+        imageUrls,
+      };
 
       const res = await fetch("/api/properties", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, imageUrls }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      let data: {
+        error?: { message?: string; fields?: Record<string, string> } | string;
+        details?: Array<{ path?: string[]; message?: string }>;
+      } = {};
+      try {
+        data = await res.json();
+      } catch {
+        toast.error("Server returned an invalid response. Please try again.");
+        return;
+      }
 
       if (res.ok) {
         toast.success("Property listing submitted for review!");
         router.push(dashboardPathForRole(session?.user?.role));
         router.refresh();
+      } else if (res.status === 401) {
+        toast.error("Your session expired. Please sign in again.");
+        router.push("/login");
       } else if (res.status === 403) {
         toast.error(
-          data.error?.message || "You don't have permission to create listings. Please register as a landlord or agent.",
+          (typeof data.error === "object" && data.error?.message) ||
+            "You don't have permission to create listings. Please register as a landlord or agent.",
           { duration: 10000 }
         );
       } else if (res.status === 400) {
         const backendErrors: Record<string, string> = {};
-        if (data.error?.fields && typeof data.error.fields === "object") {
+        if (typeof data.error === "object" && data.error?.fields) {
           for (const [field, message] of Object.entries(data.error.fields)) {
             backendErrors[field] = message as string;
           }
@@ -252,19 +318,30 @@ export default function CreatePropertyPage() {
           for (const issue of data.details) {
             const field = Array.isArray(issue.path) ? issue.path.join(".") : "";
             if (field && !backendErrors[field]) {
-              backendErrors[field] = issue.message as string;
+              backendErrors[field] = (issue.message as string) || "Invalid value";
             }
           }
         }
         if (Object.keys(backendErrors).length > 0) {
           setFieldErrors(backendErrors);
           jumpToFirstError(backendErrors);
-          toast.error(data.error?.message || "Please fix the validation errors below.");
+          toast.error(
+            (typeof data.error === "object" && data.error?.message) ||
+              "Please fix the validation errors below."
+          );
         } else {
-          toast.error(data.error?.message || data.error || "Failed to create listing");
+          toast.error(
+            (typeof data.error === "object" && data.error?.message) ||
+              (typeof data.error === "string" ? data.error : null) ||
+              "Failed to create listing"
+          );
         }
       } else {
-        toast.error(data.error?.message || data.error || "Failed to create listing");
+        toast.error(
+          (typeof data.error === "object" && data.error?.message) ||
+            (typeof data.error === "string" ? data.error : null) ||
+            "Failed to create listing"
+        );
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
@@ -345,14 +422,15 @@ export default function CreatePropertyPage() {
           {currentStep === 1 && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-gray-900">Where is the property?</h2>
+              <p className="text-sm text-gray-500">Location details are optional — add what you know.</p>
               <div>
-                <label className="label">District *</label>
+                <label className="label">District</label>
                 <select
                   value={form.district}
                   onChange={(e) => updateForm({ district: e.target.value })}
                   className={`input ${fieldErrors.district ? "input-error" : ""}`}
                 >
-                  <option value="">Select district</option>
+                  <option value="">Select district (optional)</option>
                   {UGANDA_DISTRICTS.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
@@ -459,23 +537,17 @@ export default function CreatePropertyPage() {
                 <FieldError field="title" />
               </div>
               <div>
-                <label className="label">Description *</label>
+                <label className="label">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => updateForm({ description: e.target.value })}
                   className={`input ${fieldErrors.description ? "input-error" : ""}`}
                   rows={5}
-                  placeholder="Describe your property in detail (at least 20 characters)..."
+                  placeholder="Describe your property (optional)..."
                   maxLength={5000}
                 />
-                <p
-                  className={`mt-1 text-xs ${
-                    form.description.trim().length < 20
-                      ? "text-amber-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {form.description.trim().length}/20 characters minimum
+                <p className="mt-1 text-xs text-gray-400">
+                  {form.description.trim().length}/5,000 characters · optional
                 </p>
                 <FieldError field="description" />
               </div>
@@ -547,26 +619,44 @@ export default function CreatePropertyPage() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Property Photos</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Photos are stored on Cloudflare R2. You can add up to 20 images (JPEG, PNG, WebP).
+                Tap to take a photo or choose from your gallery. Large phone photos are
+                compressed automatically (JPEG, PNG, WebP — up to 20).
               </p>
 
-              <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-10 text-center hover:border-brand-400 hover:bg-brand-50/40">
-                <Upload className="h-12 w-12 text-gray-300" />
-                <p className="mt-4 text-sm font-medium text-gray-700">Click to upload photos</p>
-                <p className="mt-1 text-xs text-gray-500">Max 8MB per image</p>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handlePhotosSelected(e.target.files)}
-                />
-              </label>
+              <button
+                type="button"
+                disabled={preparingPhotos || photoFiles.length >= 20}
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-6 flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-10 text-center hover:border-brand-400 hover:bg-brand-50/40 disabled:opacity-60"
+              >
+                {preparingPhotos ? (
+                  <Loader2 className="h-12 w-12 animate-spin text-brand-500" />
+                ) : (
+                  <Upload className="h-12 w-12 text-gray-300" />
+                )}
+                <p className="mt-4 text-sm font-medium text-gray-700">
+                  {preparingPhotos ? "Preparing photos…" : "Tap to add photos"}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">Camera or gallery · max 8MB each</p>
+              </button>
+              {/*
+                Do NOT use display:none — Android Chrome often fails to open the
+                picker when a hidden file input is activated via a label.
+              */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                multiple
+                className="sr-only"
+                aria-label="Add property photos"
+                onChange={(e) => void handlePhotosSelected(e.target.files)}
+              />
 
               {photoPreviews.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {photoPreviews.map((src, index) => (
-                    <div key={src} className="relative overflow-hidden rounded-lg bg-gray-100">
+                    <div key={`${src}-${index}`} className="relative overflow-hidden rounded-lg bg-gray-100">
                       <img src={src} alt="" className="h-28 w-full object-cover" />
                       {index === 0 && (
                         <span className="absolute left-2 top-2 rounded bg-brand-600 px-2 py-0.5 text-[10px] font-semibold text-white">
@@ -640,11 +730,12 @@ export default function CreatePropertyPage() {
             </div>
           )}
 
-          {/* Navigation */}
-          <div className="mt-8 flex items-center justify-between">
+          {/* Navigation — extra bottom space so mobile bottom-nav doesn't cover Submit */}
+          <div className="mt-8 mb-8 flex items-center justify-between gap-3 pb-[env(safe-area-inset-bottom)]">
             <button
+              type="button"
               onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-              disabled={currentStep === 0}
+              disabled={currentStep === 0 || loading}
               className="btn-secondary"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -653,6 +744,7 @@ export default function CreatePropertyPage() {
 
             {currentStep < steps.length - 1 ? (
               <button
+                type="button"
                 onClick={() => setCurrentStep(currentStep + 1)}
                 className="btn-primary"
               >
@@ -661,9 +753,10 @@ export default function CreatePropertyPage() {
               </button>
             ) : (
               <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="btn-primary"
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={loading || preparingPhotos}
+                className="btn-primary min-h-[44px] touch-manipulation"
               >
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

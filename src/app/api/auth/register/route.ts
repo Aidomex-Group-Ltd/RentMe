@@ -3,17 +3,41 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, isValidUgandanPhone } from "@/lib/utils";
 
 const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters"),
   email: z.preprocess(
-    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    (value) => {
+      if (value == null) return undefined;
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : trimmed.toLowerCase();
+    },
     z.string().email("Invalid email address").optional()
   ),
-  phone: z.string().min(10, "Invalid phone number"),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Phone number is required")
+    .transform((value) => formatPhoneNumber(value))
+    .refine(isValidUgandanPhone, {
+      message: "Enter a valid Ugandan phone number (e.g. 0700 000 000)",
+    }),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["TENANT", "LANDLORD", "AGENT"]).default("TENANT"),
+  role: z.preprocess(
+    (value) => {
+      if (value == null || value === "") return "TENANT";
+      if (typeof value === "string") return value.trim().toUpperCase();
+      return value;
+    },
+    z.enum(["TENANT", "LANDLORD", "AGENT"], {
+      errorMap: () => ({ message: "Invalid account type" }),
+    })
+  ),
 });
 
 function isDatabaseUnavailable(error: unknown): boolean {
@@ -28,14 +52,29 @@ function isDatabaseUnavailable(error: unknown): boolean {
   );
 }
 
+function zodFieldErrors(error: z.ZodError): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = issue.path[0];
+    if (typeof key === "string" && !fields[key]) {
+      fields[key] = issue.message;
+    }
+  }
+  return fields;
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!process.env.DATABASE_URL) {
       console.error("Registration error: DATABASE_URL is not configured");
       return NextResponse.json(
         {
-          error:
-            "Database is not configured. Set DATABASE_URL in your Vercel project environment variables.",
+          success: false,
+          error: {
+            code: "DATABASE_NOT_CONFIGURED",
+            message:
+              "Database is not configured. Set DATABASE_URL in your Vercel project environment variables.",
+          },
         },
         { status: 503 }
       );
@@ -44,8 +83,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validatedData = registerSchema.parse(body);
 
-    const normalizedPhone = formatPhoneNumber(validatedData.phone);
-    const normalizedEmail = validatedData.email?.toLowerCase();
+    const normalizedPhone = validatedData.phone;
+    const normalizedEmail = validatedData.email;
 
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -116,8 +155,18 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
+      const fields = zodFieldErrors(error);
+      const firstMessage =
+        Object.values(fields)[0] || "Please check your details and try again.";
       return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_FAILED",
+            message: firstMessage,
+            fields,
+          },
+        },
         { status: 400 }
       );
     }
@@ -129,7 +178,8 @@ export async function POST(req: NextRequest) {
             success: false,
             error: {
               code: "ACCOUNT_EXISTS",
-              message: "An account with this email or phone already exists. Please sign in instead.",
+              message:
+                "An account with this email or phone already exists. Please sign in instead.",
             },
           },
           { status: 409 }
@@ -140,8 +190,12 @@ export async function POST(req: NextRequest) {
         console.error("Registration error: database schema missing", error);
         return NextResponse.json(
           {
-            error:
-              "Database tables are missing. Redeploy after configuring DATABASE_URL so Prisma can sync the schema.",
+            success: false,
+            error: {
+              code: "SCHEMA_MISSING",
+              message:
+                "Database tables are missing. Redeploy after configuring DATABASE_URL so Prisma can sync the schema.",
+            },
           },
           { status: 503 }
         );
@@ -152,8 +206,12 @@ export async function POST(req: NextRequest) {
       console.error("Registration error: database unavailable", error);
       return NextResponse.json(
         {
-          error:
-            "Cannot connect to the database. Check DATABASE_URL in Vercel environment variables.",
+          success: false,
+          error: {
+            code: "DATABASE_UNAVAILABLE",
+            message:
+              "Cannot connect to the database. Check DATABASE_URL in Vercel environment variables.",
+          },
         },
         { status: 503 }
       );
@@ -161,7 +219,13 @@ export async function POST(req: NextRequest) {
 
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Something went wrong. Please try again.",
+        },
+      },
       { status: 500 }
     );
   }

@@ -29,11 +29,33 @@ export function formatUGX(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * Normalize Ugandan phone numbers to E.164 (`+256XXXXXXXXX`).
+ * Strips spaces, dashes, and other punctuation so signup/login match.
+ */
 export function formatPhoneNumber(phone: string): string {
-  if (phone.startsWith("+256")) return phone;
-  if (phone.startsWith("256")) return `+${phone}`;
-  if (phone.startsWith("0")) return `+256${phone.slice(1)}`;
-  return `+256${phone}`;
+  const trimmed = phone.trim();
+  const digits = trimmed.replace(/\D/g, "");
+
+  if (digits.startsWith("256") && digits.length >= 12) {
+    return `+${digits.slice(0, 12)}`;
+  }
+  if (digits.startsWith("0") && digits.length >= 10) {
+    return `+256${digits.slice(1, 10)}`;
+  }
+  // Local mobile without leading 0: 7XXXXXXXX / 3XXXXXXXX
+  if (digits.length === 9 && /^[37]/.test(digits)) {
+    return `+256${digits}`;
+  }
+  if (digits.length >= 9) {
+    return `+256${digits.slice(-9)}`;
+  }
+  return digits ? `+256${digits}` : trimmed;
+}
+
+/** True when value is a valid Uganda MSISDN after normalization. */
+export function isValidUgandanPhone(phone: string): boolean {
+  return /^\+256[37]\d{8}$/.test(formatPhoneNumber(phone));
 }
 
 export function slugify(text: string): string {

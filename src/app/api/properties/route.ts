@@ -200,33 +200,52 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/** Empty string / null → undefined so optional number fields do not become NaN. */
+const optionalCoercedNumber = z.preprocess((value) => {
+  if (value === "" || value === null || value === undefined) return undefined;
+  return value;
+}, z.coerce.number().optional());
+
+/** Empty / missing → 0 for bedrooms/bathrooms. */
+const optionalCount = z.preprocess((value) => {
+  if (value === "" || value === null || value === undefined) return 0;
+  return value;
+}, z.coerce.number().min(0).max(20).default(0));
+
+const optionalTrimmedString = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}, z.string().optional());
+
 const createPropertySchema = z.object({
   title: z
     .string()
     .trim()
     .min(5, "Title must be at least 5 characters.")
     .max(200, "Title must be 200 characters or fewer."),
-  description: z
-    .string()
-    .trim()
-    .min(20, "Description must be at least 20 characters.")
-    .max(5000, "Description must be 5,000 characters or fewer."),
+  // Optional — empty descriptions are stored as ""
+  description: z.preprocess((value) => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "string") return value.trim();
+    return value;
+  }, z.string().max(5000, "Description must be 5,000 characters or fewer.").default("")),
   propertyType: z.string().min(1, "Please select a property type."),
-  bedrooms: z.number().min(0).max(20),
-  bathrooms: z.number().min(0).max(20),
-  rent: z.number().min(1000, "Rent must be at least UGX 1,000."),
-  deposit: z.number().optional(),
-  agencyFee: z.number().optional(),
-  serviceCharge: z.number().optional(),
+  bedrooms: optionalCount,
+  bathrooms: optionalCount,
+  rent: z.coerce.number().min(1000, "Rent must be at least UGX 1,000."),
+  deposit: optionalCoercedNumber,
+  agencyFee: optionalCoercedNumber,
+  serviceCharge: optionalCoercedNumber,
   paymentFrequency: z
     .enum(["MONTHLY", "WEEKLY", "DAILY", "QUARTERLY", "ANNUALLY"])
     .default("MONTHLY"),
-  district: z.string().min(1, "Please select a district."),
-  city: z.string().optional(),
-  neighborhood: z.string().optional(),
-  address: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  district: optionalTrimmedString,
+  city: optionalTrimmedString,
+  neighborhood: optionalTrimmedString,
+  address: optionalTrimmedString,
+  latitude: optionalCoercedNumber,
+  longitude: optionalCoercedNumber,
   isFurnished: z.boolean().default(false),
   isSelfContained: z.boolean().default(false),
   hasCompound: z.boolean().default(false),
@@ -242,8 +261,14 @@ const createPropertySchema = z.object({
   hasSecurityGuard: z.boolean().default(false),
   isGatedCommunity: z.boolean().default(false),
   allowsPets: z.boolean().default(false),
-  availableFrom: z.string().optional(),
-  imageUrls: z.array(z.string().url()).max(20).optional(),
+  availableFrom: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().optional()
+  ),
+  imageUrls: z
+    .array(z.string().min(1))
+    .max(20)
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -324,22 +349,22 @@ export async function POST(req: NextRequest) {
     const property = await prisma.property.create({
       data: {
         title: data.title,
-        description: data.description,
+        description: data.description || "",
         slug,
         propertyType: data.propertyType,
-        bedrooms: data.bedrooms,
-        bathrooms: data.bathrooms,
+        bedrooms: data.bedrooms ?? 0,
+        bathrooms: data.bathrooms ?? 0,
         rent: data.rent,
-        deposit: data.deposit,
-        agencyFee: data.agencyFee,
-        serviceCharge: data.serviceCharge,
+        deposit: data.deposit ?? null,
+        agencyFee: data.agencyFee ?? null,
+        serviceCharge: data.serviceCharge ?? null,
         paymentFrequency: data.paymentFrequency,
-        district: data.district,
-        city: data.city,
-        neighborhood: data.neighborhood,
-        address: data.address,
-        latitude: data.latitude,
-        longitude: data.longitude,
+        district: data.district ?? null,
+        city: data.city ?? null,
+        neighborhood: data.neighborhood ?? null,
+        address: data.address ?? null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
         isFurnished: data.isFurnished,
         isSelfContained: data.isSelfContained,
         hasCompound: data.hasCompound,

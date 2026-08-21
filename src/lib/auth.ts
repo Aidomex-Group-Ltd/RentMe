@@ -32,15 +32,49 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const user = await prisma.user.findFirst({
+          // Match both normalized E.164 and common raw inputs users may have stored.
+          const phoneCandidates = phoneInput
+            ? Array.from(
+                new Set(
+                  [phone, phoneInput, formatPhoneNumber(phoneInput)].filter(
+                    (value): value is string => Boolean(value)
+                  )
+                )
+              )
+            : [];
+
+          let user = await prisma.user.findFirst({
             where: {
               OR: [
                 ...(email ? [{ email }] : []),
-                ...(phone ? [{ phone }, { phone: phoneInput }] : []),
+                ...phoneCandidates.map((value) => ({ phone: value })),
               ],
               deletedAt: null,
             },
           });
+
+          // Legacy rows may store phones with spaces/dashes; match on last 9 digits.
+          if (!user && phone) {
+            const last9 = phone.replace(/\D/g, "").slice(-9);
+            if (last9.length === 9) {
+              try {
+                const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+                  SELECT id FROM users
+                  WHERE "deletedAt" IS NULL
+                    AND phone IS NOT NULL
+                    AND right(regexp_replace(phone, '[^0-9]', '', 'g'), 9) = ${last9}
+                  LIMIT 1
+                `;
+                if (rows[0]?.id) {
+                  user = await prisma.user.findFirst({
+                    where: { id: rows[0].id, deletedAt: null },
+                  });
+                }
+              } catch (legacyPhoneError) {
+                console.error("Auth legacy phone lookup error:", legacyPhoneError);
+              }
+            }
+          }
 
           if (!user || !user.passwordHash) return null;
           if (user.status === "BANNED" || user.status === "SUSPENDED") return null;

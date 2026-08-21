@@ -6,7 +6,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Home, Eye, EyeOff, Loader2, User, Building, Users } from "lucide-react";
 import { toast } from "sonner";
-import { cn, dashboardPathForRole } from "@/lib/utils";
+import { cn, dashboardPathForRole, formatPhoneNumber, isValidUgandanPhone } from "@/lib/utils";
 
 const roles = [
   {
@@ -43,14 +43,34 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const normalizedPhone = formatPhoneNumber(phone);
+
+    if (trimmedName.length < 2) {
+      toast.error("Name must be at least 2 characters");
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast.error("Passwords don't match");
       return;
     }
 
-    if (!phone.startsWith("+256") && !phone.startsWith("0") && !phone.startsWith("256")) {
-      toast.error("Please enter a valid Ugandan phone number");
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    if (!isValidUgandanPhone(phone)) {
+      toast.error("Enter a valid Ugandan phone number (e.g. 0700 000 000)");
+      return;
+    }
+
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error("Enter a valid email address or leave it blank");
       return;
     }
 
@@ -59,32 +79,40 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: email || undefined, phone, password, role }),
+        body: JSON.stringify({
+          name: trimmedName,
+          email: trimmedEmail || undefined,
+          phone: normalizedPhone,
+          password,
+          role,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        const message =
+          data.error?.message ||
+          (typeof data.error === "string" ? data.error : null) ||
+          "Registration failed";
+
         if (res.status === 409) {
-          toast.error(
-            data.error?.message || "An account with this email or phone already exists. Please sign in.",
-            {
-              action: {
-                label: "Sign In",
-                onClick: () => router.push("/login"),
-              },
-              duration: 8000,
-            }
-          );
+          toast.error(message, {
+            action: {
+              label: "Sign In",
+              onClick: () => router.push("/login"),
+            },
+            duration: 8000,
+          });
         } else {
-          toast.error(data.error?.message || data.error || "Registration failed");
+          toast.error(message);
         }
         return;
       }
 
       const signInResult = await signIn("credentials", {
-        email: email || undefined,
-        phone,
+        ...(trimmedEmail ? { email: trimmedEmail.toLowerCase() } : {}),
+        phone: normalizedPhone,
         password,
         redirect: false,
       });
@@ -98,7 +126,7 @@ export default function RegisterPage() {
       toast.success("Welcome to RentMe!");
       router.push(dashboardPathForRole(role));
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong");
     } finally {
       setLoading(false);
@@ -229,10 +257,14 @@ export default function RegisterPage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+256 700 000 000"
+                  placeholder="0700 000 000"
                   className="input"
                   required
+                  autoComplete="tel"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Ugandan mobile number. Used to sign in.
+                </p>
               </div>
 
               <div>
