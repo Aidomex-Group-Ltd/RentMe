@@ -5,8 +5,8 @@
  *   DATABASE_URL=... node scripts/ensure-admin.mjs [email] [password]
  * Defaults: admin@rentme.ug / password123
  */
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 async function main() {
   const email = (process.argv[2] || "admin@rentme.ug").toLowerCase();
