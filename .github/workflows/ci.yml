@@ -182,49 +182,84 @@ jobs:
             echo ""
             echo "Create it in GitHub → Settings → Secrets → Actions:"
             echo "  Name:    KUBE_CONFIG"
-            echo "  Value:   (paste raw kubeconfig or base64-encoded single line)"
+            echo "  Value:   cat /etc/rancher/k3s/k3s.yaml (paste raw YAML)"
             echo ""
-            echo "Quick setup on k3s server:"
+            echo "IMPORTANT: replace 127.0.0.1 with your public IP first:"
             echo "  sudo sed -i 's/127.0.0.1/\$(curl -s ifconfig.me)/' /etc/rancher/k3s/k3s.yaml"
-            echo "  sudo cat /etc/rancher/k3s/k3s.yaml   # paste as KUBE_CONFIG secret"
             exit 1
           fi
 
-          # Write to $HOME/.kube/config so kubectl finds it by default.
-          # Using GITHUB_ENV to export KUBECONFIG does NOT propagate to
-          # subsequent steps on all runner versions — $HOME/.kube/config is reliable.
           KUBECONFIG_PATH="${HOME}/.kube/config"
           mkdir -p "${HOME}/.kube"
+          TMPFILE=$(mktemp)
 
-          # Auto-detect: raw YAML starts with apiVersion or ---
-          FIRST_CHARS=$(printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '[:space:]' | cut -c1-12)
+          # Try strategy: (1) base64 decode, (2) raw YAML, (3) escaped-newline YAML
+          DECODED=false
 
-          if printf '%s' "${FIRST_CHARS}" | grep -qE '^(apiVersion:|---)'; then
-            # Raw YAML — write directly (replace literal \n with real newlines)
-            printf '%s' "${KUBE_CONFIG_RAW}" | sed 's/\\n/\n/g' > "${KUBECONFIG_PATH}"
-            echo "✓ KUBE_CONFIG is raw YAML"
-          else
-            # Assume base64 — decode
-            printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '\n\r\t ' | openssl base64 -d -A -out "${KUBECONFIG_PATH}" 2>/dev/null \
-              || { printf '%s' "${KUBE_CONFIG_RAW}" | base64 -d > "${KUBECONFIG_PATH}" 2>/dev/null; }
-            echo "✓ KUBE_CONFIG decoded from base64"
+          # ── Attempt 1: base64 decode ──
+          CLEAN=$(printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '\n\r\t ')
+          if printf '%s' "${CLEAN}" | openssl base64 -d -A -out "${TMPFILE}" 2>/dev/null; then
+            if grep -qE '^apiVersion:' "${TMPFILE}"; then
+              cp "${TMPFILE}" "${KUBECONFIG_PATH}"
+              DECODED=true
+              echo "✓ KUBE_CONFIG decoded from base64"
+            fi
+          fi
+
+          # ── Attempt 2: raw YAML (newlines preserved) ──
+          if [ "${DECODED}" = false ]; then
+            printf '%s\n' "${KUBE_CONFIG_RAW}" > "${TMPFILE}"
+            if grep -qE '^apiVersion:' "${TMPFILE}"; then
+              cp "${TMPFILE}" "${KUBECONFIG_PATH}"
+              DECODED=true
+              echo "✓ KUBE_CONFIG is raw YAML"
+            fi
+          fi
+
+          # ── Attempt 3: literal \\n converted to newlines ──
+          if [ "${DECODED}" = false ]; then
+            printf '%s' "${KUBE_CONFIG_RAW}" | sed 's/\\\\n/\n/g' > "${TMPFILE}"
+            if grep -qE '^apiVersion:' "${TMPFILE}"; then
+              cp "${TMPFILE}" "${KUBECONFIG_PATH}"
+              DECODED=true
+              echo "✓ KUBE_CONFIG decoded (escaped newlines)"
+            fi
+          fi
+
+          # ── Attempt 4: try stripping ALL whitespace and re-decoding as base64 ──
+          if [ "${DECODED}" = false ]; then
+            STRIPPED=$(printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '[:space:]')
+            if printf '%s' "${STRIPPED}" | base64 -d > "${TMPFILE}" 2>/dev/null; then
+              if grep -qE '^apiVersion:' "${TMPFILE}"; then
+                cp "${TMPFILE}" "${KUBECONFIG_PATH}"
+                DECODED=true
+                echo "✓ KUBE_CONFIG decoded (stripped-base64)"
+              fi
+            fi
+          fi
+
+          rm -f "${TMPFILE}"
+
+          if [ "${DECODED}" = false ]; then
+            echo "::error::KUBE_CONFIG is not a valid kubeconfig in any format."
+            echo ""
+            echo "The secret content (first 80 chars):"
+            printf '%s' "${KUBE_CONFIG_RAW}" | head -c 80
+            echo ""
+            echo ""
+            echo "Re-create the secret with the RAW kubeconfig:"
+            echo "  sudo sed -i 's/127.0.0.1/\$(curl -s ifconfig.me)/' /etc/rancher/k3s/k3s.yaml"
+            echo "  sudo cat /etc/rancher/k3s/k3s.yaml  | pbcopy"
+            echo "  Then paste into GitHub → Settings → Secrets → KUBE_CONFIG"
+            exit 1
           fi
 
           chmod 600 "${KUBECONFIG_PATH}"
 
-          # Validate the decoded content
-          if ! grep -qE '^apiVersion:' "${KUBECONFIG_PATH}"; then
-            echo "::error::KUBE_CONFIG is not a valid kubeconfig (missing apiVersion)."
-            echo "First 200 chars of decoded content:"
-            head -c 200 "${KUBECONFIG_PATH}" || true
-            exit 1
-          fi
-
-          # Also export for this step (belt-and-suspenders)
+          # Export for subsequent steps
           echo "KUBECONFIG=${KUBECONFIG_PATH}" >> "${GITHUB_ENV}"
-          echo "export KUBECONFIG=${KUBECONFIG_PATH}" >> "${HOME}/.bashrc"
 
-          echo "--- kubeconfig (redacted) ---"
+          echo "--- kubeconfig (structure only) ---"
           grep -E '^(apiVersion|kind|clusters|contexts|users|current-context):' "${KUBECONFIG_PATH}" || true
 
       - name: Verify cluster connectivity
