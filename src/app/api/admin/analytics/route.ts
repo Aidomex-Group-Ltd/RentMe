@@ -1,37 +1,77 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin";
+
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function toDateKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function fillDailyCounts(
+  from: Date,
+  to: Date,
+  rows: { day: Date; count: number }[]
+): { date: string; count: number }[] {
+  const map = new Map(rows.map((r) => [toDateKey(r.day), r.count]));
+  const out: { date: string; count: number }[] = [];
+  const cursor = startOfDay(from);
+  const end = startOfDay(to);
+  while (cursor <= end) {
+    const key = toDateKey(cursor);
+    out.push({ date: key, count: map.get(key) || 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
+}
+
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    // Current period counts
     const [
       totalUsers,
       activeUsers,
+      pendingVerificationUsers,
       newUsersThisMonth,
       newUsersLastMonth,
       totalProperties,
       activeListings,
       pendingReview,
       rentedProperties,
+      suspendedProperties,
+      reportedProperties,
       totalReports,
       pendingReports,
+      pendingVerifications,
       totalViewings,
       pendingApplications,
+      tenants,
+      landlords,
+      agents,
+      admins,
+      recentUsers,
+      recentProperties,
+      recentVerifications,
+      recentActivity,
     ] = await Promise.all([
       prisma.user.count({ where: { deletedAt: null } }),
       prisma.user.count({
-        where: { deletedAt: null, lastLoginAt: { gte: thirtyDaysAgo } },
+        where: { deletedAt: null, status: "ACTIVE", lastLoginAt: { gte: thirtyDaysAgo } },
+      }),
+      prisma.user.count({
+        where: { deletedAt: null, status: "PENDING_VERIFICATION" },
       }),
       prisma.user.count({
         where: { deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
@@ -43,125 +83,198 @@ export async function GET(req: NextRequest) {
       prisma.property.count({ where: { deletedAt: null, status: "ACTIVE" } }),
       prisma.property.count({ where: { deletedAt: null, status: "PENDING_REVIEW" } }),
       prisma.property.count({ where: { deletedAt: null, status: "RENTED" } }),
+      prisma.property.count({ where: { deletedAt: null, status: "SUSPENDED" } }),
+      prisma.property.count({
+        where: { deletedAt: null, reports: { some: { status: { in: ["PENDING", "UNDER_REVIEW"] } } } },
+      }),
       prisma.report.count(),
-      prisma.report.count({ where: { status: "PENDING" } }),
+      prisma.report.count({ where: { status: { in: ["PENDING", "UNDER_REVIEW"] } } }),
+      prisma.verificationRequest.count({ where: { status: "PENDING" } }),
       prisma.viewingRequest.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
       prisma.application.count({ where: { status: "SUBMITTED" } }),
-    ]);
-
-    // User role breakdown
-    const [tenants, landlords, agents, admins] = await Promise.all([
       prisma.user.count({ where: { deletedAt: null, role: "TENANT" } }),
       prisma.user.count({ where: { deletedAt: null, role: "LANDLORD" } }),
       prisma.user.count({ where: { deletedAt: null, role: "AGENT" } }),
       prisma.user.count({ where: { deletedAt: null, role: "ADMIN" } }),
+      prisma.user.findMany({
+        where: { deletedAt: null },
+        select: { id: true, name: true, email: true, role: true, status: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.property.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          district: true,
+          status: true,
+          listedAt: true,
+          user: { select: { name: true } },
+        },
+        orderBy: { listedAt: "desc" },
+        take: 5,
+      }),
+      prisma.verificationRequest.findMany({
+        where: { status: "PENDING" },
+        include: { user: { select: { id: true, name: true, email: true, role: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.auditLog.findMany({
+        include: { user: { select: { id: true, name: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      }),
     ]);
 
-    // Revenue from completed payments
     const revenueResult = await prisma.payment.aggregate({
       where: { status: "completed" },
       _sum: { amount: true },
     });
-    const totalRevenue = revenueResult._sum.amount || 0;
-
-    // Recent payments this month
     const monthlyRevenueResult = await prisma.payment.aggregate({
       where: { status: "completed", createdAt: { gte: thirtyDaysAgo } },
       _sum: { amount: true },
     });
-    const monthlyRevenue = monthlyRevenueResult._sum.amount || 0;
 
-    // Growth percentages
     const userGrowth =
       newUsersLastMonth > 0
         ? Math.round(((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth) * 100)
         : newUsersThisMonth > 0
-        ? 100
-        : 0;
+          ? 100
+          : 0;
 
-    // Chart data: daily user registrations for last 30 days
-    const dailyUsers = await prisma.$queryRawUnsafe<{ date: string; count: bigint }[]>(
-      `SELECT DATE(created_at) as date, COUNT(*) as count
-       FROM users
-       WHERE created_at >= $1 AND deleted_at IS NULL
-       GROUP BY DATE(created_at)
-       ORDER BY date ASC`,
-      thirtyDaysAgo
+    // Build chart series with Prisma (camelCase columns) — no fragile raw SQL
+    const [usersForChart, propertiesForChart, paymentsForChart, verificationTrend, reportTrend] =
+      await Promise.all([
+        prisma.user.findMany({
+          where: { deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
+          select: { createdAt: true },
+        }),
+        prisma.property.findMany({
+          where: { deletedAt: null, listedAt: { gte: thirtyDaysAgo } },
+          select: { listedAt: true },
+        }),
+        prisma.payment.findMany({
+          where: { status: "completed", createdAt: { gte: thirtyDaysAgo } },
+          select: { createdAt: true, amount: true },
+        }),
+        prisma.verificationRequest.findMany({
+          where: { createdAt: { gte: thirtyDaysAgo } },
+          select: { createdAt: true, status: true },
+        }),
+        prisma.report.findMany({
+          where: { createdAt: { gte: thirtyDaysAgo } },
+          select: { createdAt: true, status: true },
+        }),
+      ]);
+
+    const countByDay = (dates: Date[]) => {
+      const map = new Map<string, number>();
+      for (const d of dates) {
+        const key = toDateKey(startOfDay(d));
+        map.set(key, (map.get(key) || 0) + 1);
+      }
+      return [...map.entries()].map(([day, count]) => ({
+        day: new Date(`${day}T00:00:00.000Z`),
+        count,
+      }));
+    };
+
+    const dailyUsers = fillDailyCounts(
+      thirtyDaysAgo,
+      now,
+      countByDay(usersForChart.map((u) => u.createdAt))
+    );
+    const dailyProperties = fillDailyCounts(
+      thirtyDaysAgo,
+      now,
+      countByDay(propertiesForChart.map((p) => p.listedAt))
     );
 
-    // Chart data: daily property listings for last 30 days
-    const dailyProperties = await prisma.$queryRawUnsafe<{ date: string; count: bigint }[]>(
-      `SELECT DATE(listed_at) as date, COUNT(*) as count
-       FROM properties
-       WHERE listed_at >= $1 AND deleted_at IS NULL
-       GROUP BY DATE(listed_at)
-       ORDER BY date ASC`,
-      thirtyDaysAgo
-    );
+    const revenueMap = new Map<string, number>();
+    for (const p of paymentsForChart) {
+      const key = toDateKey(startOfDay(p.createdAt));
+      revenueMap.set(key, (revenueMap.get(key) || 0) + p.amount);
+    }
+    const dailyRevenue = fillDailyCounts(thirtyDaysAgo, now, []).map((row) => ({
+      date: row.date,
+      total: revenueMap.get(row.date) || 0,
+    }));
 
-    // Daily revenue for last 30 days
-    const dailyRevenue = await prisma.$queryRawUnsafe<{ date: string; total: bigint }[]>(
-      `SELECT DATE(created_at) as date, COALESCE(SUM(amount), 0) as total
-       FROM payments
-       WHERE created_at >= $1 AND status = 'completed'
-       GROUP BY DATE(created_at)
-       ORDER BY date ASC`,
-      thirtyDaysAgo
-    );
+    const districtGroups = await prisma.property.groupBy({
+      by: ["district"],
+      where: { deletedAt: null, status: "ACTIVE" },
+      _count: { _all: true },
+      orderBy: { _count: { district: "desc" } },
+      take: 10,
+    });
 
-    // District breakdown
-    const districtBreakdown = await prisma.$queryRawUnsafe<{ district: string; count: bigint }[]>(
-      `SELECT COALESCE(district, 'Unknown') as district, COUNT(*) as count
-       FROM properties
-       WHERE deleted_at IS NULL AND status = 'ACTIVE'
-       GROUP BY district
-       ORDER BY count DESC
-       LIMIT 10`
-    );
+    const typeGroups = await prisma.property.groupBy({
+      by: ["propertyType"],
+      where: { deletedAt: null, status: "ACTIVE" },
+      _count: { _all: true },
+      orderBy: { _count: { propertyType: "desc" } },
+    });
 
-    // Property type breakdown
-    const propertyTypeBreakdown = await prisma.$queryRawUnsafe<{ type: string; count: bigint }[]>(
-      `SELECT property_type as type, COUNT(*) as count
-       FROM properties
-       WHERE deleted_at IS NULL AND status = 'ACTIVE'
-       GROUP BY property_type
-       ORDER BY count DESC`
+    const dailyVerifications = fillDailyCounts(
+      thirtyDaysAgo,
+      now,
+      countByDay(verificationTrend.map((v) => v.createdAt))
+    );
+    const dailyReports = fillDailyCounts(
+      thirtyDaysAgo,
+      now,
+      countByDay(reportTrend.map((r) => r.createdAt))
     );
 
     return NextResponse.json({
       stats: {
         totalUsers,
         activeUsers,
+        pendingVerificationUsers,
         newUsersThisMonth,
         userGrowth,
         totalProperties,
         activeListings,
         pendingReview,
         rentedProperties,
+        suspendedProperties,
+        reportedProperties,
         totalReports,
         pendingReports,
+        pendingVerifications,
         totalViewings,
         pendingApplications,
-        totalRevenue,
-        monthlyRevenue,
+        totalRevenue: revenueResult._sum.amount || 0,
+        monthlyRevenue: monthlyRevenueResult._sum.amount || 0,
         roleBreakdown: { tenants, landlords, agents, admins },
       },
+      queues: {
+        recentUsers,
+        recentProperties,
+        recentVerifications,
+        recentActivity,
+      },
       charts: {
-        dailyUsers: dailyUsers.map((r) => ({ date: r.date, count: Number(r.count) })),
-        dailyProperties: dailyProperties.map((r) => ({ date: r.date, count: Number(r.count) })),
-        dailyRevenue: dailyRevenue.map((r) => ({ date: r.date, total: Number(r.total) })),
-        districtBreakdown: districtBreakdown.map((r) => ({
-          district: r.district,
-          count: Number(r.count),
+        dailyUsers,
+        dailyProperties,
+        dailyRevenue,
+        dailyVerifications,
+        dailyReports,
+        districtBreakdown: districtGroups.map((r) => ({
+          district: r.district || "Unknown",
+          count: r._count._all,
         })),
-        propertyTypeBreakdown: propertyTypeBreakdown.map((r) => ({
-          type: r.type,
-          count: Number(r.count),
+        propertyTypeBreakdown: typeGroups.map((r) => ({
+          type: r.propertyType,
+          count: r._count._all,
         })),
       },
+      range: { from: thirtyDaysAgo.toISOString(), to: now.toISOString() },
     });
   } catch (error) {
     console.error("Analytics error:", error);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load analytics" }, { status: 500 });
   }
 }

@@ -170,7 +170,7 @@ export default withAuth(
         return NextResponse.redirect(login);
       }
       if (token.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/", req.url));
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
     }
 
@@ -238,8 +238,12 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    // Include bare /admin — :path* alone is unreliable across Next matcher versions
+    "/admin",
     "/admin/:path*",
+    "/dashboard",
     "/dashboard/:path*",
+    "/messages",
     "/messages/:path*",
     "/api/properties",
     "/api/properties/:path*",
@@ -249,6 +253,8 @@ export const config = {
     "/api/conversations/:path*",
     "/api/reports",
     "/api/reports/:path*",
+    "/api/admin",
+    "/api/admin/:path*",
     "/api/viewings",
     "/api/viewings/:path*",
     "/api/applications",

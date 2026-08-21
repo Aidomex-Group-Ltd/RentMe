@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -88,13 +90,34 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "locationId required" }, { status: 400 });
     }
 
+    if (typeof isActive !== "boolean") {
+      return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
+    }
+
+    const existing = await prisma.location.findUnique({ where: { id: locationId } });
+    if (!existing) {
+      return NextResponse.json({ error: "Location not found" }, { status: 404 });
+    }
+
     const location = await prisma.location.update({
       where: { id: locationId },
       data: { isActive },
     });
 
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "UPDATE",
+        entity: "Location",
+        entityId: locationId,
+        oldData: { isActive: existing.isActive },
+        newData: { isActive },
+      },
+    });
+
     return NextResponse.json({ location });
   } catch (error) {
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+    console.error("Admin locations PATCH error:", error);
+    return NextResponse.json({ error: "Failed to update location" }, { status: 500 });
   }
 }

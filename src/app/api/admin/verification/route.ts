@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -66,27 +68,35 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    // If approved, update the user's landlord/agent verification status
-    if (status === "VERIFIED") {
+    // Sync landlord/agent verification status when request is decided
+    if (status === "VERIFIED" || status === "REJECTED") {
       const user = await prisma.user.findUnique({ where: { id: request.userId } });
       if (user?.role === "LANDLORD") {
-        await prisma.landlord.update({
+        await prisma.landlord.updateMany({
           where: { userId: request.userId },
           data: {
-            verificationStatus: "VERIFIED",
-            idVerifiedAt: new Date(),
-            idDocumentType: request.documentType || null,
-            idDocumentUrl: request.documentUrl || null,
+            verificationStatus: status,
+            ...(status === "VERIFIED"
+              ? {
+                  idVerifiedAt: new Date(),
+                  idDocumentType: request.documentType || null,
+                  idDocumentUrl: request.documentUrl || null,
+                }
+              : {}),
           },
         });
       } else if (user?.role === "AGENT") {
-        await prisma.agent.update({
+        await prisma.agent.updateMany({
           where: { userId: request.userId },
           data: {
-            verificationStatus: "VERIFIED",
-            verifiedAt: new Date(),
-            businessRegNumber: request.documentType || null,
-            businessDocUrl: request.documentUrl || null,
+            verificationStatus: status,
+            ...(status === "VERIFIED"
+              ? {
+                  verifiedAt: new Date(),
+                  businessRegNumber: request.documentType || null,
+                  businessDocUrl: request.documentUrl || null,
+                }
+              : {}),
           },
         });
       }
