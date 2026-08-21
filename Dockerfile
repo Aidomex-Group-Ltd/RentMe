@@ -1,14 +1,15 @@
 # ─── Stage 1: Dependencies ────────────────────────────────
-FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
+# Pin alpine3.20: Alpine 3.21+ moved libssl to /usr/lib, which breaks Prisma 5.x detection
+FROM node:20-alpine3.20 AS deps
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # ─── Stage 2: Build ──────────────────────────────────────
-FROM node:20-alpine AS builder
-RUN apk add --no-cache libc6-compat
+FROM node:20-alpine3.20 AS builder
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -30,7 +31,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # ─── Stage 3: Production Runner ──────────────────────────
-FROM node:20-alpine AS runner
+FROM node:20-alpine3.20 AS runner
 # openssl required by Prisma query/migration engines on Alpine
 RUN apk add --no-cache libc6-compat wget openssl
 
