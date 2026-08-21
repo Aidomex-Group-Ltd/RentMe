@@ -31,9 +31,18 @@ kind: Job
 metadata:
   name: rentme-backup-manual
   namespace: ${NS}
+  labels:
+    app.kubernetes.io/name: rentme
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: rentme
 spec:
   ttlSecondsAfterFinished: 600
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rentme
+        app.kubernetes.io/component: backup
+        app.kubernetes.io/part-of: rentme
     spec:
       restartPolicy: Never
       containers:
@@ -77,33 +86,42 @@ ${KUBECTL} -n "${NS}" wait --for=condition=complete job/rentme-backup-manual --t
   || { error "Backup failed"; exit 1; }
 log "  Backup complete"
 
-# ─── 2. Set image on migrate Job + run migrate ───────────
+# ─── 2. Apply overlay + run migrate with target image ────
 log "Step 2: Running migrations..."
 ${KUBECTL} -n "${NS}" delete job rentme-migrate --ignore-not-found
-# Apply overlay then patch migrate job image
 ${KUBECTL} apply -k "${OVERLAY}"
-${KUBECTL} -n "${NS}" set image job/rentme-migrate migrate="${IMAGE}" 2>/dev/null || true
-# Recreate migrate job with new image via apply of patched manifest
 cat <<EOF | ${KUBECTL} apply -f -
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: rentme-migrate
   namespace: ${NS}
+  labels:
+    app.kubernetes.io/name: rentme
+    app.kubernetes.io/component: migrate
+    app.kubernetes.io/part-of: rentme
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 600
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rentme
+        app.kubernetes.io/component: migrate
+        app.kubernetes.io/part-of: rentme
     spec:
       restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
+        runAsGroup: 1001
       containers:
         - name: migrate
           image: ${IMAGE}
           imagePullPolicy: Always
-          command: ["npx", "prisma", "db", "push", "--skip-generate"]
+          command: ["node", "node_modules/prisma/build/index.js", "db", "push", "--skip-generate"]
           envFrom:
             - configMapRef:
                 name: rentme-config

@@ -28,3 +28,6 @@ patches:
       - op: replace
         path: /data/NEXTAUTH_URL
         value: https://rentme.ug
+      - op: replace
+        path: /data/PRODUCTION_DOMAIN
+        value: rentme.ug

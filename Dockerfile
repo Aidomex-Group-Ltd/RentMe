@@ -31,7 +31,8 @@ RUN npm run build
 
 # ─── Stage 3: Production Runner ──────────────────────────
 FROM node:20-alpine AS runner
-RUN apk add --no-cache libc6-compat wget
+# openssl required by Prisma query/migration engines on Alpine
+RUN apk add --no-cache libc6-compat wget openssl
 
 WORKDIR /app
 
@@ -55,6 +56,9 @@ COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/package.json ./package.json
+RUN mkdir -p node_modules/.bin && \
+    ln -sf ../prisma/build/index.js node_modules/.bin/prisma && \
+    chown -R nextjs:nodejs node_modules/prisma node_modules/@prisma node_modules/.prisma node_modules/.bin package.json prisma
 
 USER nextjs
 

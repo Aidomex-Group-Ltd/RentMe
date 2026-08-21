@@ -18,6 +18,8 @@ spec:
         app.kubernetes.io/component: migrate
     spec:
       restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
@@ -26,7 +28,8 @@ spec:
         - name: migrate
           image: ghcr.io/aidomex-group-ltd/rentme:latest
           imagePullPolicy: Always
-          command: ["npx", "prisma", "db", "push", "--skip-generate"]
+          # Avoid npx network fetch; use vendored CLI from the image
+          command: ["node", "node_modules/prisma/build/index.js", "db", "push", "--skip-generate"]
           envFrom:
             - configMapRef:
                 name: rentme-config

@@ -1,7 +1,7 @@
 .PHONY: help build dev prod deploy logs health backup monitor \
         ssl-init ssl-renew ssl-enable rollback db-push db-migrate db-seed \
         compose-up compose-down compose-ps clean lint test \
-        k3s-apply k3s-deploy k3s-rollback k3s-secrets k3s-migrate \
+        k3s-apply k3s-deploy k3s-rollback k3s-secrets k3s-registry k3s-migrate \
         k3s-health k3s-logs k3s-status k3s-cert-manager k3s-dry-run k3s-backup
 
 KUBECTL ?= ./scripts/kubectl.sh
@@ -34,6 +34,9 @@ k3s-dry-run: ## Validate manifests (client-side kustomize build)
 
 k3s-secrets: ## Create/update rentme-secrets from env vars
 	./scripts/k3s-secrets.sh
+
+k3s-registry: ## Create/update ghcr-pull imagePullSecret (GHCR_USER + GHCR_TOKEN)
+	./scripts/k3s-registry.sh
 
 k3s-cert-manager: ## Install cert-manager + Let's Encrypt ClusterIssuers
 	$(KUBECTL) apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.5/cert-manager.yaml

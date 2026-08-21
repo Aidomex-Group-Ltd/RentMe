@@ -32,7 +32,10 @@ Primary production target is **k3s** (Kubernetes) with Traefik ingress and cert-
 ```bash
 # One-time
 export POSTGRES_PASSWORD=... NEXTAUTH_SECRET=...
+# optional: CLOUDFLARE_* SMTP_* ADMIN_EMAIL
 make k3s-secrets
+export GHCR_USER=... GHCR_TOKEN=...   # PAT with read:packages
+make k3s-registry
 make k3s-cert-manager
 make k3s-apply
 make k3s-migrate
@@ -62,4 +65,4 @@ kubectl kustomize k8s/overlays/production
 
 ## Secrets
 
-Never commit real secrets. Use `.env.example` locally and `k8s/base/secret.example.yaml` / `make k3s-secrets` for the cluster. CI needs `KUBE_CONFIG` (and optional `PRODUCTION_DOMAIN`).
+Never commit real secrets. Use `.env.example` locally and `k8s/base/secret.example.yaml` / `make k3s-secrets` for the cluster. CI needs `KUBE_CONFIG`, a one-time `ghcr-pull` secret on the cluster (`make k3s-registry`), and optional `PRODUCTION_DOMAIN`.

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Create / update rentme-secrets in the rentme namespace from environment variables.
 # Usage:
-#   export POSTGRES_PASSWORD=... NEXTAUTH_SECRET=... (and optional R2 vars)
+#   export POSTGRES_PASSWORD=... NEXTAUTH_SECRET=... (and optional R2 / SMTP vars)
 #   ./scripts/k3s-secrets.sh
 set -eu
 
@@ -26,6 +26,12 @@ ${KUBECTL} -n "${NS}" create secret generic rentme-secrets \
   --from-literal=CLOUDFLARE_S3_SECRET_ACCESS_KEY="${CLOUDFLARE_S3_SECRET_ACCESS_KEY:-}" \
   --from-literal=CLOUDFLARE_R2_BUCKET="${CLOUDFLARE_R2_BUCKET:-}" \
   --from-literal=CLOUDFLARE_R2_PUBLIC_URL="${CLOUDFLARE_R2_PUBLIC_URL:-}" \
+  --from-literal=SMTP_HOST="${SMTP_HOST:-}" \
+  --from-literal=SMTP_PORT="${SMTP_PORT:-587}" \
+  --from-literal=SMTP_USER="${SMTP_USER:-}" \
+  --from-literal=SMTP_PASS="${SMTP_PASS:-}" \
+  --from-literal=SMTP_FROM="${SMTP_FROM:-noreply@rentme.ug}" \
+  --from-literal=ADMIN_EMAIL="${ADMIN_EMAIL:-}" \
   --dry-run=client -o yaml | ${KUBECTL} apply -f -
 
 echo "✓ Secret rentme-secrets applied in namespace ${NS}"

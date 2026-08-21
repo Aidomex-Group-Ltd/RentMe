@@ -35,6 +35,7 @@ spec:
           labels:
             app.kubernetes.io/name: rentme
             app.kubernetes.io/component: backup
+            app.kubernetes.io/part-of: rentme
         spec:
           restartPolicy: OnFailure
           containers:

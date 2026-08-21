@@ -130,7 +130,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,format=long
+            # Raw commit SHA so deploy-k3s can pull :${{ github.sha }}
+            type=raw,value=${{ github.sha }}
             type=raw,value=latest
 
       - uses: docker/build-push-action@v5
@@ -146,8 +147,8 @@ jobs:
 
       - name: Verify image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
   deploy-k3s:
     name: Deploy to k3s
@@ -172,6 +173,10 @@ jobs:
             echo "rentme-secrets missing — create once with make k3s-secrets on the cluster"
             exit 1
           }
+          kubectl -n rentme get secret ghcr-pull >/dev/null 2>&1 || {
+            echo "ghcr-pull missing — create once with make k3s-registry (GHCR_USER + GHCR_TOKEN)"
+            exit 1
+          }
 
       - name: Deploy (backup → migrate → rollout → health)
         env:
@@ -179,10 +184,7 @@ jobs:
           RENTME_IMAGE_TAG: ${{ github.sha }}
           PROD_DOMAIN: ${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}
           KUBECTL: kubectl
-        run: |
-          # Prefer short SHA tag from metadata; fall back to full sha / latest
-          TAG="${GITHUB_SHA}"
-          ./scripts/k3s-deploy.sh "${TAG}"
+        run: ./scripts/k3s-deploy.sh "${GITHUB_SHA}"
 
       - name: Production smoke
         run: |

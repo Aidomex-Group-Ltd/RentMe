@@ -13,5 +13,6 @@ data:
   # Override in overlays/production if DNS differs
   NEXT_PUBLIC_SITE_URL: "https://rentme.ug"
   NEXTAUTH_URL: "https://rentme.ug"
+  PRODUCTION_DOMAIN: "rentme.ug"
   POSTGRES_DB: "rentme"
   POSTGRES_USER: "rentme"
