@@ -190,7 +190,11 @@ jobs:
             exit 1
           fi
 
-          KUBECONFIG_PATH="${RUNNER_TEMP}/kubeconfig"
+          # Write to $HOME/.kube/config so kubectl finds it by default.
+          # Using GITHUB_ENV to export KUBECONFIG does NOT propagate to
+          # subsequent steps on all runner versions — $HOME/.kube/config is reliable.
+          KUBECONFIG_PATH="${HOME}/.kube/config"
+          mkdir -p "${HOME}/.kube"
 
           # Auto-detect: raw YAML starts with apiVersion or ---
           FIRST_CHARS=$(printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '[:space:]' | cut -c1-12)
@@ -216,9 +220,11 @@ jobs:
             exit 1
           fi
 
+          # Also export for this step (belt-and-suspenders)
           echo "KUBECONFIG=${KUBECONFIG_PATH}" >> "${GITHUB_ENV}"
+          echo "export KUBECONFIG=${KUBECONFIG_PATH}" >> "${HOME}/.bashrc"
+
           echo "--- kubeconfig (redacted) ---"
-          # Show structure without secrets
           grep -E '^(apiVersion|kind|clusters|contexts|users|current-context):' "${KUBECONFIG_PATH}" || true
 
       - name: Verify cluster connectivity
@@ -409,3 +415,53 @@ jobs:
           echo ""
           echo "=== Recent events ==="
           kubectl -n "${NS}" get events --sort-by='.lastTimestamp' | tail -20 || true
+
+      # ── Rollback + Slack notification on failure ──────────────────
+      - name: "Rollback on deployment failure"
+        if: failure()
+        run: |
+          NS="rentme"
+          echo "→ Rolling back rentme-app to previous revision"
+          kubectl -n "${NS}" rollout undo deployment/rentme-app 2>/dev/null || echo "WARN: rollback failed"
+          kubectl -n "${NS}" rollout status deployment/rentme-app --timeout=120s 2>/dev/null || echo "WARN: rollback did not converge"
+          echo "✓ Rollback triggered"
+
+      - name: "Notify Slack on failure"
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "SLACK_WEBHOOK_URL not set — skipping notification"
+            exit 0
+          fi
+
+          REPO="${GITHUB_REPOSITORY}"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+          ACTOR="${GITHUB_ACTOR}"
+          REF="${GITHUB_REF_NAME}"
+          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7)
+
+          curl -sf -X POST -H 'Content-type: application/json' \
+            --data "$(printf '{"text":"🚨 *Deploy FAILED* — %s\nBranch: %s\nCommit: <%s|%s>\nTriggered by: %s\nAuto-rollback: ✅ Executed\n<%s|View run>"}' \
+              "${REPO}" "${REF}" "${COMMIT_URL}" "${SHA_SHORT}" "${ACTOR}" "${RUN_URL}")" \
+            "${SLACK_WEBHOOK_URL}"
+          echo "✓ Slack failure notification sent"
+
+      - name: "Notify Slack on success"
+        if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then exit 0; fi
+
+          REPO="${GITHUB_REPOSITORY}"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7)
+
+          curl -sf -X POST -H 'Content-type: application/json' \
+            --data "$(printf '{"text":"✅ *Deploy succeeded* — %s @ %s\n<%s|View run>"}' \
+              "${REPO}" "${SHA_SHORT}" "${RUN_URL}")" \
+            "${SLACK_WEBHOOK_URL}"
+          echo "✓ Slack success notification sent"
