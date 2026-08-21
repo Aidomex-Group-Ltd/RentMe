@@ -58,12 +58,15 @@ async function main() {
     "/guides/landlord",
     "/stories",
     "/safety",
+    "/login",
+    "/forgot-password",
+    "/reset-password",
   ];
   for (const path of publicRoutes) {
     const res = await fetch(`${BASE}${path}`);
     assert(res.status === 200, `Expected 200 for ${path}, got ${res.status}`);
   }
-  console.log("✓ public footer routes resolve");
+  console.log("✓ public footer + auth routes resolve");
 
   // 1) Register landlord
   const regRes = await fetch(`${BASE}/api/auth/register`, {
@@ -102,6 +105,27 @@ async function main() {
     `Duplicate register missing ACCOUNT_EXISTS UX: ${JSON.stringify(dupBody)}`
   );
   console.log("✓ duplicate register returns 409 with clear message");
+
+  // 1c) Forgot password (no enumeration) + invalid reset token
+  const forgotRes = await fetch(`${BASE}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const forgotBody = await parseJson(forgotRes);
+  assert(forgotRes.status === 200, `Forgot password failed: ${forgotRes.status}`);
+  assert(
+    String(forgotBody.message || "").toLowerCase().includes("if an account"),
+    `Forgot password missing generic message: ${JSON.stringify(forgotBody)}`
+  );
+
+  const badReset = await fetch(`${BASE}/api/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: "not-a-valid-token", password: "NewPass123!" }),
+  });
+  assert(badReset.status === 400, `Expected 400 for bad reset token, got ${badReset.status}`);
+  console.log("✓ forgot-password + reset-password validation");
 
   // 2) CSRF + credentials login
   const csrfRes = await fetch(`${BASE}/api/auth/csrf`);

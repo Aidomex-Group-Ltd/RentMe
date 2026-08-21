@@ -20,13 +20,35 @@ function isInvalidOrigin(req: Request): boolean {
   // Allow requests with no origin (same-origin browser requests, server-to-server)
   if (!origin && !referer) return false;
 
+  // Allow configured site URL, the request Host, and Vercel deployment URL
+  const allowedHosts = new Set<string>();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "";
   if (siteUrl) {
-    const siteHost = new URL(siteUrl).host;
-    if (origin && !origin.includes(siteHost)) return true;
-    if (referer && !referer.includes(siteHost)) return true;
-    if (host && !host.includes(siteHost)) return true;
+    try {
+      allowedHosts.add(new URL(siteUrl).host.toLowerCase());
+    } catch {
+      /* ignore invalid site URL */
+    }
   }
+  if (host) allowedHosts.add(host.toLowerCase());
+  if (process.env.VERCEL_URL) {
+    allowedHosts.add(process.env.VERCEL_URL.toLowerCase());
+  }
+
+  if (allowedHosts.size === 0) return false;
+
+  const hostAllowed = (value: string | null): boolean => {
+    if (!value) return true;
+    try {
+      const valueHost = new URL(value).host.toLowerCase();
+      return [...allowedHosts].some((h) => valueHost === h || valueHost.endsWith(`.${h}`));
+    } catch {
+      return [...allowedHosts].some((h) => value.toLowerCase().includes(h));
+    }
+  };
+
+  if (origin && !hostAllowed(origin)) return true;
+  if (referer && !hostAllowed(referer)) return true;
 
   return false;
 }
@@ -115,9 +137,11 @@ export default withAuth(
 
     // ── Rate limiting for sensitive API endpoints ───────────────
 
-    // Auth endpoints (register, login, credentials callback)
+    // Auth endpoints (register, login, password reset, credentials callback)
     if (
       pathname.startsWith("/api/auth/register") ||
+      pathname.startsWith("/api/auth/forgot-password") ||
+      pathname.startsWith("/api/auth/reset-password") ||
       pathname.startsWith("/api/auth/callback/credentials")
     ) {
       const blocked = applyRateLimit(req, RateLimits.auth);
@@ -227,6 +251,8 @@ export const config = {
     "/api/notifications",
     "/api/notifications/:path*",
     "/api/auth/register",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
     "/api/auth/callback/credentials",
   ],
 };
