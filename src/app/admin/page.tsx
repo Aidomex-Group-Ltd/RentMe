@@ -17,6 +17,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Activity,
+  HeartPulse,
+  ClipboardList,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import { formatUGX } from "@/lib/utils";
@@ -100,6 +103,8 @@ export default function AdminDashboard() {
     { href: "/admin/locations", label: "Locations", icon: MapPin, desc: "Manage districts and areas" },
     { href: "/admin/settings", label: "System Settings", icon: Settings, desc: "Platform configuration" },
     { href: "/admin/analytics", label: "Analytics", icon: BarChart3, desc: "Platform metrics and insights" },
+    { href: "/admin/activity", label: "Activity Log", icon: Activity, desc: "Audit trail and event history" },
+    { href: "/admin/health", label: "System Health", icon: HeartPulse, desc: "Service status and diagnostics" },
   ];
 
   return (
