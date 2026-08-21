@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Home, Search, Heart, MessageSquare, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, dashboardPathForRole } from "@/lib/utils";
 
 export default function BottomNav() {
   const { data: session } = useSession();
@@ -17,7 +17,7 @@ export default function BottomNav() {
     { href: "/messages", label: "Messages", icon: MessageSquare },
     {
       href: session?.user
-        ? `/dashboard/${session.user.role?.toLowerCase() || "tenant"}`
+        ? dashboardPathForRole(session.user.role)
         : "/login",
       label: "Profile",
       icon: User,

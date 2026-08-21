@@ -5,6 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Role → dashboard path used by nav, register, and post-login redirects. */
+export function dashboardPathForRole(role?: string | null): string {
+  switch ((role || "").toUpperCase()) {
+    case "LANDLORD":
+      return "/dashboard/landlord";
+    case "AGENT":
+      return "/dashboard/agent";
+    case "ADMIN":
+      return "/admin";
+    case "TENANT":
+    default:
+      return "/dashboard/tenant";
+  }
+}
+
 export function formatUGX(amount: number): string {
   return new Intl.NumberFormat("en-UG", {
     style: "currency",

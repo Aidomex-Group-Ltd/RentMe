@@ -6,7 +6,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Home, Eye, EyeOff, Loader2, User, Building, Users } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, dashboardPathForRole } from "@/lib/utils";
 
 const roles = [
   {
@@ -96,13 +96,7 @@ export default function RegisterPage() {
       }
 
       toast.success("Welcome to RentMe!");
-      const destination =
-        role === "TENANT"
-          ? "/dashboard/tenant"
-          : role === "LANDLORD"
-            ? "/dashboard/landlord"
-            : "/dashboard/landlord";
-      router.push(destination);
+      router.push(dashboardPathForRole(role));
       router.refresh();
     } catch (error) {
       toast.error("Something went wrong");

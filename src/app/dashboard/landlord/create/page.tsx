@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
-import { PROPERTY_TYPES, UGANDA_DISTRICTS } from "@/lib/utils";
+import { PROPERTY_TYPES, UGANDA_DISTRICTS, dashboardPathForRole } from "@/lib/utils";
 import { toast } from "sonner";
 
 const steps = [
@@ -235,7 +235,7 @@ export default function CreatePropertyPage() {
 
       if (res.ok) {
         toast.success("Property listing submitted for review!");
-        router.push("/dashboard/landlord");
+        router.push(dashboardPathForRole(session?.user?.role));
         router.refresh();
       } else if (res.status === 403) {
         toast.error(

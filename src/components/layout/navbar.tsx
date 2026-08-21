@@ -18,7 +18,7 @@ import {
   ChevronDown,
   Shield,
 } from "lucide-react";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, getInitials, dashboardPathForRole } from "@/lib/utils";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -116,7 +116,7 @@ export default function Navbar() {
                       </div>
 
                       <Link
-                        href={`/dashboard/${session.user.role?.toLowerCase() || "tenant"}`}
+                        href={dashboardPathForRole(session.user.role)}
                         onClick={() => setProfileMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                       >

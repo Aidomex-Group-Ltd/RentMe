@@ -68,6 +68,16 @@ async function main() {
   }
   console.log("✓ public footer + auth routes resolve");
 
+  // Dashboard routes exist (auth middleware may redirect unauthenticated → login)
+  for (const path of ["/dashboard/tenant", "/dashboard/landlord", "/dashboard/agent"]) {
+    const res = await fetch(`${BASE}${path}`, { redirect: "manual" });
+    assert(
+      res.status === 200 || res.status === 307 || res.status === 302,
+      `Expected dashboard route ${path} to resolve, got ${res.status}`
+    );
+  }
+  console.log("✓ dashboard routes exist");
+
   // 1) Register landlord
   const regRes = await fetch(`${BASE}/api/auth/register`, {
     method: "POST",
