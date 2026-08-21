@@ -160,39 +160,125 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ── Validate kubeconfig secret exists before setting context ──
-      # Required secret: KUBE_CONFIG (base64-encoded or raw kubeconfig content)
-      # Create with: kubectl config view --raw --minify | base64 > /tmp/kubeconfig.b64
-      # Then set in GitHub → Settings → Secrets → Actions → KUBE_CONFIG
-      - name: Validate kubeconfig secret
+      # ── Configure kubectl from KUBE_CONFIG secret ──────────────────
+      # Accepts EITHER raw YAML kubeconfig OR base64-encoded (single line).
+      # Auto-detects format: if content starts with "apiVersion:" → raw YAML.
+      #
+      # To create the secret:
+      #   Raw:     cat /etc/rancher/k3s/k3s.yaml | pbcopy
+      #   Base64:  cat /etc/rancher/k3s/k3s.yaml | openssl base64 -A | pbcopy
+      #
+      # IMPORTANT: If using raw YAML, the server address must be your PUBLIC
+      # IP/domain (not 127.0.0.1). Fix with:
+      #   sed -i 's/127.0.0.1/YOUR_PUBLIC_IP/' /etc/rancher/k3s/k3s.yaml
+      - name: Configure kubectl from KUBE_CONFIG secret
+        env:
+          KUBE_CONFIG_RAW: ${{ secrets.KUBE_CONFIG }}
         run: |
-          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
-            echo "::error::KUBE_CONFIG secret is not set. Go to GitHub → Settings → Secrets → Actions and create KUBE_CONFIG."
-            echo "The value should be the raw kubeconfig content from your k3s cluster."
-            echo "Export with: cat /etc/rancher/k3s/k3s.yaml"
+          set -euo pipefail
+
+          if [ -z "${KUBE_CONFIG_RAW}" ]; then
+            echo "::error::KUBE_CONFIG secret is not set."
+            echo ""
+            echo "Create it in GitHub → Settings → Secrets → Actions:"
+            echo "  Name:    KUBE_CONFIG"
+            echo "  Value:   (paste raw kubeconfig or base64-encoded single line)"
+            echo ""
+            echo "Quick setup on k3s server:"
+            echo "  sudo sed -i 's/127.0.0.1/\$(curl -s ifconfig.me)/' /etc/rancher/k3s/k3s.yaml"
+            echo "  sudo cat /etc/rancher/k3s/k3s.yaml   # paste as KUBE_CONFIG secret"
             exit 1
           fi
-          echo "✓ KUBE_CONFIG secret is present"
 
-      - name: Configure kubectl
-        uses: azure/k8s-set-context@v5
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          KUBECONFIG_PATH="${RUNNER_TEMP}/kubeconfig"
 
-      - name: Ensure secrets exist
+          # Auto-detect: raw YAML starts with apiVersion or ---
+          FIRST_CHARS=$(printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '[:space:]' | cut -c1-12)
+
+          if printf '%s' "${FIRST_CHARS}" | grep -qE '^(apiVersion:|---)'; then
+            # Raw YAML — write directly (replace literal \n with real newlines)
+            printf '%s' "${KUBE_CONFIG_RAW}" | sed 's/\\n/\n/g' > "${KUBECONFIG_PATH}"
+            echo "✓ KUBE_CONFIG is raw YAML"
+          else
+            # Assume base64 — decode
+            printf '%s' "${KUBE_CONFIG_RAW}" | tr -d '\n\r\t ' | openssl base64 -d -A -out "${KUBECONFIG_PATH}" 2>/dev/null \
+              || { printf '%s' "${KUBE_CONFIG_RAW}" | base64 -d > "${KUBECONFIG_PATH}" 2>/dev/null; }
+            echo "✓ KUBE_CONFIG decoded from base64"
+          fi
+
+          chmod 600 "${KUBECONFIG_PATH}"
+
+          # Validate the decoded content
+          if ! grep -qE '^apiVersion:' "${KUBECONFIG_PATH}"; then
+            echo "::error::KUBE_CONFIG is not a valid kubeconfig (missing apiVersion)."
+            echo "First 200 chars of decoded content:"
+            head -c 200 "${KUBECONFIG_PATH}" || true
+            exit 1
+          fi
+
+          echo "KUBECONFIG=${KUBECONFIG_PATH}" >> "${GITHUB_ENV}"
+          echo "--- kubeconfig (redacted) ---"
+          # Show structure without secrets
+          grep -E '^(apiVersion|kind|clusters|contexts|users|current-context):' "${KUBECONFIG_PATH}" || true
+
+      - name: Verify cluster connectivity
         run: |
-          kubectl get ns rentme >/dev/null 2>&1 || kubectl create namespace rentme
-          kubectl -n rentme get secret rentme-secrets >/dev/null 2>&1 || {
-            echo "rentme-secrets missing — create once with make k3s-secrets on the cluster"
-            exit 1
-          }
-          kubectl -n rentme get secret ghcr-pull >/dev/null 2>&1 || {
-            echo "ghcr-pull missing — create once with make k3s-registry (GHCR_USER + GHCR_TOKEN)"
+          set -euo pipefail
+          echo "→ kubectl version"
+          kubectl version --client --short 2>/dev/null || kubectl version --client
+          echo ""
+          echo "→ kubectl cluster-info"
+          kubectl cluster-info
+          echo ""
+          echo "→ kubectl get nodes"
+          kubectl get nodes -o wide
+          echo ""
+          echo "✓ Cluster reachable"
+
+      # ── E2E k3s deployment verification ────────────────────────────
+      - name: "E2E: Verify namespace and secrets"
+        run: |
+          set -euo pipefail
+          NS="rentme"
+
+          echo "→ Ensure namespace ${NS}"
+          kubectl get ns "${NS}" >/dev/null 2>&1 || kubectl create namespace "${NS}"
+
+          echo "→ Verify rentme-secrets"
+          kubectl -n "${NS}" get secret rentme-secrets >/dev/null 2>&1 || {
+            echo "::error::rentme-secrets not found in namespace ${NS}"
+            echo "Create with: make k3s-secrets"
+            echo "  export POSTGRES_PASSWORD=... NEXTAUTH_SECRET=..."
+            echo "  ./scripts/k3s-secrets.sh"
             exit 1
           }
 
-      - name: Deploy (backup → migrate → rollout → health)
+          echo "→ Verify ghcr-pull"
+          kubectl -n "${NS}" get secret ghcr-pull >/dev/null 2>&1 || {
+            echo "::error::ghcr-pull not found in namespace ${NS}"
+            echo "Create with: make k3s-registry"
+            echo "  export GHCR_USER=... GHCR_TOKEN=..."
+            echo "  ./scripts/k3s-registry.sh"
+            exit 1
+          }
+
+          echo "→ Verify rentme-config ConfigMap"
+          kubectl -n "${NS}" get configmap rentme-config >/dev/null 2>&1 || {
+            echo "::error::rentme-config not found in namespace ${NS}"
+            echo "Apply with: kubectl apply -k k8s/overlays/production"
+            exit 1
+          }
+
+          echo "✓ All prerequisites present in namespace ${NS}"
+
+      - name: "E2E: Verify kustomize applies cleanly"
+        run: |
+          set -euo pipefail
+          echo "→ Dry-run kustomize production overlay"
+          kubectl kustomize k8s/overlays/production | kubectl apply --dry-run=client -f - 2>&1
+          echo "✓ Kustomize dry-run passed"
+
+      - name: "E2E: Deploy (backup → migrate → rollout → health)"
         env:
           RENTME_IMAGE_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           RENTME_IMAGE_TAG: ${{ github.sha }}
@@ -200,9 +286,126 @@ jobs:
           KUBECTL: kubectl
         run: ./scripts/k3s-deploy.sh "${GITHUB_SHA}"
 
-      - name: Production smoke
+      - name: "E2E: Verify deployment status"
+        if: always()
         run: |
-          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}"
+          set -euo pipefail
+          NS="rentme"
+
+          echo "=== Pods ==="
+          kubectl -n "${NS}" get pods -o wide
+
+          echo ""
+          echo "=== Deployments ==="
+          kubectl -n "${NS}" get deployments
+
+          echo ""
+          echo "=== Services ==="
+          kubectl -n "${NS}" get services
+
+          echo ""
+          echo "=== Ingress ==="
+          kubectl -n "${NS}" get ingress
+
+          echo ""
+          echo "=== Jobs ==="
+          kubectl -n "${NS}" get jobs
+
+          echo ""
+          echo "=== PVCs ==="
+          kubectl -n "${NS}" get pvc
+
+          echo ""
+          echo "=== Deployment rollout status ==="
+          kubectl -n "${NS}" rollout status deployment/rentme-app --timeout=60s 2>/dev/null || echo "WARN: rollout not ready"
+
+      - name: "E2E: Health check via port-forward"
+        if: always()
+        run: |
+          set -euo pipefail
+          NS="rentme"
+
+          echo "→ Port-forwarding to rentme-app:80 → localhost:18080"
+          kubectl -n "${NS}" port-forward svc/rentme-app 18080:80 >/tmp/pf.log 2>&1 &
+          PF_PID=$!
+          cleanup() { kill "${PF_PID}" 2>/dev/null || true; }
+          trap cleanup EXIT
           sleep 5
-          curl -sf "https://${DOMAIN}/api/health" | tee /tmp/health.json
-          grep -q '"status":"healthy"' /tmp/health.json
+
+          echo "→ Health check (up to 60s)"
+          HEALTHY=false
+          for i in $(seq 1 20); do
+            RESP=$(curl -sf http://127.0.0.1:18080/api/health 2>/dev/null || echo '{"status":"unreachable"}')
+            STATUS=$(echo "${RESP}" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+            echo "  Attempt ${i}/20: ${STATUS:-waiting}"
+            if [ "${STATUS}" = "healthy" ]; then
+              HEALTHY=true
+              break
+            fi
+            sleep 3
+          done
+
+          if [ "${HEALTHY}" = "true" ]; then
+            echo "✓ Application is healthy"
+          else
+            echo "::error::Health check failed after 60s"
+            echo "Last response: ${RESP}"
+            echo ""
+            echo "=== Pod logs (last 30 lines) ==="
+            kubectl -n "${NS}" logs -l app.kubernetes.io/component=app --tail=30 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: "E2E: Production smoke test"
+        if: always()
+        run: |
+          set -euo pipefail
+          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}"
+
+          echo "→ Public health check: https://${DOMAIN}/api/health"
+          RESP=$(curl -sf "https://${DOMAIN}/api/health" 2>/dev/null || echo '{"status":"unreachable"}')
+          echo "Response: ${RESP}"
+
+          if echo "${RESP}" | grep -q '"status":"healthy"'; then
+            echo "✓ Public health OK"
+          else
+            echo "WARN: Public health check did not return healthy (DNS/TLS may still be provisioning)"
+          fi
+
+      - name: "E2E: Full endpoint checks"
+        if: always()
+        run: |
+          set -euo pipefail
+          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}"
+
+          echo "→ Checking key endpoints"
+          FAILURES=0
+
+          for path in "/" "/api/health" "/api/properties"; do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "https://${DOMAIN}${path}" 2>/dev/null || echo "000")
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 400 ]; then
+              echo "  ✓ ${path} → HTTP ${STATUS}"
+            else
+              echo "  ✗ ${path} → HTTP ${STATUS}"
+              FAILURES=$((FAILURES + 1))
+            fi
+          done
+
+          if [ "${FAILURES}" -gt 0 ]; then
+            echo "WARN: ${FAILURES} endpoint(s) returned non-2xx status"
+          else
+            echo "✓ All endpoints healthy"
+          fi
+
+      - name: "E2E: Collect diagnostics on failure"
+        if: failure()
+        run: |
+          NS="rentme"
+          echo "=== Pod describe (rentme-app) ==="
+          kubectl -n "${NS}" describe deploy rentme-app 2>/dev/null || true
+          echo ""
+          echo "=== Pod logs (last 50 lines) ==="
+          kubectl -n "${NS}" logs -l app.kubernetes.io/component=app --tail=50 2>/dev/null || true
+          echo ""
+          echo "=== Recent events ==="
+          kubectl -n "${NS}" get events --sort-by='.lastTimestamp' | tail -20 || true

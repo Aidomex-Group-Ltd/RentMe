@@ -19,29 +19,29 @@ Set these in **GitHub → Settings → Secrets and variables → Actions → Sec
 | Secret | Required by | Description |
 |--------|-------------|-------------|
 | `GITHUB_TOKEN` | docker | Auto-provided by GitHub Actions. Used for GHCR push (needs `packages: write`). |
-| `KUBE_CONFIG` | deploy-k3s | Kubeconfig for k3s cluster. See setup instructions below. |
+| `KUBE_CONFIG` | deploy-k3s | **openssl base64** of the kubeconfig (single line). See below. |
 
 ### Setting up `KUBE_CONFIG`
 
-From the k3s server:
+CI decodes the secret with `openssl base64 -d -A`. From a machine that can reach the cluster API (or on the k3s server after rewriting the server address):
 
 ```bash
-# Option 1: raw kubeconfig (recommended — works with azure/k8s-set-context@v5)
-cat /etc/rancher/k3s/k3s.yaml
-
-# Option 2: minified + base64
-kubectl config view --raw --minify | base64
+# Prefer minified kubeconfig; replace 127.0.0.1 with the public API host first if needed
+kubectl config view --raw --minify \
+  | sed 's/127.0.0.1/YOUR_SERVER_IP/' \
+  | openssl base64 -A
 ```
 
-Paste the full output as the `KUBE_CONFIG` secret value in GitHub.
+Or from the k3s server file:
 
-> **Note:** The default `k3s.yaml` uses `127.0.0.1` as the server address.
-> For GitHub Actions running externally, replace `127.0.0.1` with your
-> cluster's public IP or domain:
->
-> ```bash
-> sed -i 's/127.0.0.1/YOUR_SERVER_IP/' /etc/rancher/k3s/k3s.yaml
-> ```
+```bash
+sed 's/127.0.0.1/YOUR_SERVER_IP/' /etc/rancher/k3s/k3s.yaml \
+  | openssl base64 -A
+```
+
+Paste that **single-line** openssl base64 string as the `KUBE_CONFIG` secret in GitHub → Settings → Secrets → Actions.
+
+> Do **not** paste raw YAML into `KUBE_CONFIG` — the workflow always openssl-decodes it.
 
 ---
 
@@ -101,7 +101,7 @@ All actions are pinned to latest major versions with native Node 24 support:
 | `docker/login-action` | `v4` | GHCR authentication |
 | `docker/metadata-action` | `v6` | Image tag/label extraction |
 | `docker/build-push-action` | `v7` | Multi-stage Docker build + push |
-| `azure/k8s-set-context` | `v5` | Kubeconfig context (Node 24, perm 600) |
+| (deploy) | `openssl base64 -d -A` | Decodes `KUBE_CONFIG` into `KUBECONFIG` |
 
 ---
 
