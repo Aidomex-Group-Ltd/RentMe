@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Home, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { dashboardPathForRole } from "@/lib/utils";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,12 +30,23 @@ export default function LoginPage() {
 
       if (result?.error) {
         toast.error("Invalid credentials. Please try again.");
-      } else {
-        toast.success("Welcome back!");
-        router.push("/");
-        router.refresh();
+        return;
       }
-    } catch (error) {
+
+      toast.success("Welcome back!");
+
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      const callbackUrl = searchParams.get("callbackUrl");
+      const safeCallback =
+        callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+          ? callbackUrl
+          : null;
+      const destination =
+        safeCallback || dashboardPathForRole(session?.user?.role) || "/";
+      router.push(destination);
+      router.refresh();
+    } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -41,8 +54,70 @@ export default function LoginPage() {
   };
 
   return (
+    <>
+      <h1 className="text-2xl font-bold text-gray-900 font-display">Sign in</h1>
+      <p className="mt-2 text-gray-500">
+        Don&apos;t have an account?{" "}
+        <Link href="/register" className="font-semibold text-brand-600 hover:text-brand-700">
+          Get started
+        </Link>
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        <div>
+          <label className="label">Email or Phone</label>
+          <input
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="you@example.com or +256..."
+            className="input"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="label">Password</label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="input pr-10"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input type="checkbox" className="rounded border-gray-300 text-brand-500" />
+            Remember me
+          </label>
+          <Link href="/forgot-password" className="text-sm font-semibold text-brand-600 hover:text-brand-700">
+            Forgot password?
+          </Link>
+        </div>
+
+        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Sign in"}
+        </button>
+      </form>
+    </>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="flex min-h-screen">
-      {/* Left panel - Brand */}
       <div className="hidden flex-col items-center justify-center bg-brand-700 p-12 lg:flex lg:w-1/2">
         <div className="max-w-md text-center">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
@@ -74,7 +149,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel - Form */}
       <div className="flex flex-1 items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
@@ -86,70 +160,9 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 font-display">Sign in</h1>
-          <p className="mt-2 text-gray-500">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold text-brand-600 hover:text-brand-700">
-              Get started
-            </Link>
-          </p>
-
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <div>
-              <label className="label">Email or Phone</label>
-              <input
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="you@example.com or +256..."
-                className="input"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="label">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="input pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-gray-600">
-                <input type="checkbox" className="rounded border-gray-300 text-brand-500" />
-                Remember me
-              </label>
-              <Link href="/forgot-password" className="text-sm font-semibold text-brand-600 hover:text-brand-700">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-3"
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                "Sign in"
-              )}
-            </button>
-          </form>
+          <Suspense fallback={<p className="text-sm text-gray-500">Loading…</p>}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>

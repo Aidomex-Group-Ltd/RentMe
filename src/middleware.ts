@@ -164,7 +164,12 @@ export default withAuth(
 
     // Admin-only routes
     if (pathname.startsWith("/admin")) {
-      if (!token || token.role !== "ADMIN") {
+      if (!token) {
+        const login = new URL("/login", req.url);
+        login.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(login);
+      }
+      if (token.role !== "ADMIN") {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }
