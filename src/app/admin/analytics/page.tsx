@@ -29,7 +29,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import MainLayout from "@/components/layout/main-layout";
+import AdminLayout from "@/components/admin/admin-layout";
 import { formatUGX } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -63,11 +63,11 @@ export default function AdminAnalyticsPage() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <AdminLayout>
         <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
         </div>
-      </MainLayout>
+      </AdminLayout>
     );
   }
 
@@ -90,18 +90,13 @@ export default function AdminAnalyticsPage() {
     : [];
 
   return (
-    <MainLayout>
+    <AdminLayout>
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.push("/admin")} className="p-2 text-gray-600 hover:text-gray-900">
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 font-display">Analytics</h1>
-                <p className="text-sm text-gray-500">Platform metrics and insights</p>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 font-display">Analytics</h1>
+              <p className="text-sm text-gray-500">Platform metrics and insights</p>
             </div>
           </div>
         </div>
@@ -268,6 +263,6 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
 }

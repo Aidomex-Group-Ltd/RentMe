@@ -16,7 +16,7 @@ import {
   AlertTriangle,
   XCircle,
 } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
+import AdminLayout from "@/components/admin/admin-layout";
 
 interface HealthCheck {
   status: string;
@@ -92,31 +92,26 @@ export default function AdminHealthPage() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <AdminLayout>
         <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
         </div>
-      </MainLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <AdminLayout>
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => router.push("/admin")} className="p-2 text-gray-600 hover:text-gray-900">
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 font-display">System Health</h1>
-                  <p className="text-sm text-gray-500">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 font-display">System Health</h1>
+                <p className="text-sm text-gray-500">
                     Last checked: {health?.timestamp ? new Date(health.timestamp).toLocaleString() : "Never"}
                   </p>
                 </div>
-              </div>
               <button onClick={fetchHealth} disabled={refreshing} className="btn-secondary">
                 <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                 Refresh
@@ -173,6 +168,6 @@ export default function AdminHealthPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
 }

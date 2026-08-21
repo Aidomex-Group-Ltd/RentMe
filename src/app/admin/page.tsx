@@ -21,7 +21,7 @@ import {
   HeartPulse,
   ClipboardList,
 } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
+import AdminLayout from "@/components/admin/admin-layout";
 import { formatUGX } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <MainLayout>
+    <AdminLayout>
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-6">
@@ -219,6 +219,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
 }

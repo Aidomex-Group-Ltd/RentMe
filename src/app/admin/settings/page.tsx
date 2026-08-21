@@ -14,7 +14,7 @@ import {
   DollarSign,
   Users,
 } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
+import AdminLayout from "@/components/admin/admin-layout";
 import { toast } from "sonner";
 
 interface Setting {
@@ -110,26 +110,21 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <AdminLayout>
         <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
         </div>
-      </MainLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <AdminLayout>
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => router.push("/admin")} className="p-2 text-gray-600 hover:text-gray-900">
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-xl font-bold text-gray-900 font-display">System Settings</h1>
-              </div>
+              <h1 className="text-xl font-bold text-gray-900 font-display">System Settings</h1>
               <button onClick={handleSave} disabled={saving} className="btn-primary">
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Changes
@@ -195,6 +190,6 @@ export default function AdminSettingsPage() {
           })}
         </div>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
 }

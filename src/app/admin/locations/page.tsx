@@ -14,7 +14,7 @@ import {
   Building,
   Globe,
 } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
+import AdminLayout from "@/components/admin/admin-layout";
 import { toast } from "sonner";
 
 export default function AdminLocationsPage() {
@@ -97,17 +97,12 @@ export default function AdminLocationsPage() {
   };
 
   return (
-    <MainLayout>
+    <AdminLayout>
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => router.push("/admin")} className="p-2 text-gray-600 hover:text-gray-900">
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h1 className="text-xl font-bold text-gray-900 font-display">Locations</h1>
-              </div>
+              <h1 className="text-xl font-bold text-gray-900 font-display">Locations</h1>
               <button onClick={() => setShowCreate(!showCreate)} className="btn-primary">
                 <Plus className="mr-2 h-4 w-4" /> Add Location
               </button>
@@ -237,6 +232,6 @@ export default function AdminLocationsPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
 }

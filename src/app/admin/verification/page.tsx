@@ -13,7 +13,7 @@ import {
   User,
   Clock,
 } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
+import AdminLayout from "@/components/admin/admin-layout";
 import { toast } from "sonner";
 
 export default function AdminVerificationPage() {
@@ -76,18 +76,13 @@ export default function AdminVerificationPage() {
   };
 
   return (
-    <MainLayout>
+    <AdminLayout>
       <div className="bg-gray-50 min-h-screen">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.push("/admin")} className="p-2 text-gray-600 hover:text-gray-900">
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 font-display">Verification Requests</h1>
-                <p className="text-sm text-gray-500">{total} requests</p>
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 font-display">Verification Requests</h1>
+              <p className="text-sm text-gray-500">{total} requests</p>
             </div>
           </div>
         </div>
@@ -241,6 +236,6 @@ export default function AdminVerificationPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
 }
