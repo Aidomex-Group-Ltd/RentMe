@@ -2,7 +2,9 @@
         ssl-init ssl-renew ssl-enable rollback db-push db-migrate db-seed \
         compose-up compose-down compose-ps clean lint test \
         k3s-apply k3s-deploy k3s-rollback k3s-secrets k3s-registry k3s-migrate \
-        k3s-health k3s-logs k3s-status k3s-cert-manager k3s-dry-run k3s-backup
+        k3s-health k3s-logs k3s-status k3s-cert-manager k3s-dry-run k3s-backup \
+        staging-deploy staging-secrets staging-status staging-logs staging-e2e \
+        staging-port-forward staging-teardown
 
 KUBECTL ?= ./scripts/kubectl.sh
 RENTME_NAMESPACE ?= rentme
@@ -79,6 +81,30 @@ deploy: ## Deploy production via k3s
 
 rollback: ## Rollback k3s deployment
 	./scripts/k3s-rollback.sh
+
+# ─── Staging (isolated namespace; never touches production) ─
+STAGING_NAMESPACE ?= rentme-staging
+
+staging-secrets: ## Create/update staging secrets (env: POSTGRES_PASSWORD NEXTAUTH_SECRET ...)
+	RENTME_NAMESPACE=$(STAGING_NAMESPACE) POSTGRES_DB=rentme ./scripts/k3s-secrets.sh
+
+staging-deploy: ## Full staging pipeline: migrate → deploy → verify (TAG to pin image)
+	RUN_E2E=$(RUN_E2E) ./scripts/k3s-deploy-staging.sh $(TAG)
+
+staging-status: ## Show staging resources
+	$(KUBECTL) -n $(STAGING_NAMESPACE) get deploy,po,svc,ingress,pvc,job
+
+staging-logs: ## Tail staging app logs
+	$(KUBECTL) -n $(STAGING_NAMESPACE) logs -l app.kubernetes.io/component=app -f --tail=100
+
+staging-port-forward: ## Port-forward staging app to localhost:18081
+	$(KUBECTL) -n $(STAGING_NAMESPACE) port-forward svc/rentme-app 18081:80
+
+staging-e2e: ## Run E2E suite against local staging port-forward
+	node scripts/e2e-auth-listings.mjs http://127.0.0.1:18081
+
+staging-teardown: ## Delete the entire staging namespace (DESTRUCTIVE)
+	$(KUBECTL) delete namespace $(STAGING_NAMESPACE) --ignore-not-found
 
 # ─── Monitoring & Logs ──────────────────────────────────
 logs: ## Show application logs (k3s, fallback compose)

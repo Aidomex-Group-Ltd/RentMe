@@ -5,7 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, MapPin, Grid3X3, Map, Loader2 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import PropertyCard from "@/components/property/property-card";
-import { PROPERTY_TYPES, UGANDA_DISTRICTS } from "@/lib/utils";
+import { PROPERTY_TYPES } from "@/lib/utils";
+import DistrictSelector from "@/components/ui/district-selector";
+import { ugandanRegions, type Region } from "@/lib/uganda-districts";
 
 const PAGE_SIZE = 20;
 
@@ -69,6 +71,7 @@ function SearchPageContent() {
   const [furnished, setFurnished] = useState(searchParams.get("furnished") || "");
   const [parking, setParking] = useState(searchParams.get("parking") || "");
   const [security, setSecurity] = useState(searchParams.get("security") || "");
+  const [region, setRegion] = useState(searchParams.get("region") || "");
 
   const fetchProperties = useCallback(async (targetPage: number, append = false) => {
     if (append) {
@@ -85,6 +88,7 @@ function SearchPageContent() {
       if (maxRent) params.set("maxRent", maxRent);
       if (bedrooms) params.set("bedrooms", bedrooms);
       if (district) params.set("district", district);
+      if (region) params.set("region", region);
       if (sort) params.set("sort", sort);
       if (furnished) params.set("furnished", furnished);
       if (parking) params.set("parking", parking);
@@ -111,7 +115,7 @@ function SearchPageContent() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [q, propertyType, minRent, maxRent, bedrooms, district, sort, furnished, parking, security]);
+  }, [q, propertyType, minRent, maxRent, bedrooms, district, region, sort, furnished, parking, security]);
 
   // Reset and fetch page 1 when filters change
   useEffect(() => {
@@ -151,13 +155,14 @@ function SearchPageContent() {
     setMaxRent("");
     setBedrooms("");
     setDistrict("");
+    setRegion("");
     setSort("newest");
     setFurnished("");
     setParking("");
     setSecurity("");
   };
 
-  const activeFilters = [q, propertyType, minRent, maxRent, bedrooms, district, furnished, parking, security].filter(Boolean).length;
+  const activeFilters = [q, propertyType, minRent, maxRent, bedrooms, district, region, furnished, parking, security].filter(Boolean).length;
 
   return (
     <MainLayout>
@@ -173,14 +178,8 @@ function SearchPageContent() {
                   placeholder="Search by location, property name..."
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  list="search-districts"
                   className="input pl-10"
                 />
-                <datalist id="search-districts">
-                  {UGANDA_DISTRICTS.map((d) => (
-                    <option key={d} value={d} />
-                  ))}
-                </datalist>
               </div>
               <button type="submit" className="btn-primary">
                 <Search className="h-4 w-4" />
@@ -236,16 +235,25 @@ function SearchPageContent() {
                     </div>
 
                     {/* District */}
+                    <DistrictSelector
+                      value={district}
+                      onChange={setDistrict}
+                      label="District"
+                      id="filter-district"
+                      placeholder="All districts"
+                    />
+
+                    {/* Region */}
                     <div>
-                      <label className="label">District</label>
+                      <label className="label">Region</label>
                       <select
-                        value={district}
-                        onChange={(e) => setDistrict(e.target.value)}
+                        value={region}
+                        onChange={(e) => setRegion(e.target.value)}
                         className="input"
                       >
-                        <option value="">All Districts</option>
-                        {UGANDA_DISTRICTS.map((d) => (
-                          <option key={d} value={d}>{d}</option>
+                        <option value="">All Regions</option>
+                        {ugandanRegions.map((r) => (
+                          <option key={r} value={r}>{r}</option>
                         ))}
                       </select>
                     </div>

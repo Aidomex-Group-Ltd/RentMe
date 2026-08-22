@@ -35,8 +35,19 @@ import {
   Star,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
+import ScamAlert from "@/components/property/scam-alert";
+import InspectionTracker from "@/components/property/inspection-tracker";
+import { calculatePropertyFeesFromProperty, type FeeBreakdown } from "@/lib/fees";
 import { formatUGX, timeAgo } from "@/lib/utils";
+import {
+  descriptionRequired,
+  isReportReason,
+  minDescriptionLength,
+  REPORT_REASON_LABELS,
+  REPORT_REASONS,
+} from "@/lib/flagging-rules";
 import { toast } from "sonner";
+import type { PublicSafetyAlert } from "@/lib/flagging-rules";
 
 const amenityIcons: Record<string, any> = {
   hasParking: { icon: Car, label: "Parking" },
@@ -94,6 +105,8 @@ export default function PropertyDetailPage() {
   const [viewingMessage, setViewingMessage] = useState("");
   const [reportReason, setReportReason] = useState("");
   const [reportDescription, setReportDescription] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [alreadyReported, setAlreadyReported] = useState(false);
 
   useEffect(() => {
     async function fetchProperty() {
@@ -105,6 +118,7 @@ export default function PropertyDetailPage() {
           return;
         }
         setProperty(data.property);
+        setAlreadyReported(Boolean(data.property?.alreadyReported));
       } catch (error) {
         toast.error("Failed to load property");
       } finally {
@@ -199,10 +213,16 @@ export default function PropertyDetailPage() {
       router.push("/login");
       return;
     }
-    if (!reportReason) {
+    if (!isReportReason(reportReason)) {
       toast.error("Please select a reason");
       return;
     }
+    const minLen = minDescriptionLength(reportReason);
+    if (descriptionRequired(reportReason) && reportDescription.trim().length < minLen) {
+      toast.error(`Please add at least ${minLen} characters describing what happened`);
+      return;
+    }
+    setReporting(true);
     try {
       const res = await fetch("/api/reports", {
         method: "POST",
@@ -210,18 +230,23 @@ export default function PropertyDetailPage() {
         body: JSON.stringify({
           propertyId: property.id,
           reason: reportReason,
-          description: reportDescription,
+          description: reportDescription.trim(),
         }),
       });
       const data = await res.json();
-      if (data.report) {
-        toast.success("Report submitted. Thank you for helping keep RentMe safe.");
-        setShowReportModal(false);
-        setReportReason("");
-        setReportDescription("");
+      if (!res.ok || !data.report) {
+        toast.error(data.error || "Failed to submit report");
+        return;
       }
+      toast.success("Report submitted. Thank you for helping keep RentMe safe.");
+      setShowReportModal(false);
+      setReportReason("");
+      setReportDescription("");
+      setAlreadyReported(true);
     } catch (error) {
       toast.error("Failed to submit report");
+    } finally {
+      setReporting(false);
     }
   };
 
@@ -271,7 +296,23 @@ export default function PropertyDetailPage() {
   }
 
   const images = property.images || [];
+  const videos = property.videos || [];
   const location = [property.neighborhood, property.district, property.city, "Uganda"].filter(Boolean).join(", ");
+  // Calculate fees from property data
+  const fees: FeeBreakdown = property.rent
+    ? calculatePropertyFeesFromProperty(property)
+    : null!;
+
+  const safety: PublicSafetyAlert = property.safety || {
+    level: "none",
+    title: "",
+    messages: [],
+    hideDirectContact: false,
+    blockInquiries: false,
+  };
+  const isOwner = Boolean(property.isOwner);
+  const inquiriesBlocked = safety.blockInquiries && !isOwner;
+  const hidePhone = safety.hideDirectContact && !isOwner;
 
   return (
     <MainLayout>
@@ -375,6 +416,12 @@ export default function PropertyDetailPage() {
 
             {/* Property Info */}
             <div className="mt-6">
+              <ScamAlert
+                level={safety.level}
+                title={safety.title}
+                messages={safety.messages}
+                className="mb-6"
+              />
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -404,8 +451,27 @@ export default function PropertyDetailPage() {
                   <button onClick={handleShare} className="btn-secondary p-2.5">
                     <Share2 className="h-5 w-5" />
                   </button>
-                  <button onClick={() => setShowReportModal(true)} className="btn-secondary p-2.5">
-                    <Flag className="h-5 w-5" />
+                  <button
+                    onClick={() => {
+                      if (alreadyReported || isOwner) return;
+                      if (!session) {
+                        router.push("/login");
+                        return;
+                      }
+                      setShowReportModal(true);
+                    }}
+                    className="btn-secondary p-2.5"
+                    disabled={alreadyReported || isOwner}
+                    aria-label={alreadyReported ? "Already reported" : "Flag this listing"}
+                    title={
+                      isOwner
+                        ? "You cannot report your own listing"
+                        : alreadyReported
+                          ? "You already reported this listing"
+                          : "Report this listing"
+                    }
+                  >
+                    <Flag className={`h-5 w-5 ${alreadyReported ? "text-red-500" : ""}`} />
                   </button>
                 </div>
               </div>
@@ -442,6 +508,73 @@ export default function PropertyDetailPage() {
                   <p className="text-xs text-gray-500">Listed</p>
                 </div>
               </div>
+
+              {/* Videos */}
+              {videos.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-lg font-semibold text-gray-900">Videos</h2>
+                  <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {videos.map((video: any) => (
+                      <div key={video.id} className="overflow-hidden rounded-xl bg-gray-100">
+                        <video
+                          src={video.url}
+                          controls
+                          preload="metadata"
+                          className="aspect-video w-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fee Breakdown */}
+              {fees && (
+                <div className="mt-8">
+                  <h2 className="text-lg font-semibold text-gray-900">Move-in Cost Breakdown</h2>
+                  <div className="mt-3 rounded-xl border border-gray-200 p-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">
+                          Rent ({fees.minimumMonths} month{fees.minimumMonths > 1 ? "s" : ""})
+                        </span>
+                        <span className="font-medium text-gray-900">
+                          {formatUGX(fees.rentSubtotal)}
+                        </span>
+                      </div>
+                      {fees.deposit > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Security Deposit</span>
+                          <span className="font-medium text-gray-900">
+                            {formatUGX(fees.deposit)}
+                          </span>
+                        </div>
+                      )}
+                      {fees.agencyFee > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Agency Fee</span>
+                          <span className="font-medium text-gray-900">
+                            {formatUGX(fees.agencyFee)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Service Charge (5%)</span>
+                        <span className="font-medium text-gray-900">
+                          {formatUGX(fees.serviceCharge)}
+                        </span>
+                      </div>
+                      <div className="my-2 border-t border-gray-200" />
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-gray-900">Total Move-in Cost</span>
+                        <span className="text-lg font-bold text-brand-600">
+                          {formatUGX(fees.totalMoveInCost)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               <div className="mt-8">
@@ -537,6 +670,7 @@ export default function PropertyDetailPage() {
                 <button
                   onClick={() => setShowViewingModal(true)}
                   className="btn-primary w-full"
+                  disabled={inquiriesBlocked}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   Request Viewing
@@ -545,12 +679,13 @@ export default function PropertyDetailPage() {
                 <button
                   onClick={() => setShowContactModal(true)}
                   className="btn-secondary mt-3 w-full"
+                  disabled={inquiriesBlocked}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Contact Landlord
                 </button>
 
-                {property.user.phone && (
+                {!hidePhone && property.user.phone && (
                   <a
                     href={`tel:${property.user.phone}`}
                     className="btn-secondary mt-3 w-full"
@@ -558,6 +693,11 @@ export default function PropertyDetailPage() {
                     <Phone className="mr-2 h-4 w-4" />
                     {property.user.phone}
                   </a>
+                )}
+                {hidePhone && !inquiriesBlocked && (
+                  <p className="mt-3 text-center text-xs text-gray-500">
+                    Phone number is hidden on reported listings. Use RentMe messages instead.
+                  </p>
                 )}
               </div>
 
@@ -656,6 +796,11 @@ export default function PropertyDetailPage() {
             <p className="mt-1 text-sm text-gray-500">
               About: {property.title}
             </p>
+            {safety.level !== "none" && (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                Never send money before viewing this property in person.
+              </p>
+            )}
             <textarea
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
@@ -741,41 +886,53 @@ export default function PropertyDetailPage() {
         </div>
       )}
 
+      {/* Inspection Tracker */}
+      {!isOwner && property.latitude && property.longitude && (
+        <InspectionTracker
+          propertyId={property.id}
+          propertyTitle={property.title}
+          propertyLatitude={property.latitude}
+          propertyLongitude={property.longitude}
+        />
+      )}
+
       {/* Report Modal */}
       {showReportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="card w-full max-w-md p-6">
             <h2 className="text-lg font-semibold text-gray-900">Report This Listing</h2>
-            <p className="mt-1 text-sm text-gray-500">Help us keep RentMe safe</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Flags are reviewed by RentMe. Scam reports also warn other tenants.
+            </p>
             <select
               value={reportReason}
               onChange={(e) => setReportReason(e.target.value)}
               className="input mt-4"
             >
               <option value="">Select a reason</option>
-              <option value="SCAM">Scam</option>
-              <option value="FAKE_PROPERTY">Fake property</option>
-              <option value="ALREADY_RENTED">Already rented</option>
-              <option value="WRONG_PRICE">Wrong price</option>
-              <option value="WRONG_LOCATION">Wrong location</option>
-              <option value="FAKE_PHOTOS">Fake photos</option>
-              <option value="HARASSMENT">Harassment</option>
-              <option value="DUPLICATE_LISTING">Duplicate listing</option>
-              <option value="OTHER">Other</option>
+              {REPORT_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {REPORT_REASON_LABELS[reason]}
+                </option>
+              ))}
             </select>
             <textarea
               value={reportDescription}
               onChange={(e) => setReportDescription(e.target.value)}
-              placeholder="Additional details (optional)"
+              placeholder={
+                isReportReason(reportReason) && descriptionRequired(reportReason)
+                  ? "Describe what happened (required for scam and safety reports)"
+                  : "Additional details (optional)"
+              }
               className="input mt-3"
               rows={3}
             />
             <div className="mt-4 flex gap-3">
-              <button onClick={() => setShowReportModal(false)} className="btn-secondary flex-1">
+              <button onClick={() => setShowReportModal(false)} className="btn-secondary flex-1" disabled={reporting}>
                 Cancel
               </button>
-              <button onClick={handleReport} className="btn-danger flex-1">
-                Submit Report
+              <button onClick={handleReport} className="btn-danger flex-1" disabled={reporting}>
+                {reporting ? "Submitting…" : "Submit Report"}
               </button>
             </div>
           </div>

@@ -6,7 +6,9 @@ import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { cachePropertyList, invalidatePropertyCaches } from "@/lib/cache";
 import { slugify } from "@/lib/utils";
+import { getDistrictsByRegion, type Region } from "@/lib/uganda-districts";
 import { notifyLandlordListingSubmitted, notifyAdminNewListing } from "@/lib/notifications";
+import { sanitizeText } from "@/lib/sanitize";
 
 // GET /api/properties - List properties with search & filters
 export async function GET(req: NextRequest) {
@@ -31,6 +33,7 @@ export async function GET(req: NextRequest) {
     const hasParking = searchParams.get("parking") || "";
     const hasSecurity = searchParams.get("security") || "";
     const selfContained = searchParams.get("selfContained") || "";
+    const region = searchParams.get("region") || "";
 
     const where: Prisma.PropertyWhereInput = {
       deletedAt: null,
@@ -85,6 +88,14 @@ export async function GET(req: NextRequest) {
 
     if (district) {
       where.district = { contains: district, mode: "insensitive" };
+    }
+
+    // Region filter: expand region name to matching districts
+    if (region && !district) {
+      const regionDistricts = getDistrictsByRegion(region as Region);
+      if (regionDistricts.length > 0) {
+        where.district = { in: regionDistricts, mode: "insensitive" };
+      }
     }
 
     if (city) {
@@ -349,7 +360,7 @@ export async function POST(req: NextRequest) {
     const property = await prisma.property.create({
       data: {
         title: data.title,
-        description: data.description || "",
+        description: sanitizeText(data.description || "", 5000),
         slug,
         propertyType: data.propertyType,
         bedrooms: data.bedrooms ?? 0,

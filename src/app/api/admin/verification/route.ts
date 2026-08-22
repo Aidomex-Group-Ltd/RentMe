@@ -1,16 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || "";
@@ -18,9 +16,9 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    const where: any = {};
-    if (status) where.status = status;
-    if (type) where.type = type;
+    const where: Prisma.VerificationRequestWhereInput = {};
+    if (status) where.status = status as Prisma.VerificationRequestWhereInput["status"];
+    if (type) where.type = type as Prisma.VerificationRequestWhereInput["type"];
 
     const [requests, total] = await Promise.all([
       prisma.verificationRequest.findMany({
@@ -48,22 +46,30 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const { requestId, status, notes } = await req.json();
     if (!requestId || !status) {
       return NextResponse.json({ error: "requestId and status required" }, { status: 400 });
     }
 
+    const allowedStatuses = ["PENDING", "UNDER_REVIEW", "VERIFIED", "REJECTED"];
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json({ error: `Invalid status. Allowed: ${allowedStatuses.join(", ")}` }, { status: 400 });
+    }
+
+    const existingReq = await prisma.verificationRequest.findUnique({ where: { id: requestId } });
+    if (!existingReq) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
     const request = await prisma.verificationRequest.update({
       where: { id: requestId },
       data: {
         status,
-        notes: notes || null,
-        reviewedBy: session.user.id,
+        notes: notes ? notes.slice(0, 1000) : null,
+        reviewedBy: auth.user.id,
         reviewedAt: new Date(),
       },
     });
@@ -117,7 +123,7 @@ export async function PATCH(req: NextRequest) {
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: auth.user.id,
         action: "UPDATE",
         entity: "VerificationRequest",
         entityId: requestId,

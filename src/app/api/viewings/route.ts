@@ -70,13 +70,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { propertyId, date, time, numberOfPeople, message } = await req.json();
+    const body = await req.json();
+    const propertyId = typeof body.propertyId === "string" ? body.propertyId.trim() : "";
+    const dateStr = typeof body.date === "string" ? body.date.trim() : "";
+    const time = typeof body.time === "string" ? body.time.trim() : "";
+    const numberOfPeople = typeof body.numberOfPeople === "number" ? body.numberOfPeople : 1;
+    const message = typeof body.message === "string" ? body.message.trim() : "";
 
-    if (!propertyId || !date || !time) {
+    if (!propertyId || !dateStr || !time) {
       return NextResponse.json(
         { error: "propertyId, date, and time are required" },
         { status: 400 }
       );
+    }
+
+    // Validate date is a valid future date
+    const parsedDate = new Date(dateStr);
+    if (isNaN(parsedDate.getTime()) || parsedDate < new Date()) {
+      return NextResponse.json({ error: "Invalid or past date" }, { status: 400 });
+    }
+
+    // Validate time format (HH:MM)
+    if (!/^\d{2}:\d{2}$/.test(time)) {
+      return NextResponse.json({ error: "Invalid time format (use HH:MM)" }, { status: 400 });
+    }
+
+    // Validate numberOfPeople
+    if (numberOfPeople < 1 || numberOfPeople > 10 || !Number.isInteger(numberOfPeople)) {
+      return NextResponse.json({ error: "numberOfPeople must be 1-10" }, { status: 400 });
+    }
+
+    // Validate message length
+    if (message.length > 1000) {
+      return NextResponse.json({ error: "Message too long (max 1000 characters)" }, { status: 400 });
     }
 
     const property = await prisma.property.findUnique({
@@ -92,9 +118,9 @@ export async function POST(req: NextRequest) {
       data: {
         propertyId,
         tenantId: session.user.id,
-        date: new Date(date),
+        date: parsedDate,
         time,
-        numberOfPeople: numberOfPeople || 1,
+        numberOfPeople,
         message: message || null,
       },
       include: {

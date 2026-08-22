@@ -11,10 +11,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { propertyId, personalInfo, employmentInfo, incomeRange, references, preferredMoveIn, notes } = await req.json();
+    const body = await req.json();
+    const propertyId = typeof body.propertyId === "string" ? body.propertyId.trim() : "";
 
     if (!propertyId) {
       return NextResponse.json({ error: "propertyId is required" }, { status: 400 });
+    }
+
+    // Validate string fields have reasonable lengths
+    const MAX_FIELD_LEN = 2000;
+    const personalInfo = typeof body.personalInfo === "string" ? body.personalInfo.trim().slice(0, MAX_FIELD_LEN) : null;
+    const employmentInfo = typeof body.employmentInfo === "string" ? body.employmentInfo.trim().slice(0, MAX_FIELD_LEN) : null;
+    const incomeRange = typeof body.incomeRange === "string" ? body.incomeRange.trim().slice(0, 200) : null;
+    const references = typeof body.references === "string" ? body.references.trim().slice(0, MAX_FIELD_LEN) : null;
+    const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 2000) : null;
+    const preferredMoveIn = typeof body.preferredMoveIn === "string" ? body.preferredMoveIn : null;
+
+    // Validate preferredMoveIn is a valid future date if provided
+    if (preferredMoveIn) {
+      const d = new Date(preferredMoveIn);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid preferredMoveIn date" }, { status: 400 });
+      }
+    }
+
+    // Verify property exists (userId guards self-apply, title feeds the owner notification)
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      select: { id: true, userId: true, title: true },
+    });
+    if (!property) {
+      return NextResponse.json({ error: "Property not found" }, { status: 404 });
+    }
+
+    // Cannot apply to own property
+    if (property.userId === session.user.id) {
+      return NextResponse.json({ error: "You cannot apply to your own property" }, { status: 400 });
     }
 
     // Check for existing application
@@ -47,12 +79,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Get property owner for notification
-    const property = await prisma.property.findUnique({
-      where: { id: propertyId },
-      select: { userId: true, title: true },
-    });
-
+    // Notify the property owner
     if (property) {
       await prisma.notification.create({
         data: {

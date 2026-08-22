@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { sanitizeText, validateMessageContent } from "@/lib/sanitize";
 
 // GET /api/conversations/[id] - Get messages for a conversation
 export async function GET(
@@ -97,17 +98,22 @@ export async function POST(
     const { content, imageUrl } = await req.json();
 
     if (!content && !imageUrl) {
-      return NextResponse.json(
-        { error: "Content is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Content is required" }, { status: 400 });
     }
+
+    // Validate and sanitize message content
+    const rawContent = typeof content === "string" ? content : "";
+    const contentError = validateMessageContent(rawContent);
+    if (contentError) {
+      return NextResponse.json({ error: contentError }, { status: 400 });
+    }
+    const sanitizedContent = sanitizeText(rawContent, 5000);
 
     const message = await prisma.message.create({
       data: {
         conversationId: params.id,
         senderId: session.user.id,
-        content: content || "",
+        content: sanitizedContent,
         imageUrl: imageUrl || null,
       },
       include: {

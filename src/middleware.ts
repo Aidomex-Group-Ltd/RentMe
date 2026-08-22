@@ -160,6 +160,24 @@ export default withAuth(
       if (blocked) return blocked;
     }
 
+    // Property / user reports
+    if (pathname.startsWith("/api/reports") && req.method === "POST") {
+      const blocked = applyRateLimit(req, RateLimits.reports);
+      if (blocked) return blocked;
+    }
+
+    // Chatbot
+    if (pathname.startsWith("/api/chatbot") && req.method === "POST") {
+      const blocked = applyRateLimit(req, RateLimits.chatbot);
+      if (blocked) return blocked;
+    }
+
+    // Inspections
+    if (pathname.startsWith("/api/inspections") && req.method === "POST") {
+      const blocked = applyRateLimit(req, RateLimits.inspections);
+      if (blocked) return blocked;
+    }
+
     // ── Page-level auth checks ─────────────────────────────────
 
     // Admin-only routes
@@ -261,6 +279,9 @@ export const config = {
     "/api/applications/:path*",
     "/api/notifications",
     "/api/notifications/:path*",
+    "/api/chatbot",
+    "/api/inspections",
+    "/api/inspections/:path*",
     "/api/auth/register",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",

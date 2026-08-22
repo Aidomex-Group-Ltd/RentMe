@@ -183,6 +183,12 @@ export default function LandlordDashboard() {
                               <Heart className="h-3 w-3" />
                               {property.saveCount || 0}
                             </span>
+                            {property.isFlagged && (
+                              <span className="inline-flex items-center gap-1 font-medium text-red-600">
+                                <AlertCircle className="h-3 w-3" />
+                                Flagged
+                              </span>
+                            )}
                           </div>
                         </div>
                         <span

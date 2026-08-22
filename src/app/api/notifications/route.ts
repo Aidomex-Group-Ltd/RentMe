@@ -47,7 +47,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { notificationIds, markAll } = await req.json();
+    const body = await req.json();
+    const markAll = body.markAll === true;
+    const notificationIds = Array.isArray(body.notificationIds)
+      ? body.notificationIds.filter((id: unknown): id is string => typeof id === "string")
+      : [];
 
     if (markAll) {
       await prisma.notification.updateMany({
@@ -57,7 +61,7 @@ export async function PATCH(req: NextRequest) {
         },
         data: { isRead: true },
       });
-    } else if (notificationIds?.length) {
+    } else if (notificationIds.length > 0) {
       await prisma.notification.updateMany({
         where: {
           id: { in: notificationIds },

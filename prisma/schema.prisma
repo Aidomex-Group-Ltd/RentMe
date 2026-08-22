@@ -110,6 +110,12 @@ enum Gender {
   PREFER_NOT_TO_SAY
 }
 
+enum InspectionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
 // ─── USERS ───────────────────────────────────────────────
 
 model User {
@@ -151,6 +157,7 @@ model User {
   properties         Property[]
   subscriptions    Subscription[]
   payments         Payment[]
+  inspectionSessions InspectionSession[]
 
   @@index([email])
   @@index([phone])
@@ -340,6 +347,7 @@ model Property {
   city            String?
   latitude        Float?
   longitude       Float?
+  coordinatesUpdatedAt DateTime?
   
   // Landlord/Agent
   userId          String
@@ -363,6 +371,11 @@ model Property {
   isGatedCommunity Boolean       @default(false)
   allowsPets      Boolean        @default(false)
   isVerified      Boolean        @default(false)
+
+  // Moderation / scam flagging
+  isFlagged       Boolean        @default(false)
+  flaggedAt       DateTime?
+  flagReason      String?
   
   // Stats
   viewCount       Int            @default(0)
@@ -390,6 +403,7 @@ model Property {
   reports         Report[]
   reviews         Review[]
   featuredListing FeaturedListing?
+  inspectionSessions InspectionSession[]
 
   @@index([userId])
   @@index([status])
@@ -401,6 +415,7 @@ model Property {
   @@index([locationId])
   @@index([listedAt])
   @@index([isVerified])
+  @@index([isFlagged])
   @@map("properties")
 }
 
@@ -667,6 +682,8 @@ model Report {
   @@index([status])
   @@index([reporterId])
   @@index([propertyId])
+  @@index([reporterId, propertyId])
+  @@index([reporterId, subjectId])
   @@map("reports")
 }
 
@@ -831,4 +848,50 @@ model FeatureFlag {
   updatedAt   DateTime @updatedAt
 
   @@map("feature_flags")
+}
+
+// ─── INSPECTION TRACKING ─────────────────────────────────
+
+model InspectionSession {
+  id             String           @id @default(cuid())
+  propertyId     String
+  userId         String
+  status         InspectionStatus @default(ACTIVE)
+  startedAt      DateTime         @default(now())
+  endedAt        DateTime?
+  arrivedAt      DateTime?
+  arrivalRadiusM Int              @default(50)
+  totalDistanceM Float            @default(0)
+  maxSpeedKmh    Float?
+  avgSpeedKmh    Float?
+  durationS      Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  property Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  waypoints InspectionWaypoint[]
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
+  @@map("inspection_sessions")
+}
+
+model InspectionWaypoint {
+  id           String   @id @default(cuid())
+  sessionId    String
+  latitude     Float
+  longitude    Float
+  accuracyM    Float?
+  speedMps     Float?
+  distanceFromPrevM Float?
+  recordedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  session InspectionSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, recordedAt])
+  @@map("inspection_waypoints")
 }

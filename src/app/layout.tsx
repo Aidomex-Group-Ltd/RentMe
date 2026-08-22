@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
+import SupportChatbot from "@/components/support/support-chatbot";
 import "./globals.css";
 
 // Self-hosted Inter + Plus Jakarta Sans (same families as before) so production
@@ -101,6 +102,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`}>
       <body className="min-h-screen bg-white font-sans antialiased">
         <Providers>{children}</Providers>
+        <SupportChatbot />
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { escapeHtml } from "@/lib/sanitize";
 import {
   createPasswordResetToken,
   siteBaseUrl,
@@ -46,11 +47,13 @@ export async function POST(req: NextRequest) {
       const token = createPasswordResetToken(user.id);
       const resetUrl = `${requestBaseUrl(req)}/reset-password?token=${encodeURIComponent(token)}`;
 
+      const safeName = escapeHtml(user.name || "there");
+      const safeUrl = escapeHtml(resetUrl);
       await sendEmail({
         to: user.email,
         subject: "Reset your RentMe password",
         text: `Hi ${user.name},\n\nReset your password using this link (valid for 1 hour):\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-        html: `<p>Hi ${user.name},</p><p>Reset your password using this link (valid for 1 hour):</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you did not request this, you can ignore this email.</p>`,
+        html: `<p>Hi ${safeName},</p><p>Reset your password using this link (valid for 1 hour):</p><p><a href="${safeUrl}">${safeUrl}</a></p><p>If you did not request this, you can ignore this email.</p>`,
       });
     }
 

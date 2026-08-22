@@ -1,16 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const checks: Record<string, { status: string; latencyMs?: number; details?: string }> = {};
 
@@ -19,24 +16,24 @@ export async function GET() {
     try {
       await prisma.$queryRaw`SELECT 1`;
       checks.database = { status: "healthy", latencyMs: Date.now() - dbStart };
-    } catch (e: any) {
-      checks.database = { status: "error", details: e.message };
+    } catch (e: unknown) {
+      checks.database = { status: "error", details: e instanceof Error ? e.message : "Unknown error" };
     }
 
     // Users count
     try {
       const userCount = await prisma.user.count({ where: { deletedAt: null } });
       checks.users = { status: "healthy", details: `${userCount} users` };
-    } catch (e: any) {
-      checks.users = { status: "error", details: e.message };
+    } catch (e: unknown) {
+      checks.users = { status: "error", details: e instanceof Error ? e.message : "Unknown error" };
     }
 
     // Properties count
     try {
       const propCount = await prisma.property.count({ where: { deletedAt: null } });
       checks.properties = { status: "healthy", details: `${propCount} properties` };
-    } catch (e: any) {
-      checks.properties = { status: "error", details: e.message };
+    } catch (e: unknown) {
+      checks.properties = { status: "error", details: e instanceof Error ? e.message : "Unknown error" };
     }
 
     // Memory usage
@@ -71,9 +68,10 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       checks,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { status: "error", error: error.message },
+      { status: "error", error: message },
       { status: 500 }
     );
   }

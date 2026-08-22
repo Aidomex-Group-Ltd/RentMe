@@ -11,6 +11,7 @@ import {
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import StatusBadge from "@/components/admin/status-badge";
 import ConfirmDialog from "@/components/admin/confirm-dialog";
+import { REPORT_REASON_LABELS, REPORT_REASONS, REPORT_SEVERITY, isReportReason } from "@/lib/flagging-rules";
 import { toast } from "sonner";
 
 interface ReportRow {
@@ -20,25 +21,24 @@ interface ReportRow {
   description: string | null;
   createdAt: string;
   reporter: { id: string; name: string; email: string | null } | null;
-  property: { id: string; title: string; district: string | null; slug: string } | null;
+  property: {
+    id: string;
+    title: string;
+    district: string | null;
+    slug: string;
+    status?: string;
+    isFlagged?: boolean;
+    flagReason?: string | null;
+  } | null;
 }
 
 interface ConfirmAction {
   report: ReportRow;
   status: "UNDER_REVIEW" | "RESOLVED" | "DISMISSED";
+  propertyAction?: "suspend" | "none";
 }
 
-const REASONS = [
-  "SCAM",
-  "FAKE_PROPERTY",
-  "ALREADY_RENTED",
-  "WRONG_PRICE",
-  "WRONG_LOCATION",
-  "FAKE_PHOTOS",
-  "HARASSMENT",
-  "DUPLICATE_LISTING",
-  "OTHER",
-];
+const REASONS = [...REPORT_REASONS];
 
 const PAGE_SIZE = 20;
 
@@ -63,12 +63,17 @@ function actionCopy(action: ConfirmAction): {
     };
   }
   if (action.status === "RESOLVED") {
+    const highSeverity =
+      isReportReason(action.report.reason) && REPORT_SEVERITY[action.report.reason] === "HIGH";
+    const willSuspend = (action.propertyAction ?? (highSeverity ? "suspend" : "none")) === "suspend";
     return {
-      title: "Resolve report",
-      description: `Mark this ${target} as resolved? This closes the case. Status can be changed again if needed.`,
-      confirmLabel: "Resolve",
-      tone: "neutral",
-      success: "Report resolved",
+      title: willSuspend ? "Resolve and suspend listing" : "Resolve report",
+      description: willSuspend
+        ? `Mark this ${target} as resolved and hide the listing from search? Tenants will see a scam alert if they open a direct link.`
+        : `Mark this ${target} as resolved? This closes the case. Status can be changed again if needed.`,
+      confirmLabel: willSuspend ? "Resolve & suspend" : "Resolve",
+      tone: willSuspend ? "danger" : "neutral",
+      success: willSuspend ? "Report resolved and listing suspended" : "Report resolved",
     };
   }
   return {
@@ -128,7 +133,11 @@ export default function AdminReportsPage() {
       const res = await fetch("/api/reports", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportId: confirm.report.id, status: confirm.status }),
+        body: JSON.stringify({
+          reportId: confirm.report.id,
+          status: confirm.status,
+          propertyAction: confirm.propertyAction,
+        }),
       });
       if (!res.ok) throw new Error("Failed");
       toast.success(copy.success);
@@ -187,7 +196,7 @@ export default function AdminReportsPage() {
             <option value="">All reasons</option>
             {REASONS.map((r) => (
               <option key={r} value={r}>
-                {r.replace(/_/g, " ")}
+                {REPORT_REASON_LABELS[r]}
               </option>
             ))}
           </select>
@@ -224,9 +233,19 @@ export default function AdminReportsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-semibold text-gray-900">
-                        {report.reason.replace(/_/g, " ")}
+                        {isReportReason(report.reason)
+                          ? REPORT_REASON_LABELS[report.reason]
+                          : report.reason.replace(/_/g, " ")}
                       </span>
                       <StatusBadge status={report.status} />
+                      {report.property?.isFlagged && (
+                        <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                          Flagged
+                        </span>
+                      )}
+                      {report.property?.status === "SUSPENDED" && (
+                        <StatusBadge status="SUSPENDED" />
+                      )}
                     </div>
                     <p className="mt-0.5 text-sm text-gray-500">
                       Reported by {report.reporter?.name || "Unknown"}
@@ -264,7 +283,18 @@ export default function AdminReportsPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => setConfirm({ report, status: "RESOLVED" })}
+                        onClick={() =>
+                          setConfirm({
+                            report,
+                            status: "RESOLVED",
+                            propertyAction:
+                              isReportReason(report.reason) &&
+                              REPORT_SEVERITY[report.reason] === "HIGH" &&
+                              report.property?.status !== "SUSPENDED"
+                                ? "suspend"
+                                : "none",
+                          })
+                        }
                         className="rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-800 hover:bg-green-100"
                       >
                         Resolve

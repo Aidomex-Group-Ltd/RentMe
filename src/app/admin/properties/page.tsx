@@ -27,6 +27,7 @@ interface PropertyRow {
   slug: string;
   status: string;
   isVerified: boolean;
+  isFlagged?: boolean;
   district: string | null;
   neighborhood: string | null;
   bedrooms: number | null;
@@ -137,6 +138,7 @@ function AdminPropertiesContent() {
   const [district, setDistrict] = useState("");
   const [propertyType, setPropertyType] = useState("");
   const [verified, setVerified] = useState("");
+  const [flagged, setFlagged] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -159,6 +161,7 @@ function AdminPropertiesContent() {
       if (district) params.set("district", district);
       if (propertyType) params.set("propertyType", propertyType);
       if (verified) params.set("verified", verified);
+      if (flagged) params.set("flagged", flagged);
       params.set("page", String(page));
       params.set("limit", String(PAGE_SIZE));
 
@@ -174,7 +177,7 @@ function AdminPropertiesContent() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, q, district, propertyType, verified, page]);
+  }, [statusFilter, q, district, propertyType, verified, flagged, page]);
 
   useEffect(() => {
     load();
@@ -297,6 +300,19 @@ function AdminPropertiesContent() {
                 <option value="true">Verified only</option>
                 <option value="false">Unverified only</option>
               </select>
+              <select
+                value={flagged}
+                onChange={(e) => {
+                  setFlagged(e.target.value);
+                  setPage(1);
+                }}
+                className="input w-auto"
+                aria-label="Flagged filter"
+              >
+                <option value="">Flagged: any</option>
+                <option value="true">Flagged only</option>
+                <option value="false">Not flagged</option>
+              </select>
               <button
                 type="button"
                 className="btn-secondary"
@@ -356,6 +372,9 @@ function AdminPropertiesContent() {
                             {p.isVerified && (
                               <Shield className="h-4 w-4 shrink-0 text-green-600" aria-label="Verified" />
                             )}
+                            {p.isFlagged && (
+                              <AlertTriangle className="h-4 w-4 shrink-0 text-red-600" aria-label="Flagged" />
+                            )}
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                             <span className="inline-flex items-center gap-1">
@@ -375,6 +394,12 @@ function AdminPropertiesContent() {
                         <StatusBadge status={p.status} />
                       </div>
 
+                      {p.isFlagged && (
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs text-red-700">
+                          <AlertTriangle className="h-3 w-3" aria-hidden />
+                          Scam alert active
+                        </div>
+                      )}
                       {p._count?.reports > 0 && (
                         <div className="mt-2 inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs text-red-700">
                           <AlertTriangle className="h-3 w-3" aria-hidden />

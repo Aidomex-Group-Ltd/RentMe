@@ -1,23 +1,22 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin";
 import prisma from "@/lib/prisma";
+import { sanitizeText } from "@/lib/sanitize";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || "";
     const parentId = searchParams.get("parentId") || "";
     const q = searchParams.get("q") || "";
 
-    const where: any = {};
+    const where: Prisma.LocationWhereInput = {};
     if (type) where.type = type;
     if (parentId) where.parentId = parentId;
     if (q) where.name = { contains: q, mode: "insensitive" };
@@ -39,14 +38,25 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
-    const { name, type, parentId, latitude, longitude } = await req.json();
+    const body = await req.json();
+    const name = typeof body.name === "string" ? sanitizeText(body.name.trim(), 200) : "";
+    const type = typeof body.type === "string" ? body.type.trim() : "";
+    const parentId = typeof body.parentId === "string" ? body.parentId.trim() : null;
+    const latitude = typeof body.latitude === "number" ? body.latitude : null;
+    const longitude = typeof body.longitude === "number" ? body.longitude : null;
+
     if (!name || !type) {
       return NextResponse.json({ error: "name and type required" }, { status: 400 });
+    }
+
+    if (latitude != null && (latitude < -90 || latitude > 90)) {
+      return NextResponse.json({ error: "Invalid latitude" }, { status: 400 });
+    }
+    if (longitude != null && (longitude < -180 || longitude > 180)) {
+      return NextResponse.json({ error: "Invalid longitude" }, { status: 400 });
     }
 
     const location = await prisma.location.create({
@@ -61,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: auth.user.id,
         action: "CREATE",
         entity: "Location",
         entityId: location.id,
@@ -70,8 +80,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ location }, { status: 201 });
-  } catch (error: any) {
-    if (error?.code === "P2002") {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    if (message.includes("P2002")) {
       return NextResponse.json({ error: "Location already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -80,12 +91,13 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
-    const { locationId, isActive } = await req.json();
+    const body = await req.json();
+    const locationId = typeof body.locationId === "string" ? body.locationId : "";
+    const isActive = body.isActive;
+
     if (!locationId) {
       return NextResponse.json({ error: "locationId required" }, { status: 400 });
     }
@@ -106,7 +118,7 @@ export async function PATCH(req: NextRequest) {
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: auth.user.id,
         action: "UPDATE",
         entity: "Location",
         entityId: locationId,

@@ -16,7 +16,9 @@ import {
   Loader2,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
-import { PROPERTY_TYPES, UGANDA_DISTRICTS, dashboardPathForRole } from "@/lib/utils";
+import { PROPERTY_TYPES, dashboardPathForRole } from "@/lib/utils";
+import DistrictSelector from "@/components/ui/district-selector";
+import FeeConfig from "@/components/property/fee-config";
 import { preparePropertyImage } from "@/lib/client-image";
 import { toast } from "sonner";
 
@@ -423,20 +425,14 @@ export default function CreatePropertyPage() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-gray-900">Where is the property?</h2>
               <p className="text-sm text-gray-500">Location details are optional — add what you know.</p>
-              <div>
-                <label className="label">District</label>
-                <select
-                  value={form.district}
-                  onChange={(e) => updateForm({ district: e.target.value })}
-                  className={`input ${fieldErrors.district ? "input-error" : ""}`}
-                >
-                  <option value="">Select district (optional)</option>
-                  {UGANDA_DISTRICTS.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <FieldError field="district" />
-              </div>
+              <DistrictSelector
+                value={form.district}
+                onChange={(district) => updateForm({ district })}
+                label="District"
+                id="district"
+                placeholder="Search districts..."
+              />
+              <FieldError field="district" />
               <div>
                 <label className="label">City / Municipality</label>
                 <input
@@ -486,37 +482,16 @@ export default function CreatePropertyPage() {
                 />
                 <FieldError field="rent" />
               </div>
-              <div>
-                <label className="label">Security Deposit (UGX)</label>
-                <input
-                  type="number"
-                  value={form.deposit || ""}
-                  onChange={(e) => updateForm({ deposit: parseInt(e.target.value) || 0 })}
-                  className="input"
-                  placeholder="500000"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Agency Fee (UGX)</label>
-                <input
-                  type="number"
-                  value={form.agencyFee || ""}
-                  onChange={(e) => updateForm({ agencyFee: parseInt(e.target.value) || 0 })}
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Service Charge (UGX)</label>
-                <input
-                  type="number"
-                  value={form.serviceCharge || ""}
-                  onChange={(e) => updateForm({ serviceCharge: parseInt(e.target.value) || 0 })}
-                  className="input"
-                  min="0"
-                />
-              </div>
+              <FeeConfig
+                rent={form.rent}
+                deposit={form.deposit}
+                agencyFee={form.agencyFee}
+                serviceCharge={form.serviceCharge}
+                isAgentListing={session?.user?.role === "AGENT"}
+                onDepositChange={(value) => updateForm({ deposit: value })}
+                onAgencyFeeChange={(value) => updateForm({ agencyFee: value })}
+                onServiceChargeChange={(value) => updateForm({ serviceCharge: value })}
+              />
             </div>
           )}
 
@@ -636,8 +611,17 @@ export default function CreatePropertyPage() {
                 )}
                 <p className="mt-4 text-sm font-medium text-gray-700">
                   {preparingPhotos ? "Preparing photos…" : "Tap to add photos"}
+                </p>              <p className="mt-1 text-xs text-gray-500">
+                  Camera or gallery · max 8MB each
                 </p>
-                <p className="mt-1 text-xs text-gray-500">Camera or gallery · max 8MB each</p>
+
+                {/* Video upload info */}
+                <div className="mt-8">
+                  <h3 className="text-sm font-semibold text-gray-700">Property Videos</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Videos can be added after submitting your listing from the property edit page.
+                  </p>
+                </div>
               </button>
               {/*
                 Do NOT use display:none — Android Chrome often fails to open the
