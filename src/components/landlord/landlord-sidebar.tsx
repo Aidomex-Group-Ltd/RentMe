@@ -16,6 +16,7 @@ import {
   Calendar,
   ChevronRight,
   ClipboardList,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     label: "Dashboard",
     href: "/dashboard/landlord",
     icon: Home,
+  },
+  {
+    label: "Properties",
+    href: "/dashboard/landlord/properties",
+    icon: Building2,
   },
   {
     label: "Tenants",
