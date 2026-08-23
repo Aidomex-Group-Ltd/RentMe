@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="jSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8fd0e8"/>
+      <stop offset="60%" stop-color="#cfe9ef"/>
+      <stop offset="100%" stop-color="#f4e6c8"/>
+    </linearGradient>
+    <linearGradient id="jGlass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2f7d8c"/>
+      <stop offset="100%" stop-color="#17505e"/>
+    </linearGradient>
+    <linearGradient id="jRiver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5fb3c9"/>
+      <stop offset="100%" stop-color="#22677e"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" fill="url(#jSky)"/>
+  <!-- clouds -->
+  <g fill="#ffffff" opacity=".85">
+    <ellipse cx="150" cy="90" rx="70" ry="20"/><ellipse cx="210" cy="78" rx="50" ry="16"/>
+    <ellipse cx="650" cy="120" rx="80" ry="18"/>
+  </g>
+  <!-- condos -->
+  <g>
+    <rect x="150" y="140" width="130" height="280" fill="url(#jGlass)"/>
+    <rect x="300" y="100" width="150" height="320" fill="#e8e3d8"/>
+    <rect x="310" y="112" width="130" height="296" fill="url(#jGlass)"/>
+    <rect x="472" y="170" width="110" height="250" fill="#dcd5c6"/>
+    <rect x="480" y="180" width="94" height="230" fill="#35818f"/>
+    <!-- balconies -->
+    <g fill="#f7f3ea">
+      <rect x="292" y="150" width="166" height="10"/><rect x="292" y="190" width="166" height="10"/>
+      <rect x="292" y="230" width="166" height="10"/><rect x="292" y="270" width="166" height="10"/>
+      <rect x="292" y="310" width="166" height="10"/><rect x="292" y="350" width="166" height="10"/>
+    </g>
+    <!-- rooftop garden + sign -->
+    <rect x="290" y="88" width="170" height="14" rx="6" fill="#3f8f5f"/>
+    <text x="375" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#134e5e">NALUBAALE</text>
+  </g>
+  <!-- palms along the Nile -->
+  <g fill="#1f5b46">
+    <path d="M84 420 V320 q0 -12 -9 -19 l10 -4 q12 9 12 23 z"/>
+    <path d="M96 312 q-46 -30 -82 -15 q39 -5 76 21 z"/>
+    <path d="M96 312 q-18 -52 -56 -62 q32 22 47 66 z"/>
+    <path d="M98 314 q20 -50 58 -58 q-35 24 -49 62 z"/>
+    <path d="M700 420 V330 q0 -11 -8 -17 l9 -4 q11 8 11 21 z"/>
+    <path d="M710 324 q-42 -27 -74 -13 q36 -5 68 19 z"/>
+    <path d="M710 324 q-16 -47 -51 -56 q30 20 43 60 z"/>
+  </g>
+  <!-- Source of the Nile -->
+  <rect y="420" width="800" height="180" fill="url(#jRiver)"/>
+  <g stroke="#eaf7fa" opacity=".6" stroke-width="4">
+    <path d="M100 470 H300 M430 500 H660 M220 545 H520 M520 570 H740"/>
+  </g>
+  <!-- boat -->
+  <path d="M330 512 q40 16 96 0 l-12 18 h-72 z" fill="#f2f7f8"/>
+  <rect x="372" y="488" width="8" height="26" fill="#c96f4a"/>
+</svg>

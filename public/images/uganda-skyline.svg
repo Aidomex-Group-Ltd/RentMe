@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1b2a4a"/>
+      <stop offset="35%" stop-color="#5a3d6e"/>
+      <stop offset="62%" stop-color="#c96f4a"/>
+      <stop offset="82%" stop-color="#f2a65a"/>
+      <stop offset="100%" stop-color="#ffd08a"/>
+    </linearGradient>
+    <linearGradient id="lake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8934e"/>
+      <stop offset="45%" stop-color="#8a4d52"/>
+      <stop offset="100%" stop-color="#232c47"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff3d6"/>
+      <stop offset="55%" stop-color="#ffc46b" stop-opacity=".85"/>
+      <stop offset="100%" stop-color="#ffb257" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="620" fill="url(#sky)"/>
+  <circle cx="800" cy="600" r="150" fill="#ffdf9e"/>
+  <circle cx="800" cy="600" r="300" fill="url(#sunGlow)"/>
+
+  <!-- distant hills (Mengo / Entebbe ridge) -->
+  <path d="M0 520 Q180 470 340 505 T700 500 T1080 512 T1420 495 L1600 520 V620 H0 Z" fill="#3d3050" opacity=".75"/>
+  <path d="M0 555 Q260 505 520 540 T1040 535 T1600 550 V620 H0 Z" fill="#2c2440" opacity=".9"/>
+
+  <!-- skyline silhouettes: Kampala towers, Jinja crane, Entebbe palms -->
+  <g fill="#191430">
+    <rect x="120" y="430" width="46" height="190"/>
+    <rect x="178" y="470" width="34" height="150"/>
+    <polygon points="250,600 250,450 268,430 286,450 286,600"/>
+    <rect x="330" y="488" width="58" height="112"/>
+    <rect x="406" y="452" width="30" height="148"/>
+    <rect x="452" y="500" width="70" height="100"/>
+    <rect x="560" y="466" width="38" height="134"/>
+    <polygon points="620,600 620,480 660,455 700,480 700,600"/>
+    <rect x="742" y="502" width="96" height="98"/>
+    <rect x="880" y="452" width="34" height="148"/>
+    <rect x="930" y="486" width="64" height="114"/>
+    <polygon points="1020,600 1020,470 1038,448 1056,470 1056,600"/>
+    <rect x="1090" y="498" width="52" height="102"/>
+    <rect x="1160" y="462" width="30" height="138"/>
+    <rect x="1210" y="506" width="76" height="94"/>
+    <rect x="1320" y="478" width="44" height="122"/>
+    <rect x="1380" y="512" width="90" height="88"/>
+    <rect x="1490" y="470" width="36" height="130"/>
+    <!-- construction crane (Jinja industrial) -->
+    <rect x="1540" y="420" width="6" height="180"/>
+    <rect x="1470" y="420" width="120" height="6"/>
+    <rect x="1520" y="430" width="4" height="26"/>
+  </g>
+
+  <!-- lit windows -->
+  <g fill="#ffd98c" opacity=".85">
+    <rect x="132" y="446" width="7" height="9"/><rect x="146" y="446" width="7" height="9"/>
+    <rect x="132" y="466" width="7" height="9"/><rect x="160" y="486" width="7" height="9"/>
+    <rect x="188" y="486" width="7" height="9"/><rect x="202" y="508" width="7" height="9"/>
+    <rect x="256" y="470" width="7" height="9"/><rect x="272" y="492" width="7" height="9"/>
+    <rect x="342" y="502" width="8" height="9"/><rect x="360" y="522" width="8" height="9"/>
+    <rect x="412" y="468" width="7" height="9"/><rect x="426" y="494" width="7" height="9"/>
+    <rect x="466" y="514" width="8" height="9"/><rect x="492" y="514" width="8" height="9"/>
+    <rect x="572" y="482" width="7" height="9"/><rect x="586" y="506" width="7" height="9"/>
+    <rect x="632" y="496" width="7" height="9"/><rect x="662" y="518" width="7" height="9"/>
+    <rect x="758" y="516" width="8" height="9"/><rect x="786" y="516" width="8" height="9"/>
+    <rect x="814" y="538" width="8" height="9"/>
+    <rect x="888" y="468" width="7" height="9"/><rect x="902" y="492" width="7" height="9"/>
+    <rect x="942" y="502" width="8" height="9"/><rect x="968" y="524" width="8" height="9"/>
+    <rect x="1028" y="486" width="7" height="9"/><rect x="1044" y="510" width="7" height="9"/>
+    <rect x="1100" y="512" width="8" height="9"/><rect x="1168" y="478" width="7" height="9"/>
+    <rect x="1182" y="502" width="7" height="9"/><rect x="1224" y="520" width="8" height="9"/>
+    <rect x="1252" y="540" width="8" height="9"/><rect x="1332" y="492" width="8" height="9"/>
+    <rect x="1350" y="516" width="8" height="9"/><rect x="1396" y="526" width="8" height="9"/>
+    <rect x="1498" y="486" width="7" height="9"/><rect x="1512" y="510" width="7" height="9"/>
+  </g>
+
+  <!-- Lake Victoria -->
+  <rect y="620" width="1600" height="280" fill="url(#lake)"/>
+  <g stroke="#ffd9a0" opacity=".5">
+    <path d="M700 640 H900 M620 668 H980 M540 700 H1060 M460 736 H1140" stroke-width="4"/>
+  </g>
+  <g stroke="#ff9e5e" opacity=".35">
+    <path d="M300 656 H560 M1040 672 H1330 M240 720 H520 M1080 760 H1400" stroke-width="3"/>
+  </g>
+
+  <!-- foreground palms (Entebbe botanical vibe) -->
+  <g fill="#0e0b18">
+    <path d="M150 900 V700 q0 -14 -10 -22 l10 -4 q14 10 14 26 z"/>
+    <path d="M164 690 q-52 -34 -92 -18 q44 -6 84 26 z"/>
+    <path d="M164 690 q-20 -60 -64 -74 q36 26 52 78 z"/>
+    <path d="M164 690 q22 -56 66 -66 q-40 28 -54 70 z"/>
+    <path d="M166 692 q56 -28 94 -8 q-48 -2 -88 22 z"/>
+    <path d="M1440 900 V716 q0 -13 -9 -20 l9 -4 q13 9 13 24 z"/>
+    <path d="M1452 706 q-46 -30 -80 -15 q38 -5 73 22 z"/>
+    <path d="M1452 706 q-17 -52 -55 -63 q31 22 45 67 z"/>
+    <path d="M1454 708 q19 -48 57 -56 q-34 24 -47 60 z"/>
+    <path d="M1456 710 q48 -24 81 -7 q-41 -2 -76 19 z"/>
+  </g>
+
+  <!-- birds -->
+  <g stroke="#1b1530" stroke-width="4" fill="none" opacity=".8">
+    <path d="M420 320 q14 -14 28 0 q14 -14 28 0"/>
+    <path d="M520 270 q11 -11 22 0 q11 -11 22 0"/>
+    <path d="M1130 300 q12 -12 24 0 q12 -12 24 0"/>
+  </g>
+</svg>

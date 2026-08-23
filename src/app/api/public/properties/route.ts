@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  PUBLIC_PROPERTY_SELECT,
+  sanitizePublicProperty,
+} from "@/lib/public-property";
 
 /**
  * GET /api/public/properties — guest property discovery (Stage: public access).
@@ -20,75 +24,6 @@ const PUBLIC_LIST_RATE_LIMIT = {
   windowMs: 60_000,
   keyPrefix: "public-api",
 } as const;
-
-/** Fields safe for anonymous visitors. Shared by list + detail endpoints. */
-export const PUBLIC_PROPERTY_SELECT: Prisma.PropertySelect = {
-  id: true,
-  slug: true,
-  title: true,
-  description: true,
-  propertyType: true,
-  rent: true,
-  deposit: true,
-  agencyFee: true,
-  paymentFrequency: true,
-  bedrooms: true,
-  bathrooms: true,
-  district: true,
-  city: true,
-  neighborhood: true,
-  latitude: true,
-  longitude: true,
-  viewCount: true,
-  saveCount: true,
-  status: true,
-  isVerified: true,
-  isFurnished: true,
-  isSelfContained: true,
-  hasWater: true,
-  hasElectricity: true,
-  hasInternet: true,
-  hasParking: true,
-  hasSecurity: true,
-  hasGarden: true,
-  hasAirConditioning: true,
-  hasSecurityGuard: true,
-  isGatedCommunity: true,
-  hasCompound: true,
-  hasBalcony: true,
-  allowsPets: true,
-  listedAt: true,
-  images: {
-    orderBy: [{ isCover: "desc" }, { order: "asc" }],
-    take: 5,
-  },
-  user: {
-    select: {
-      name: true,
-      avatar: true,
-      phone: true,
-      landlord: {
-        select: { verificationStatus: true, responseRate: true },
-      },
-      agent: {
-        select: { verificationStatus: true, responseRate: true },
-      },
-    },
-  },
-};
-
-// `address` must never be public (precise location is a safety risk) —
-// enforce by stripping rather than trusting the select object.
-type PublicProperty = Record<string, unknown>;
-
-function sanitize(property: PublicProperty): PublicProperty {
-  delete property.address;
-  if (property.user && typeof property.user === "object") {
-    delete (property.user as PublicProperty).id;
-    delete (property.user as PublicProperty).email;
-  }
-  return property;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -167,7 +102,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        properties: properties.map(sanitize),
+        properties: properties.map(sanitizePublicProperty),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       },
       { headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=120" } }

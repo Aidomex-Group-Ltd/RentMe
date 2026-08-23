@@ -3,6 +3,11 @@ const nextConfig = {
   // Standalone output for minimal production Docker images
   output: "standalone",
 
+  // Overridable so CI/verification builds can run alongside a live
+  // `next dev` without the two processes corrupting each other's .next
+  // (e.g., NEXT_DIST_DIR=.next-prod npm run build && next start).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
   // Security headers (applied in production)
   async headers() {
     return [

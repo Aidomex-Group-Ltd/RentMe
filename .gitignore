@@ -54,3 +54,5 @@ k8s/**/secret.yaml
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+tmp/
+.next-prod/

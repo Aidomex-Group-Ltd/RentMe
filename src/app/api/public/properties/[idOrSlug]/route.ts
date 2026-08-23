@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { PUBLIC_PROPERTY_SELECT } from "@/lib/public-property";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sanitizePublicProperty } from "@/lib/public-property";
 
 /**
  * GET /api/public/properties/[idOrSlug] — guest property detail.
@@ -39,72 +41,13 @@ export async function GET(
         status: "ACTIVE",
       },
       select: {
-        id: true,
-        slug: true,
-        title: true,
-        description: true,
-        propertyType: true,
-        rent: true,
-        deposit: true,
-        agencyFee: true,
-        paymentFrequency: true,
-        bedrooms: true,
-        bathrooms: true,
-        district: true,
-        city: true,
-        neighborhood: true,
-        latitude: true,
-        longitude: true,
-        viewCount: true,
-        status: true,
-        isVerified: true,
-        isFurnished: true,
-        isSelfContained: true,
-        hasWater: true,
-        hasElectricity: true,
-        hasInternet: true,
-        hasParking: true,
-        hasSecurity: true,
-        hasGarden: true,
-        hasAirConditioning: true,
-        hasSecurityGuard: true,
-        isGatedCommunity: true,
-        hasCompound: true,
-        hasBalcony: true,
-        allowsPets: true,
-        listedAt: true,
-        images: { orderBy: [{ isCover: "desc" }, { order: "asc" }] },
+        ...PUBLIC_PROPERTY_SELECT,
         videos: {
           select: { id: true, url: true, thumbnail: true, order: true },
           orderBy: { order: "asc" },
         },
         amenities: {
           select: { amenity: { select: { id: true, name: true, icon: true } } },
-        },
-        user: {
-          select: {
-            name: true,
-            avatar: true,
-            phone: true,
-            landlord: {
-              select: {
-                verificationStatus: true,
-                responseRate: true,
-                responseTimeHours: true,
-                totalListings: true,
-                activeListings: true,
-              },
-            },
-            agent: {
-              select: {
-                verificationStatus: true,
-                responseRate: true,
-                responseTimeHours: true,
-                totalProperties: true,
-                activeProperties: true,
-              },
-            },
-          },
         },
         units: {
           where: { status: "AVAILABLE" },
@@ -129,17 +72,8 @@ export async function GET(
       );
     }
 
-    // Defense-in-depth scrubbing of anything not intended for guests.
-    const detail = property as unknown as Record<string, unknown>;
-    delete detail.address;
-    if (detail.user && typeof detail.user === "object") {
-      const u = detail.user as Record<string, unknown>;
-      delete u.id;
-      delete u.email;
-    }
-
     return NextResponse.json(
-      { property: detail },
+      { property: sanitizePublicProperty(property as unknown as Record<string, unknown>) },
       { headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=120" } }
     );
   } catch (error) {
