@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, MapPin, BedDouble, Bath, Maximize, Eye, ShieldCheck, AlertTriangle } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Heart, MapPin, BedDouble, Bath, Maximize, Eye, ShieldCheck, AlertTriangle, FileText } from "lucide-react";
 import { cn, formatUGX, truncate } from "@/lib/utils";
 
 interface PropertyCardProps {
@@ -26,7 +27,7 @@ interface PropertyCardProps {
     listedAt: string;
     images: { url: string; alt?: string | null }[];
     user: {
-      id: string;
+      id?: string;
       name: string;
       avatar?: string | null;
       landlord?: { verificationStatus?: string } | null;
@@ -58,6 +59,13 @@ const propertyTypeLabels: Record<string, string> = {
 export default function PropertyCard({ property, onSave, isSaved }: PropertyCardProps) {
   const [saved, setSaved] = useState(isSaved || false);
   const [imageError, setImageError] = useState(false);
+  const { data: session } = useSession();
+
+  // Guests authenticate contextually at apply-time and are returned to
+  // this listing; signed-in users go straight to the listing's apply flow.
+  const applyHref = session?.user
+    ? `/properties/${property.slug}`
+    : `/login?callbackUrl=${encodeURIComponent(`/properties/${property.slug}`)}&intent=apply`;
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -168,6 +176,24 @@ export default function PropertyCard({ property, onSave, isSaved }: PropertyCard
           <p className="text-xs text-gray-400">
             {property.user.name}
           </p>
+        </div>
+
+        {/* Guest-friendly actions: View works for everyone; Apply requests
+            identity only at the moment of application (context preserved
+            via callbackUrl so the visitor returns to this listing). */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <span className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors group-hover:border-brand-200 group-hover:text-brand-600">
+            <Eye className="h-4 w-4" />
+            View Property
+          </span>
+          <Link
+            href={applyHref}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
+          >
+            <FileText className="h-4 w-4" />
+            Apply Now
+          </Link>
         </div>
       </div>
     </Link>

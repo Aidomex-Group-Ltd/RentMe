@@ -30,6 +30,7 @@
     "test:e2e:chatbot": "node tests/stage7-chatbot.e2e.mjs",
     "test:e2e:smoke": "node scripts/e2e-stage14-smoke.mjs",
     "test:e2e:security": "node scripts/e2e-security-audit.mjs",
+    "test:e2e:guest": "node tests/guest-access.e2e.mjs",
     "cron:rent-reminders": "tsx scripts/rent-reminders.ts"
   },
   "prisma": {

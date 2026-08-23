@@ -8,6 +8,15 @@ import {
   Home,
   MapPin,
   CheckCircle,
+  Building,
+  Users,
+  Award,
+  Check,
+  Search,
+  DollarSign,
+  Star,
+  Clock,
+  ChevronRight,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import SearchBar from "@/components/property/search-bar";
@@ -15,7 +24,9 @@ import PropertyCard from "@/components/property/property-card";
 import PropertyCarousel, {
   type CarouselProperty,
 } from "@/components/property/property-carousel";
-import { cn } from "@/lib/utils";
+import { cn, formatUGX } from "@/lib/utils";
+
+// ─── Static Data ───────────────────────────────────────────
 
 const popularLocations = [
   { name: "Kampala", slug: "Kampala", description: "Find homes in the capital" },
@@ -61,7 +72,6 @@ const steps = [
   },
 ];
 
-/** Demo showcase listings when the API has no active properties yet */
 const FALLBACK_PROPERTIES: CarouselProperty[] = [
   {
     id: "demo-1",
@@ -135,42 +145,6 @@ const FALLBACK_PROPERTIES: CarouselProperty[] = [
       },
     ],
   },
-  {
-    id: "demo-5",
-    slug: "muyenga-penthouse",
-    title: "Muyenga Penthouse",
-    rent: 6800000,
-    bedrooms: 4,
-    bathrooms: 3,
-    neighborhood: "Muyenga",
-    district: "Kampala",
-    propertyType: "apartment",
-    isVerified: true,
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
-        alt: "Penthouse",
-      },
-    ],
-  },
-  {
-    id: "demo-6",
-    slug: "bugolobi-duplex",
-    title: "Bugolobi Duplex",
-    rent: 5300000,
-    bedrooms: 5,
-    bathrooms: 4,
-    neighborhood: "Bugolobi",
-    district: "Kampala",
-    propertyType: "duplex",
-    isVerified: false,
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80",
-        alt: "Duplex",
-      },
-    ],
-  },
 ];
 
 interface ListedProperty extends CarouselProperty {
@@ -189,6 +163,8 @@ interface ListedProperty extends CarouselProperty {
     agent?: { verificationStatus?: string } | null;
   };
 }
+
+// ─── Main Page ─────────────────────────────────────────────
 
 export default function HomePage() {
   const [featuredProperties, setFeaturedProperties] = useState<ListedProperty[]>(
@@ -227,59 +203,286 @@ export default function HomePage() {
 
   return (
     <MainLayout>
-      {/* Mobile-first premium showcase */}
-      <section className="bg-[#f4f6fa] pb-8 pt-5 md:pt-8">
-        <div className="mb-4 px-5 text-center md:mb-6">
-          <p className="text-sm font-medium text-[#385a4b]">
-            Property showcase
-          </p>
-          <h1 className="mt-1 bg-gradient-to-br from-[#1a4d42] to-[#2f8b76] bg-clip-text text-2xl font-bold tracking-tight text-transparent font-display sm:text-3xl">
-            Browse homes across Uganda
-          </h1>
-          <p className="mt-1.5 text-sm text-[#5b6f7a]">
-            Swipe, tap, or let listings rotate — key details at a glance
-          </p>
+      {/* ═══════════════════════════════════════════════════════
+          HERO SECTION — "Discover Your Perfect Home Across Uganda"
+         ═══════════════════════════════════════════════════════ */}
+      <section className="relative bg-gradient-to-br from-[#0f2b23] via-[#1a4d42] to-[#1f6d5e] text-white overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.1),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(255,255,255,0.05),transparent_50%)]" />
         </div>
 
-        <div className="px-3 md:px-4">
-          {loading ? (
-            <div className="mx-auto max-w-[500px] overflow-hidden rounded-[36px] bg-white p-1 pb-4 shadow-lg">
-              <div className="skeleton aspect-[1.2/1] w-full rounded-[28px]" />
-              <div className="space-y-3 px-3 pt-4">
-                <div className="skeleton h-6 w-3/4" />
-                <div className="skeleton h-8 w-1/2 rounded-full" />
-                <div className="skeleton h-10 w-full" />
-              </div>
+        {/* Gradient accent */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#2f8b76] via-[#48c9a8] to-[#2f8b76]" />
+
+        <div className="page-container relative z-10 pt-16 pb-32 sm:pt-20 sm:pb-40 lg:pt-24 lg:pb-48">
+          <div className="mx-auto max-w-4xl text-center space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/80 backdrop-blur-sm">
+              <Shield className="h-4 w-4 text-emerald-300" />
+              Uganda&apos;s Trusted Property Platform
             </div>
-          ) : (
-            <PropertyCarousel properties={carouselProperties} />
-          )}
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-display">
+              Discover Your Perfect
+              <br />
+              <span className="bg-gradient-to-r from-[#48c9a8] to-[#6ee7c4] bg-clip-text text-transparent">
+                Home Across Uganda
+              </span>
+            </h1>
+
+            <p className="mx-auto max-w-2xl text-lg sm:text-xl text-white/70 font-light leading-relaxed">
+              Explore verified properties from Kampala to Entebbe, Jinja, and
+              beyond. List, manage, and pay — all on one platform.
+            </p>
+
+            <div className="flex flex-col items-center gap-4 pt-4 sm:flex-row sm:justify-center">
+              <Link
+                href="#featured"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-[#1a4d42] shadow-lg transition-all hover:bg-gray-50 hover:shadow-xl active:scale-[0.98]"
+              >
+                Browse Featured Listings
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/login?role=landlord"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+              >
+                List Your Property
+              </Link>
+            </div>
+
+            {/* Trust badges */}
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-6 text-sm text-white/60">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                Verified Listings
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                Secure Payments
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                Tenant Management
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                24/7 Support
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-2.5 flex justify-center">
-          <span className="inline-flex items-center rounded-full bg-white/40 px-6 py-1.5 text-xs tracking-wide text-[#6b808e] backdrop-blur-sm">
-            <Shield className="mr-1.5 h-3.5 w-3.5" />
-            verified listings · 300+ properties
-          </span>
+        {/* ─── Floating Search Bar Card ─────────────────────── */}
+        <div className="relative z-20 -mb-16 sm:-mb-20">
+          <div className="page-container">
+            <div className="mx-auto max-w-4xl rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
+              <h3 className="text-center font-bold text-lg text-gray-900 mb-4 font-display">
+                Start Your Search Now
+              </h3>
+              <SearchBar />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Search hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#1a4d42] via-[#1f6d5e] to-[#2f8b76]">
-        <div className="page-container relative py-12 sm:py-14 lg:py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl font-display">
+      {/* ═══════════════════════════════════════════════════════
+          SHOWCASE & MANAGEMENT GRID
+         ═══════════════════════════════════════════════════════ */}
+      <section className="pt-24 sm:pt-28 pb-16 bg-white">
+        <div className="page-container grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          {/* ─── Left: Featured Properties ──────────────────── */}
+          <div>
+            <div className="flex items-end justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
+                  Featured Properties
+                </h2>
+                <p className="mt-1 text-gray-500">Most viewed this week</p>
+              </div>
+              <Link
+                href="/search"
+                className="hidden items-center gap-1 text-sm font-semibold text-[#1f6d5e] hover:text-[#1a4d42] sm:flex"
+              >
+                View all
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Mobile carousel */}
+            <div className="lg:hidden">
+              {loading ? (
+                <div className="mx-auto max-w-[500px] overflow-hidden rounded-[36px] bg-gray-50 p-1 pb-4 shadow-lg">
+                  <div className="skeleton aspect-[1.2/1] w-full rounded-[28px]" />
+                  <div className="space-y-3 px-3 pt-4">
+                    <div className="skeleton h-6 w-3/4" />
+                    <div className="skeleton h-8 w-1/2 rounded-full" />
+                    <div className="skeleton h-10 w-full" />
+                  </div>
+                </div>
+              ) : (
+                <PropertyCarousel properties={carouselProperties} />
+              )}
+            </div>
+
+            {/* Desktop grid */}
+            <div className="hidden lg:grid grid-cols-2 gap-4">
+              {loading
+                ? [...Array(4)].map((_, i) => (
+                    <div key={i} className="card overflow-hidden">
+                      <div className="skeleton aspect-[4/3] w-full" />
+                      <div className="space-y-3 p-4">
+                        <div className="skeleton h-5 w-3/4" />
+                        <div className="skeleton h-4 w-1/2" />
+                        <div className="skeleton h-8 w-1/3" />
+                      </div>
+                    </div>
+                  ))
+                : carouselProperties.slice(0, 4).map((p) => (
+                    <PropertyCard key={p.id} property={p as ListedProperty} />
+                  ))}
+            </div>
+
+            <div className="mt-4 text-center lg:hidden">
+              <Link
+                href="/search"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-[#1f6d5e]"
+              >
+                View all properties
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* ─── Right: Solutions for Everyone ───────────────── */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
+                Solutions for Everyone
+              </h2>
+              <p className="mt-1 text-gray-500">
+                Whether you own or rent — we have you covered
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Landlord Card */}
+              <div className="relative bg-gradient-to-br from-[#0f2b23] to-[#1a4d42] text-white p-6 rounded-2xl space-y-4 overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-8 translate-x-8" />
+                <div className="relative z-10">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
+                    <Building className="h-6 w-6 text-emerald-300" />
+                  </div>
+                  <h4 className="font-bold text-lg">For Landlords</h4>
+                  <p className="text-xs text-white/60 mt-1">
+                    Manage your entire rental portfolio from one dashboard
+                  </p>
+                </div>
+                <ul className="relative z-10 text-xs space-y-2.5 text-white/80">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    List & manage properties
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    Track applications & tenants
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    Manage leases & rent collection
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    Handle maintenance requests
+                  </li>
+                </ul>
+                <Link
+                  href="/login?role=landlord"
+                  className="relative z-10 block text-center py-2.5 bg-white text-[#1a4d42] text-xs font-semibold rounded-xl hover:bg-gray-50 transition-all"
+                >
+                  Landlord Dashboard
+                </Link>
+              </div>
+
+              {/* Tenant Card */}
+              <div className="relative bg-gradient-to-br from-[#1a4d42] to-[#2f8b76] text-white p-6 rounded-2xl space-y-4 overflow-hidden">
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-8 -translate-x-8" />
+                <div className="relative z-10">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <h4 className="font-bold text-lg">For Tenants</h4>
+                  <p className="text-xs text-white/60 mt-1">
+                    Find, apply, and manage your home seamlessly
+                  </p>
+                </div>
+                <ul className="relative z-10 text-xs space-y-2.5 text-white/80">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-200" />
+                    Search & book homes
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-200" />
+                    Pay rent via mobile money
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-200" />
+                    Submit maintenance requests
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-3.5 w-3.5 text-emerald-200" />
+                    View lease & payment history
+                  </li>
+                </ul>
+                <Link
+                  href="/login?role=tenant"
+                  className="relative z-10 block text-center py-2.5 bg-white text-[#1a4d42] text-xs font-semibold rounded-xl hover:bg-gray-50 transition-all"
+                >
+                  Tenant Dashboard
+                </Link>
+              </div>
+            </div>
+
+            {/* Trust Metrics */}
+            <div className="bg-[#0f2b23] text-white p-6 rounded-2xl">
+              <div className="grid grid-cols-3 divide-x divide-white/10">
+                <div className="text-center px-4">
+                  <p className="text-2xl font-bold text-[#48c9a8]">1,200+</p>
+                  <p className="text-xs text-white/50 mt-1">Verified Properties</p>
+                </div>
+                <div className="text-center px-4">
+                  <p className="text-2xl font-bold text-[#48c9a8]">5,000+</p>
+                  <p className="text-xs text-white/50 mt-1">Active Tenants</p>
+                </div>
+                <div className="text-center px-4">
+                  <div className="flex items-center justify-center gap-1">
+                    <p className="text-2xl font-bold text-[#48c9a8]">Uganda&apos;s</p>
+                  </div>
+                  <p className="text-xs text-white/50 mt-1">Top Platform</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          SEARCH HERO (kept from original for deep-link access)
+         ═══════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1a4d42] via-[#1f6d5e] to-[#2f8b76] py-16 sm:py-20">
+        <div className="page-container relative z-10">
+          <div className="mx-auto max-w-3xl text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-display">
               Find a place you&apos;ll love to call home
             </h2>
-            <p className="mb-8 text-base text-white/80 sm:text-lg">
+            <p className="mt-2 text-base text-white/70">
               Connecting tenants with homes and landlords with tenants across
-              Uganda. Find your perfect match today.
+              Uganda
             </p>
           </div>
 
-          <SearchBar />
-
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {popularLocations.slice(0, 6).map((loc) => (
               <Link
                 key={loc.name}
@@ -292,11 +495,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-5 text-sm text-white/70">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-emerald-300" />
-              Verified Listings
-            </span>
+          <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm text-white/60">
             <span className="flex items-center gap-1.5">
               <CheckCircle className="h-4 w-4 text-emerald-300" />
               Secure Messaging
@@ -305,11 +504,17 @@ export default function HomePage() {
               <CheckCircle className="h-4 w-4 text-emerald-300" />
               Direct Contact
             </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle className="h-4 w-4 text-emerald-300" />
+              Mobile Payments
+            </span>
           </div>
         </div>
       </section>
 
-      {/* Property Type Filter Chips */}
+      {/* ═══════════════════════════════════════════════════════
+          PROPERTY TYPE FILTER + FEATURED GRID
+         ═══════════════════════════════════════════════════════ */}
       <section className="border-b border-gray-100 bg-white py-4">
         <div className="page-container">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
@@ -331,16 +536,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured grid (desktop / secondary) */}
-      <section className="section">
+      <section id="featured" className="section">
         <div className="page-container">
           <div className="mb-8 flex items-end justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
-                Featured Properties
+                All Properties
               </h2>
               <p className="mt-1 text-gray-500">
-                Most viewed properties this week
+                Browse our complete listing collection
               </p>
             </div>
             <Link
@@ -399,7 +603,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Explore by Location */}
+      {/* ═══════════════════════════════════════════════════════
+          EXPLORE BY LOCATION
+         ═══════════════════════════════════════════════════════ */}
       <section className="section bg-[#f4f6fa]">
         <div className="page-container">
           <div className="mb-8 text-center">
@@ -431,7 +637,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Newly Listed */}
+      {/* ═══════════════════════════════════════════════════════
+          NEWLY LISTED
+         ═══════════════════════════════════════════════════════ */}
       {newestProperties.length > 0 && (
         <section className="section">
           <div className="page-container">
@@ -462,8 +670,105 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* How it works */}
+      {/* ═══════════════════════════════════════════════════════
+          TMS FEATURES SHOWCASE
+         ═══════════════════════════════════════════════════════ */}
       <section className="section bg-[#f4f6fa]">
+        <div className="page-container">
+          <div className="mb-12 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#1a4d42]/10 px-4 py-1.5 text-xs font-semibold text-[#1a4d42] mb-4">
+              <Award className="h-3.5 w-3.5" />
+              Tenant Management System
+            </span>
+            <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
+              More Than Just Listings
+            </h2>
+            <p className="mt-2 text-gray-500 max-w-xl mx-auto">
+              A complete property-to-tenancy lifecycle platform — from search
+              to move-out, all in one place
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Lease Management */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <Building className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">Lease Management</h3>
+              <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                Digital leases with full lifecycle tracking — from draft to
+                active to renewal. Never miss an expiry.
+              </p>
+            </div>
+
+            {/* Rent & Payments */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">Rent & Payments</h3>
+              <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                Automated rent reminders, mobile money payments, real-time
+                ledger tracking, and instant receipts.
+              </p>
+            </div>
+
+            {/* Maintenance */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
+                <Search className="h-5 w-5 text-orange-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">Maintenance Requests</h3>
+              <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                Tenants report issues, landlords assign and track. Full
+                visibility from submission to resolution.
+              </p>
+            </div>
+
+            {/* Applications */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50">
+                <Users className="h-5 w-5 text-purple-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">Tenant Applications</h3>
+              <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                Streamlined application pipeline — submit, review, approve, and
+                convert to tenancy in one flow.
+              </p>
+            </div>
+
+            {/* Communication */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50">
+                <Star className="h-5 w-5 text-cyan-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">Communication</h3>
+              <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                Direct messaging between tenants and landlords, plus notices,
+                announcements, and document sharing.
+              </p>
+            </div>
+
+            {/* Renewals & Move-out */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50">
+                <Clock className="h-5 w-5 text-rose-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">Renewals & Move-Out</h3>
+              <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">
+                Lease renewal offers, tenant responses, move-in inspections, and
+                structured move-out workflows.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          HOW IT WORKS
+         ═══════════════════════════════════════════════════════ */}
+      <section className="section">
         <div className="page-container">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
@@ -490,27 +795,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="section bg-[#1a4d42]">
+      {/* ═══════════════════════════════════════════════════════
+          FINAL CTA
+         ═══════════════════════════════════════════════════════ */}
+      <section className="section bg-gradient-to-br from-[#0f2b23] via-[#1a4d42] to-[#1f6d5e]">
         <div className="page-container text-center">
           <h2 className="mb-4 text-3xl font-bold text-white font-display sm:text-4xl">
             Are you a landlord or agent?
           </h2>
-          <p className="mb-8 text-lg text-white/80">
+          <p className="mb-8 text-lg text-white/70 max-w-xl mx-auto">
             List your properties on RentMe and reach thousands of potential
-            tenants across Uganda.
+            tenants across Uganda. Manage everything from one dashboard.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/register"
-              className="inline-flex items-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[#1a4d42] shadow-sm transition-all hover:bg-gray-50"
+              className="inline-flex items-center rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-[#1a4d42] shadow-sm transition-all hover:bg-gray-50"
             >
               List Your Property
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
             <Link
               href="/search"
-              className="inline-flex items-center rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10"
+              className="inline-flex items-center rounded-xl border border-white/30 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-white/10"
             >
               Browse Properties
             </Link>

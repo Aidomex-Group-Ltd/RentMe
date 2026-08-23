@@ -2403,8 +2403,8 @@ ok("Password maximum 128 characters", () => {
 });
 
 ok("New password must differ from current", () => {
-  const current = "oldpassword123";
-  const same = "oldpassword123";
+  const current: string = "oldpassword123";
+  const same: string = "oldpassword123";
   const different = "newpassword456";
   assert.ok(current !== different);
   assert.ok(current === same);

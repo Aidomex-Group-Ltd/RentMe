@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, MapPin, Grid3X3, Map, Loader2 } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Search, SlidersHorizontal, MapPin, Grid3X3, Map, Loader2, AlertCircle } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import PropertyCard from "@/components/property/property-card";
 import { PROPERTY_TYPES } from "@/lib/utils";
@@ -49,7 +49,9 @@ function SearchPageFallback() {
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,7 @@ function SearchPageContent() {
     }
 
     try {
+      setError(null);
       const params = new URLSearchParams();
       if (q) params.set("q", q);
       if (propertyType) params.set("type", propertyType);
@@ -97,10 +100,20 @@ function SearchPageContent() {
       params.set("limit", String(PAGE_SIZE));
       params.set("status", "ACTIVE");
 
-      const res = await fetch(`/api/properties?${params.toString()}`);
+      const res = await fetch(`/api/public/properties?${params.toString()}`);
+      if (!res.ok) throw new Error(`Search failed (${res.status})`);
       const data = await res.json();
       const newProperties = data.properties || [];
       const totalResults = data.pagination?.total || 0;
+
+      // Keep the URL shareable/bookmarkable: mirror active filters into
+      // query params without triggering a navigation or scroll reset.
+      const urlParams = new URLSearchParams(params);
+      urlParams.delete("page");
+      urlParams.delete("limit");
+      urlParams.delete("status");
+      const qs = urlParams.toString();
+      window.history.replaceState(null, "", qs ? `/search?${qs}` : "/search");
 
       if (append) {
         setProperties((prev) => [...prev, ...newProperties]);
@@ -109,8 +122,9 @@ function SearchPageContent() {
       }
       setTotal(totalResults);
       setHasMore(targetPage * PAGE_SIZE < totalResults);
-    } catch (error) {
-      console.error("Search error:", error);
+    } catch (err) {
+      console.error("Search error:", err);
+      setError("We couldn't load properties right now. Please try again.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -181,8 +195,9 @@ function SearchPageContent() {
                   className="input pl-10"
                 />
               </div>
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary flex items-center gap-2">
                 <Search className="h-4 w-4" />
+                <span className="hidden sm:inline">Search Properties</span>
               </button>
               <button
                 type="button"
@@ -384,6 +399,17 @@ function SearchPageContent() {
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : error ? (
+                <div className="card p-12 text-center">
+                  <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-300" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Something went wrong
+                  </h3>
+                  <p className="mt-1 text-gray-500">{error}</p>
+                  <button onClick={() => fetchProperties(1, false)} className="btn-primary mt-4">
+                    Retry
+                  </button>
                 </div>
               ) : properties.length > 0 ? (
                 <>

@@ -29,8 +29,14 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/search", label: "Search", icon: Search },
-    { href: "/saved", label: "Saved", icon: Heart },
-    { href: "/messages", label: "Messages", icon: MessageSquare },
+    // Account-bound destinations are hidden from guests so browsing never
+    // advertises an auth wall — they reappear once signed in.
+    ...(session?.user
+      ? [
+          { href: "/saved", label: "Saved", icon: Heart },
+          { href: "/messages", label: "Messages", icon: MessageSquare },
+        ]
+      : []),
   ];
 
   return (

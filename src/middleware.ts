@@ -101,6 +101,39 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
+    // ── PUBLIC GUEST ROUTES ────────────────────────────────────
+    // Frictionless discovery: these paths pass through untouched — no
+    // session check, no redirect, no popup. Authentication is requested
+    // only when a visitor takes an action that requires an account
+    // (apply, save, message, dashboards). Keep this list authoritative:
+    // public routes must never inherit dashboard auth rules added below.
+    //
+    // SECURITY: the only public API surface is /api/public/* (read-only,
+    // self-rate-limited at the route). Page prefixes must never leak into
+    // /api/* or the CSRF/rate-limit/auth gates below would be skipped.
+    if (pathname.startsWith("/api/public")) {
+      return NextResponse.next();
+    }
+
+    const isApiPath = pathname.startsWith("/api/");
+    const PUBLIC_PAGES = [
+      "/search",
+      "/properties",
+      "/login",
+      "/register",
+      "/forgot-password",
+      "/reset-password",
+    ];
+    const isPublicPage =
+      !isApiPath &&
+      (pathname === "/" ||
+        PUBLIC_PAGES.some(
+          (p) => pathname === p || pathname.startsWith(`${p}/`)
+        ));
+    if (isPublicPage) {
+      return NextResponse.next();
+    }
+
     // ── Domain redirect (opt-in via PRODUCTION_DOMAIN + REDIRECT_FROM_HOSTS)
     const host = (req.headers.get("host") || "").toLowerCase();
     if (
@@ -192,17 +225,21 @@ export default withAuth(
       }
     }
 
-    // Dashboard routes require auth
+    // Dashboard routes require auth — preserve intended destination
     if (pathname.startsWith("/dashboard")) {
       if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url));
+        const login = new URL("/login", req.url);
+        login.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(login);
       }
     }
 
-    // Messages require auth
+    // Messages require auth — preserve intended destination
     if (pathname.startsWith("/messages")) {
       if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url));
+        const login = new URL("/login", req.url);
+        login.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(login);
       }
     }
 
