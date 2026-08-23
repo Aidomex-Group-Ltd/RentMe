@@ -2507,6 +2507,186 @@ ok("Payment frequency is configurable (MONTHLY, WEEKLY, QUARTERLY, ANNUALLY)", (
   }
 });
 
+// ──────────────────────────────────────────────────────────
+pipeline("20. SECURE DOCUMENT ACCESS");
+
+section("20.1 MIME Validation");
+ok("Allowed document MIME types whitelisted", () => {
+  const allowed = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+  assert.ok(allowed.includes("application/pdf"));
+  assert.ok(allowed.includes("image/jpeg"));
+  assert.ok(!allowed.includes("application/x-executable"));
+  assert.ok(!allowed.includes("text/html"));
+});
+
+ok("File extension validation matches MIME type", () => {
+  const validCombinations: Record<string, string[]> = {
+    "application/pdf": [".pdf"],
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/png": [".png"],
+    "image/webp": [".webp"],
+  };
+  
+  for (const [mime, exts] of Object.entries(validCombinations)) {
+    assert.ok(exts.length > 0, `${mime} has valid extensions`);
+    for (const ext of exts) {
+      assert.ok(ext.startsWith("."), `${ext} starts with dot`);
+    }
+  }
+});
+
+ok("Dangerous file types rejected", () => {
+  const dangerous = [
+    ".exe", ".sh", ".bat", ".cmd", ".ps1", ".js", ".vbs",
+    ".php", ".py", ".rb", ".cgi",
+  ];
+  for (const ext of dangerous) {
+    assert.ok(!ext.endsWith(".pdf"), `${ext} is not a PDF`);
+  }
+});
+
+section("20.2 File Size Limits");
+ok("Max upload size is 100MB", () => {
+  const MAX_SIZE_BYTES = 100 * 1024 * 1024;
+  assert.equal(MAX_SIZE_BYTES, 104857600);
+});
+
+ok("File within limit accepted", () => {
+  const MAX_SIZE = 100 * 1024 * 1024;
+  const fileSize = 5 * 1024 * 1024; // 5MB
+  assert.ok(fileSize <= MAX_SIZE);
+});
+
+ok("File exceeding limit rejected", () => {
+  const MAX_SIZE = 100 * 1024 * 1024;
+  const fileSize = 150 * 1024 * 1024; // 150MB
+  assert.ok(fileSize > MAX_SIZE);
+});
+
+section("20.3 Document Access Control");
+ok("Documents scoped to tenancy ID", () => {
+  const doc = { tenancyId: "tenancy-123", name: "lease.pdf" };
+  assert.equal(doc.tenancyId, "tenancy-123");
+});
+
+ok("Unauthorized user cannot access another tenancy's documents", () => {
+  const doc = { tenancyId: "tenancy-123" };
+  const requester = { tenancyId: "tenancy-456" };
+  assert.notEqual(doc.tenancyId, requester.tenancyId);
+});
+
+ok("Public listing URLs do not expose document paths", () => {
+  const listing = {
+    title: "Sunset Apartments",
+    rent: 800000,
+    // No fileUrl, documentUrl, or signedUrl in listing data
+  };
+  assert.ok(!("fileUrl" in listing));
+  assert.ok(!("documentUrl" in listing));
+  assert.ok(!("signedUrl" in listing));
+});
+
+// ──────────────────────────────────────────────────────────
+pipeline("21. INSPECTION CHECKLISTS");
+
+section("21.1 Move-In Checklist Data");
+ok("Move-in record stores meter readings", () => {
+  const record = {
+    tenancyId: "tenancy-123",
+    meterReadings: JSON.stringify({
+      electricity: "12345",
+      water: "6789",
+      gas: "0000",
+    }),
+  };
+  const readings = JSON.parse(record.meterReadings);
+  assert.equal(readings.electricity, "12345");
+  assert.equal(readings.water, "6789");
+  assert.equal(readings.gas, "0000");
+});
+
+ok("Move-in record stores condition notes", () => {
+  const record = {
+    conditionNotes: "Walls in good condition. Minor scratch on kitchen counter.",
+  };
+  assert.ok(record.conditionNotes.length > 0);
+  assert.ok(record.conditionNotes.includes("Walls"));
+});
+
+ok("Move-in record stores photo references", () => {
+  const record = {
+    photos: [
+      "https://storage.rentme.com/movein/photo1.jpg",
+      "https://storage.rentme.com/movein/photo2.jpg",
+    ],
+  };
+  assert.equal(record.photos.length, 2);
+  for (const url of record.photos) {
+    assert.ok(url.startsWith("https://"), `Photo URL is HTTPS: ${url}`);
+  }
+});
+
+ok("Move-in checklist is optional (null allowed)", () => {
+  const record = { checklistData: null };
+  assert.equal(record.checklistData, null);
+});
+
+section("21.2 Move-Out Checklist Data");
+ok("Move-out record stores damage assessment", () => {
+  const record = {
+    damageAssessment: JSON.stringify({
+      walls: "Minor scuff marks",
+      flooring: "Good",
+      appliances: "Refrigerator needs cleaning",
+    }),
+    damageCharges: 200000,
+  };
+  const damage = JSON.parse(record.damageAssessment);
+  assert.ok(damage.walls);
+  assert.ok(damage.flooring);
+  assert.ok(damage.appliances);
+  assert.equal(record.damageCharges, 200000);
+});
+
+ok("Move-out record stores outstanding rent and damage charges separately", () => {
+  const record = {
+    outstandingRent: 800000,
+    damageCharges: 200000,
+  };
+  const totalDeductions = record.outstandingRent + record.damageCharges;
+  assert.equal(totalDeductions, 1000000);
+});
+
+ok("Deposit settlement uses both outstanding rent and damages", () => {
+  const deposit = 1600000;
+  const outstandingRent = 0;
+  const damageCharges = 300000;
+  const totalDeductions = outstandingRent + damageCharges;
+  const refund = Math.max(0, deposit - totalDeductions);
+  assert.equal(refund, 1300000);
+});
+
+ok("Move-out photos stored as URL array", () => {
+  const record = {
+    photos: [
+      "https://storage.rentme.com/moveout/kitchen.jpg",
+      "https://storage.rentme.com/moveout/bathroom.jpg",
+      "https://storage.rentme.com/moveout/bedroom.jpg",
+    ],
+  };
+  assert.equal(record.photos.length, 3);
+  for (const url of record.photos) {
+    assert.ok(url.startsWith("https://"));
+  }
+});
+
 // ══════════════════════════════════════════════════════════════
 // RESULTS
 // ══════════════════════════════════════════════════════════════

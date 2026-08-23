@@ -23,6 +23,9 @@ import {
   Building2,
   User,
   ClipboardList,
+  Key,
+  ScrollText,
+  LogOut,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import TenantSidebar from "@/components/tenant/tenant-sidebar";
@@ -154,11 +157,14 @@ export default function TenantDashboard() {
                 navItems={[
                   { label: "Dashboard", href: "/dashboard/tenant", icon: Home },
                   { label: "My Home", href: "/dashboard/tenant/tenancy", icon: Building2 },
+                  { label: "Move In", href: "/dashboard/tenant/move-in", icon: Key },
+                  { label: "Lease", href: "/dashboard/tenant/lease", icon: ScrollText },
                   { label: "Applications", href: "/dashboard/tenant/applications", icon: ClipboardList, badge: applications.filter((a: any) => ["SUBMITTED", "UNDER_REVIEW"].includes(a.status)).length || undefined },
                   { label: "Payments", href: "/dashboard/tenant/payments", icon: DollarSign },
                   { label: "Maintenance", href: "/dashboard/tenant/maintenance", icon: Wrench, badge: activeTenancy?._count?.maintenanceRequests },
                   { label: "Notices", href: "/dashboard/tenant/notices", icon: Bell, badge: notices.length || undefined },
                   { label: "Documents", href: "/dashboard/tenant/documents", icon: FileText },
+                  { label: "Move Out", href: "/dashboard/tenant/move-out", icon: LogOut },
                   { label: "Profile", href: "/dashboard/tenant/profile", icon: User },
                 ]}
               />

@@ -19,6 +19,8 @@ import {
   Key,
   BarChart3,
   MessageSquare,
+  Settings,
+  RefreshCw,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import LandlordSidebar from "@/components/landlord/landlord-sidebar";
@@ -122,11 +124,16 @@ export default function LandlordDashboard() {
               <LandlordSidebar
                 navItems={[
                   { label: "Dashboard", href: "/dashboard/landlord", icon: Home },
+                  { label: "Properties", href: "/dashboard/landlord/properties", icon: Home },
+                  { label: "Units", href: "/dashboard/landlord/units", icon: Home },
                   { label: "Tenants", href: "/dashboard/landlord/tenants", icon: Users },
+                  { label: "Applications", href: "/dashboard/landlord/applications", icon: FileText },
                   { label: "Leases", href: "/dashboard/landlord/leases", icon: FileText },
+                  { label: "Renewals", href: "/dashboard/landlord/renewals", icon: TrendingUp },
                   { label: "Maintenance", href: "/dashboard/landlord/maintenance", icon: Wrench, badge: report?.maintenance?.open },
-                  { label: "Reports", href: "/dashboard/landlord/reports", icon: TrendingUp },
-                  { label: "Messages", href: "/messages", icon: DollarSign },
+                  { label: "Reports", href: "/dashboard/landlord/reports", icon: BarChart3 },
+                  { label: "Messages", href: "/messages", icon: MessageSquare },
+                  { label: "Settings", href: "/dashboard/landlord/settings", icon: Settings },
                 ]}
               />
             </div>
