@@ -16,6 +16,7 @@ import {
   ClipboardList,
   ScrollText,
   LogOut,
+  Key,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +54,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     label: "My Home",
     href: "/dashboard/tenant/tenancy",
     icon: Building2,
+  },
+  {
+    label: "Move In",
+    href: "/dashboard/tenant/move-in",
+    icon: Key,
   },
   {
     label: "Lease",
