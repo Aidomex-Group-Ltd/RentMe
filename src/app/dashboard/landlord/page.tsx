@@ -9,17 +9,19 @@ import {
   Plus,
   Eye,
   Heart,
-  MessageSquare,
   Calendar,
   FileText,
   TrendingUp,
-  CheckCircle,
-  Clock,
-  AlertCircle,
   ArrowRight,
+  Users,
+  DollarSign,
+  Wrench,
+  Key,
   BarChart3,
+  MessageSquare,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
+import LandlordSidebar from "@/components/landlord/landlord-sidebar";
 import { formatUGX, timeAgo } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -29,6 +31,7 @@ export default function LandlordDashboard() {
   const [properties, setProperties] = useState<any[]>([]);
   const [viewings, setViewings] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,20 +46,22 @@ export default function LandlordDashboard() {
 
   async function fetchData() {
     try {
-      const [propsRes, viewingsRes, appsRes] = await Promise.all([
-        // Own listings across all statuses (new ones start as PENDING_REVIEW)
+      const [propsRes, viewingsRes, appsRes, reportRes] = await Promise.all([
         fetch("/api/properties?mine=1&limit=50"),
         fetch("/api/viewings?role=landlord"),
         fetch("/api/applications?role=landlord"),
+        fetch("/api/reports?type=overview"),
       ]);
-      const [propsData, viewingsData, appsData] = await Promise.all([
+      const [propsData, viewingsData, appsData, reportData] = await Promise.all([
         propsRes.json(),
         viewingsRes.json(),
         appsRes.json(),
+        reportRes.json(),
       ]);
       setProperties(propsData.properties || []);
       setViewings(viewingsData.viewings || []);
       setApplications(appsData.applications || []);
+      setReport(reportData.report || null);
     } catch (error) {
       toast.error("Failed to load dashboard data");
     } finally {
@@ -66,28 +71,28 @@ export default function LandlordDashboard() {
 
   const stats = [
     {
-      label: "Active Listings",
-      value: properties.filter((p) => p.status === "ACTIVE").length,
+      label: "Properties",
+      value: properties.length,
       icon: Home,
       color: "text-blue-600 bg-blue-50",
     },
     {
-      label: "Total Views",
-      value: properties.reduce((sum, p) => sum + (p.viewCount || 0), 0),
-      icon: Eye,
+      label: "Occupancy",
+      value: report?.occupancy?.occupancyRate != null ? `${report.occupancy.occupancyRate}%` : "—",
+      icon: TrendingUp,
+      color: "text-green-600 bg-green-50",
+    },
+    {
+      label: "Active Tenants",
+      value: report?.tenants?.active || 0,
+      icon: Users,
       color: "text-purple-600 bg-purple-50",
     },
     {
-      label: "Total Saves",
-      value: properties.reduce((sum, p) => sum + (p.saveCount || 0), 0),
-      icon: Heart,
+      label: "Outstanding",
+      value: report?.financial?.outstanding ? formatUGX(report.financial.outstanding) : "—",
+      icon: DollarSign,
       color: "text-red-600 bg-red-50",
-    },
-    {
-      label: "Pending Viewings",
-      value: viewings.filter((v) => v.status === "REQUESTED").length,
-      icon: Calendar,
-      color: "text-amber-600 bg-amber-50",
     },
   ];
 
@@ -111,6 +116,20 @@ export default function LandlordDashboard() {
                 List Property
               </Link>
             </div>
+
+            {/* Navigation Sidebar */}
+            <div className="mt-6">
+              <LandlordSidebar
+                navItems={[
+                  { label: "Dashboard", href: "/dashboard/landlord", icon: Home },
+                  { label: "Tenants", href: "/dashboard/landlord/tenants", icon: Users },
+                  { label: "Leases", href: "/dashboard/landlord/leases", icon: FileText },
+                  { label: "Maintenance", href: "/dashboard/landlord/maintenance", icon: Wrench, badge: report?.maintenance?.open },
+                  { label: "Reports", href: "/dashboard/landlord/reports", icon: TrendingUp },
+                  { label: "Messages", href: "/messages", icon: DollarSign },
+                ]}
+              />
+            </div>
           </div>
         </div>
 
@@ -130,6 +149,154 @@ export default function LandlordDashboard() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Quick Navigation */}
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            <Link
+              href="/dashboard/landlord/tenants"
+              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-4 transition hover:shadow-md"
+            >
+              <Users className="h-7 w-7 text-blue-600" />
+              <p className="mt-2 text-sm font-medium text-gray-900">Tenants</p>
+            </Link>
+            <Link
+              href="/dashboard/landlord/leases"
+              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-4 transition hover:shadow-md"
+            >
+              <FileText className="h-7 w-7 text-purple-600" />
+              <p className="mt-2 text-sm font-medium text-gray-900">Leases</p>
+            </Link>
+            <Link
+              href="/dashboard/landlord/maintenance"
+              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-4 transition hover:shadow-md"
+            >
+              <Wrench className="h-7 w-7 text-orange-600" />
+              <p className="mt-2 text-sm font-medium text-gray-900">Maintenance</p>
+              {report?.maintenance?.open > 0 && (
+                <span className="mt-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                  {report.maintenance.open} open
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/dashboard/landlord/reports"
+              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-4 transition hover:shadow-md"
+            >
+              <BarChart3 className="h-7 w-7 text-green-600" />
+              <p className="mt-2 text-sm font-medium text-gray-900">Reports</p>
+            </Link>
+            <Link
+              href="/messages"
+              className="flex flex-col items-center rounded-xl border border-gray-200 bg-white p-4 transition hover:shadow-md"
+            >
+              <MessageSquare className="h-7 w-7 text-indigo-600" />
+              <p className="mt-2 text-sm font-medium text-gray-900">Messages</p>
+            </Link>
+            <Link
+              href="/dashboard/landlord/create"
+              className="flex flex-col items-center rounded-xl border border-dashed border-gray-300 bg-white p-4 transition hover:border-brand-400 hover:shadow-md"
+            >
+              <Plus className="h-7 w-7 text-gray-400" />
+              <p className="mt-2 text-sm font-medium text-gray-500">New Listing</p>
+            </Link>
+          </div>
+
+          {/* Portfolio & Maintenance Overview */}
+          <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Financial Summary */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Financial Summary
+              </h3>
+              <div className="mt-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total Due</span>
+                  <span className="font-medium text-gray-900">{formatUGX(report?.financial?.totalDue || 0)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total Paid</span>
+                  <span className="font-medium text-green-700">{formatUGX(report?.financial?.totalPaid || 0)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Outstanding</span>
+                  <span className="font-medium text-red-700">{formatUGX(report?.financial?.outstanding || 0)}</span>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/landlord/reports?type=financial"
+                className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                View Financial Report <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Occupancy */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900">
+                <Key className="h-5 w-5 text-blue-600" />
+                Occupancy
+              </h3>
+              <div className="mt-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total Units</span>
+                  <span className="font-medium text-gray-900">{report?.occupancy?.totalUnits || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Occupied</span>
+                  <span className="font-medium text-green-700">{report?.occupancy?.occupiedUnits || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Available</span>
+                  <span className="font-medium text-blue-700">{report?.occupancy?.availableUnits || 0}</span>
+                </div>
+                {report?.occupancy?.occupancyRate != null && (
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Occupancy Rate</span>
+                      <span className="font-medium text-gray-900">{report.occupancy.occupancyRate}%</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="h-full rounded-full bg-green-500 transition-all"
+                        style={{ width: `${report.occupancy.occupancyRate}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Link
+                href="/dashboard/landlord/reports?type=occupancy"
+                className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                View Occupancy Report <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {/* Maintenance */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900">
+                <Wrench className="h-5 w-5 text-orange-600" />
+                Maintenance
+              </h3>
+              <div className="mt-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Open Requests</span>
+                  <span className="font-medium text-gray-900">{report?.maintenance?.open || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Urgent</span>
+                  <span className="font-medium text-red-700">{report?.maintenance?.urgent || 0}</span>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/landlord/maintenance"
+                className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+              >
+                View All Maintenance <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -183,12 +350,6 @@ export default function LandlordDashboard() {
                               <Heart className="h-3 w-3" />
                               {property.saveCount || 0}
                             </span>
-                            {property.isFlagged && (
-                              <span className="inline-flex items-center gap-1 font-medium text-red-600">
-                                <AlertCircle className="h-3 w-3" />
-                                Flagged
-                              </span>
-                            )}
                           </div>
                         </div>
                         <span
@@ -278,6 +439,25 @@ export default function LandlordDashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Expiring Leases */}
+              {report?.expiringLeases?.length > 0 && (
+                <div className="card">
+                  <div className="border-b border-gray-100 px-6 py-4">
+                    <h2 className="font-semibold text-gray-900">Expiring Leases</h2>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {report.expiringLeases.slice(0, 5).map((l: any) => (
+                      <div key={l.id} className="px-6 py-3">
+                        <p className="text-sm font-medium text-gray-900">{l.tenant}</p>
+                        <p className="text-xs text-gray-500">
+                          Expires {new Date(l.endDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

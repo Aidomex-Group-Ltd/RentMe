@@ -135,4 +135,10 @@ export const RateLimits = {
     windowMs: 60_000,
     keyPrefix: "inspect",
   },
+  /** Message sends — 30/min per user (enforced route-side, keyed by userId) */
+  messages: {
+    maxRequests: 30,
+    windowMs: 60_000,
+    keyPrefix: "msg",
+  },
 } as const;

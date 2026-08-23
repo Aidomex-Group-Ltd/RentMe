@@ -43,41 +43,12 @@ function detectImageMime(buffer: Buffer): string | null {
   return null;
 }
 
-function mimeFromFileName(name: string): string | null {
-  const ext = name.split(".").pop()?.toLowerCase();
-  switch (ext) {
-    case "jpg":
-    case "jpeg":
-      return "image/jpeg";
-    case "png":
-      return "image/png";
-    case "webp":
-      return "image/webp";
-    case "gif":
-      return "image/gif";
-    default:
-      return null;
-  }
-}
-
-function normalizeContentType(raw: string | undefined, fileName: string, buffer: Buffer): string | null {
-  const declared = (raw || "").toLowerCase().trim();
-  if (declared === "image/jpg") return "image/jpeg";
-  if (ALLOWED_TYPES.has(declared)) {
-    return declared === "image/jpg" ? "image/jpeg" : declared;
-  }
-
-  // Empty / octet-stream / weird Android types — sniff bytes, then extension
-  if (
-    !declared ||
-    declared === "application/octet-stream" ||
-    declared === "binary/octet-stream" ||
-    declared === "image"
-  ) {
-    return detectImageMime(buffer) || mimeFromFileName(fileName);
-  }
-
-  // Declared type not allowed — still accept if magic bytes say it's an image
+/**
+ * Magic bytes are authoritative for the accept/reject decision.
+ * Client-declared Content-Type and filename extensions cannot grant
+ * acceptance on their own (gate: MIME verification beyond file.type).
+ */
+function normalizeContentType(_raw: string | undefined, _fileName: string, buffer: Buffer): string | null {
   return detectImageMime(buffer);
 }
 

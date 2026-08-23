@@ -66,6 +66,7 @@ export default function CreatePropertyPage() {
     deposit: 0,
     agencyFee: 0,
     serviceCharge: 0,
+    minimumMonths: 1,
     paymentFrequency: "MONTHLY",
     district: "",
     city: "",
@@ -491,6 +492,8 @@ export default function CreatePropertyPage() {
                 onDepositChange={(value) => updateForm({ deposit: value })}
                 onAgencyFeeChange={(value) => updateForm({ agencyFee: value })}
                 onServiceChargeChange={(value) => updateForm({ serviceCharge: value })}
+                minimumMonths={form.minimumMonths}
+                onMinimumMonthsChange={(value) => updateForm({ minimumMonths: value })}
               />
             </div>
           )}

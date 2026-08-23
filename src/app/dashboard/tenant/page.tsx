@@ -15,19 +15,49 @@ import {
   ArrowRight,
   Clock,
   CheckCircle,
+  DollarSign,
+  Wrench,
+  AlertTriangle,
+  File,
+  Download,
+  Building2,
+  User,
+  ClipboardList,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
+import TenantSidebar from "@/components/tenant/tenant-sidebar";
 import PropertyCard from "@/components/property/property-card";
 import { formatUGX, timeAgo } from "@/lib/utils";
-import { toast } from "sonner";
+
+type Tenancy = {
+  id: string;
+  status: string;
+  moveInDate: string | null;
+  moveOutDate: string | null;
+  noticeGivenAt: string | null;
+  noticeDeadline: string | null;
+  property: { id: string; title: string; rent: number; district: string | null; city: string | null; slug?: string };
+  unit: { id: string; unitNumber: string } | null;
+  leases: { id: string; endDate: string; rentAmount: number; status: string }[];
+  _count: { rentCharges: number; maintenanceRequests: number };
+};
+
+type RentSummary = {
+  totalDue: number;
+  totalPaid: number;
+  outstanding: number;
+  overdueCount: number;
+};
 
 export default function TenantDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [savedProperties, setSavedProperties] = useState<any[]>([]);
+  const [tenancies, setTenancies] = useState<Tenancy[]>([]);
+  const [rentSummary, setRentSummary] = useState<RentSummary | null>(null);
   const [viewings, setViewings] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
+  const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,25 +72,61 @@ export default function TenantDashboard() {
 
   async function fetchData() {
     try {
-      const [viewingsRes, appsRes, convsRes] = await Promise.all([
+      const [tenRes, viewRes, appsRes, convsRes, noticesRes] = await Promise.all([
+        fetch("/api/tenancies?limit=10"),
         fetch("/api/viewings?role=tenant"),
         fetch("/api/applications?role=tenant"),
         fetch("/api/conversations"),
+        fetch("/api/notices?unread=true"),
       ]);
-      const [viewingsData, appsData, convsData] = await Promise.all([
-        viewingsRes.json(),
+      const [tenData, viewData, appsData, convsData, noticesData] = await Promise.all([
+        tenRes.json(),
+        viewRes.json(),
         appsRes.json(),
         convsRes.json(),
+        noticesRes.json(),
       ]);
-      setViewings(viewingsData.viewings || []);
+
+      const tenancyList = tenData.tenancies || [];
+      setTenancies(tenancyList);
+      setViewings(viewData.viewings || []);
       setApplications(appsData.applications || []);
       setConversations(convsData.conversations || []);
+      setNotices(noticesData.notices || []);
+
+      // Fetch rent summary for active tenancy
+      const activeTenancy = tenancyList.find((t: Tenancy) =>
+        ["ACTIVE", "NOTICE_GIVEN"].includes(t.status)
+      );
+      if (activeTenancy) {
+        const rentRes = await fetch(`/api/rent?tenancyId=${activeTenancy.id}`);
+        if (rentRes.ok) {
+          const rentData = await rentRes.json();
+          setRentSummary(rentData.summary || null);
+        }
+      }
     } catch (error) {
       console.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   }
+
+  const activeTenancy = tenancies.find((t) =>
+    ["ACTIVE", "PENDING", "NOTICE_GIVEN", "MOVE_OUT_SCHEDULED"].includes(t.status)
+  );
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case "ACTIVE": return "bg-green-100 text-green-800";
+      case "PENDING": return "bg-yellow-100 text-yellow-800";
+      case "NOTICE_GIVEN":
+      case "MOVE_OUT_SCHEDULED": return "bg-orange-100 text-orange-800";
+      case "ENDED":
+      case "TERMINATED": return "bg-gray-100 text-gray-600";
+      default: return "bg-gray-100 text-gray-600";
+    }
+  };
 
   return (
     <MainLayout>
@@ -81,20 +147,142 @@ export default function TenantDashboard() {
                 Find a House
               </Link>
             </div>
+
+            {/* Navigation Sidebar */}
+            <div className="mt-6">
+              <TenantSidebar
+                navItems={[
+                  { label: "Dashboard", href: "/dashboard/tenant", icon: Home },
+                  { label: "My Home", href: "/dashboard/tenant/tenancy", icon: Building2 },
+                  { label: "Applications", href: "/dashboard/tenant/applications", icon: ClipboardList, badge: applications.filter((a: any) => ["SUBMITTED", "UNDER_REVIEW"].includes(a.status)).length || undefined },
+                  { label: "Payments", href: "/dashboard/tenant/payments", icon: DollarSign },
+                  { label: "Maintenance", href: "/dashboard/tenant/maintenance", icon: Wrench, badge: activeTenancy?._count?.maintenanceRequests },
+                  { label: "Notices", href: "/dashboard/tenant/notices", icon: Bell, badge: notices.length || undefined },
+                  { label: "Documents", href: "/dashboard/tenant/documents", icon: FileText },
+                  { label: "Profile", href: "/dashboard/tenant/profile", icon: User },
+                ]}
+              />
+            </div>
           </div>
         </div>
 
         <div className="page-container py-6 space-y-8">
+          {/* Active Tenancy Card */}
+          {activeTenancy && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {activeTenancy.property.title}
+                    </h2>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor(activeTenancy.status)}`}>
+                      {activeTenancy.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {activeTenancy.unit ? `Unit ${activeTenancy.unit.unitNumber} · ` : ""}
+                    {activeTenancy.property.district}
+                    {activeTenancy.property.city ? `, ${activeTenancy.property.city}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {activeTenancy.leases?.[0] && (
+                  <>
+                    <div className="rounded-lg bg-gray-50 p-3">
+                      <p className="text-xs text-gray-500">Monthly Rent</p>
+                      <p className="mt-1 text-sm font-bold text-gray-900">
+                        {formatUGX(activeTenancy.leases[0].rentAmount)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3">
+                      <p className="text-xs text-gray-500">Lease Expires</p>
+                      <p className="mt-1 text-sm font-medium text-gray-900">
+                        {new Date(activeTenancy.leases[0].endDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </>
+                )}
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs text-gray-500">Move-in Date</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">
+                    {activeTenancy.moveInDate
+                      ? new Date(activeTenancy.moveInDate).toLocaleDateString()
+                      : "TBD"}
+                  </p>
+                </div>
+                {rentSummary && (
+                  <div className={`rounded-lg p-3 ${rentSummary.outstanding > 0 ? "bg-red-50" : "bg-green-50"}`}>
+                    <p className="text-xs text-gray-500">Balance Due</p>
+                    <p className={`mt-1 text-sm font-bold ${rentSummary.outstanding > 0 ? "text-red-700" : "text-green-700"}`}>
+                      {formatUGX(rentSummary.outstanding)}
+                    </p>
+                    {rentSummary.overdueCount > 0 && (
+                      <p className="mt-0.5 text-xs text-red-600">
+                        {rentSummary.overdueCount} overdue charge{rentSummary.overdueCount !== 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Link
+                  href="/dashboard/tenant/payments"
+                  className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100"
+                >
+                  <DollarSign className="h-4 w-4" /> Pay Rent
+                </Link>
+                <Link
+                  href="/dashboard/tenant/maintenance"
+                  className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                >
+                  <Wrench className="h-4 w-4" /> Maintenance
+                </Link>
+                <Link
+                  href="/dashboard/tenant/notices"
+                  className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100"
+                >
+                  <Bell className="h-4 w-4" /> Notices
+                </Link>
+                <Link
+                  href="/dashboard/tenant/documents"
+                  className="flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-sm font-medium text-orange-700 hover:bg-orange-100"
+                >
+                  <File className="h-4 w-4" /> Documents
+                </Link>
+              </div>
+
+              {activeTenancy.status === "NOTICE_GIVEN" && (
+                <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <p className="text-sm font-medium text-orange-800">Notice Given</p>
+                  </div>
+                  <p className="mt-1 text-xs text-orange-700">
+                    Your move-out deadline:{" "}
+                    {activeTenancy.noticeDeadline
+                      ? new Date(activeTenancy.noticeDeadline).toLocaleDateString()
+                      : "TBD"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div className="card p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                  <Heart className="h-5 w-5" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Home className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{savedProperties.length || 0}</p>
-                  <p className="text-sm text-gray-500">Saved</p>
+                  <p className="text-2xl font-bold text-gray-900">{tenancies.length}</p>
+                  <p className="text-sm text-gray-500">Tenancies</p>
                 </div>
               </div>
             </div>

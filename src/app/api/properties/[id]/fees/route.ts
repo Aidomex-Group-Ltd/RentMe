@@ -42,6 +42,7 @@ export async function GET(
         agencyFee: true,
         serviceCharge: true,
         paymentFrequency: true,
+        minimumMonths: true,
         isAgentListing: true,
       },
     });
@@ -102,7 +103,6 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { minimumMonths } = body;
 
     // Validate & coerce fee amounts — reject non-numeric/negative values
     // with a clear 400 instead of a Prisma runtime error.
@@ -121,6 +121,21 @@ export async function POST(
       );
     }
 
+    // Landlord-chosen minimum months (optional whole number 1-12;
+    // explicit null/"" clears back to paymentFrequency-derived default)
+    let minimumMonths: number | null | undefined;
+    if (body.minimumMonths === null || body.minimumMonths === "") {
+      minimumMonths = null;
+    } else if (body.minimumMonths !== undefined) {
+      minimumMonths = Number(body.minimumMonths);
+      if (!Number.isInteger(minimumMonths) || minimumMonths < 1 || minimumMonths > 12) {
+        return NextResponse.json(
+          { error: "minimumMonths must be a whole number between 1 and 12" },
+          { status: 400 }
+        );
+      }
+    }
+
     const paymentFrequency = body.paymentFrequency as string | undefined;
     if (
       paymentFrequency !== undefined &&
@@ -136,7 +151,7 @@ export async function POST(
     const validationError = validateFeeConfig({
       deposit: deposit ?? undefined,
       agencyFee: agencyFee ?? undefined,
-      minimumMonths,
+      ...(typeof minimumMonths === "number" ? { minimumMonths } : {}),
       isAgentListing: property.isAgentListing,
     });
 
@@ -149,6 +164,7 @@ export async function POST(
       agencyFee?: number | null;
       serviceCharge?: number | null;
       paymentFrequency?: PaymentFrequency;
+      minimumMonths?: number | null;
     } = {};
 
     if (deposit !== undefined) {
@@ -167,6 +183,10 @@ export async function POST(
       updateData.paymentFrequency = paymentFrequency as PaymentFrequency;
     }
 
+    if (minimumMonths !== undefined) {
+      updateData.minimumMonths = minimumMonths;
+    }
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "No fee updates provided" }, { status: 400 });
     }
@@ -181,6 +201,7 @@ export async function POST(
         agencyFee: true,
         serviceCharge: true,
         paymentFrequency: true,
+        minimumMonths: true,
         isAgentListing: true,
       },
     });

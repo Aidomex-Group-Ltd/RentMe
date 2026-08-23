@@ -94,19 +94,28 @@ export function calculatePropertyFeesFromProperty(property: {
   agencyFee?: number | null;
   serviceCharge?: number | null;
   paymentFrequency?: string;
+  /** Landlord-chosen minimum months; takes precedence over paymentFrequency when valid. */
+  minimumMonths?: number | null;
   isAgentListing?: boolean;
 }): FeeBreakdown {
+  const storedMinimumMonths =
+    property.minimumMonths && Number.isFinite(property.minimumMonths) && property.minimumMonths > 0
+      ? Math.min(12, Math.round(property.minimumMonths))
+      : undefined;
+
   return calculatePropertyFees({
     monthlyRent: property.rent,
     deposit: property.deposit,
     agencyFee: property.agencyFee,
     // Use the stored serviceCharge if provided, but always recalculate
     // to ensure consistency with the 5% rule
-    minimumMonths: property.paymentFrequency === "ANNUALLY" ? 12
-      : property.paymentFrequency === "QUARTERLY" ? 3
-      : property.paymentFrequency === "MONTHLY" ? 1
-      : property.paymentFrequency === "WEEKLY" ? 4
-      : 1,
+    minimumMonths: storedMinimumMonths
+      ? storedMinimumMonths
+      : property.paymentFrequency === "ANNUALLY" ? 12
+        : property.paymentFrequency === "QUARTERLY" ? 3
+          : property.paymentFrequency === "MONTHLY" ? 1
+            : property.paymentFrequency === "WEEKLY" ? 4
+              : 1,
     isAgentListing: property.isAgentListing,
   });
 }

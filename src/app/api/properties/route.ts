@@ -251,6 +251,8 @@ const createPropertySchema = z.object({
   paymentFrequency: z
     .enum(["MONTHLY", "WEEKLY", "DAILY", "QUARTERLY", "ANNUALLY"])
     .default("MONTHLY"),
+  /** Landlord-chosen minimum months due upfront; null/omitted derives from frequency */
+  minimumMonths: z.coerce.number().int().min(1).max(12).optional(),
   district: optionalTrimmedString,
   city: optionalTrimmedString,
   neighborhood: optionalTrimmedString,
@@ -370,6 +372,7 @@ export async function POST(req: NextRequest) {
         agencyFee: data.agencyFee ?? null,
         serviceCharge: data.serviceCharge ?? null,
         paymentFrequency: data.paymentFrequency,
+        minimumMonths: data.minimumMonths ?? null,
         district: data.district ?? null,
         city: data.city ?? null,
         neighborhood: data.neighborhood ?? null,

@@ -25,9 +25,14 @@ const ALLOWED_EXTENSIONS = new Set([
 function detectVideoMime(buffer: Buffer): string | null {
   // Check common video file signatures
   if (buffer.length >= 12) {
-    // MP4/MOV: ftyp at offset 4
+    // MP4/MOV: ISO-BMFF "ftyp" box at offset 4. Brand at offset 8 tells
+    // QuickTime ("qt..") apart from MP4 families; both are the same
+    // container family, so unknown brands default to mp4.
     const ftyp = buffer.subarray(4, 8).toString("ascii");
-    if (ftyp === "ftyp") return "video/mp4";
+    if (ftyp === "ftyp") {
+      const brand = buffer.subarray(8, 12).toString("ascii");
+      return brand.startsWith("qt") ? "video/quicktime" : "video/mp4";
+    }
 
     // WebM/MKV: EBML header
     if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
@@ -45,29 +50,14 @@ function detectVideoMime(buffer: Buffer): string | null {
   return null;
 }
 
-function mimeFromFileName(name: string): string | null {
-  const ext = name.split(".").pop()?.toLowerCase();
-  switch (ext) {
-    case "mp4": return "video/mp4";
-    case "webm": return "video/webm";
-    case "avi": return "video/avi";
-    case "mov": return "video/quicktime";
-    case "mkv": return "video/x-matroska";
-    case "ogg": return "video/ogg";
-    default: return null;
-  }
-}
-
-function normalizeContentType(raw: string | undefined, fileName: string, buffer: Buffer): string | null {
-  const declared = (raw || "").toLowerCase().trim();
-  if (ALLOWED_VIDEO_TYPES.has(declared)) return declared;
-
-  // Try sniffing bytes
-  const detected = detectVideoMime(buffer);
-  if (detected) return detected;
-
-  // Fall back to extension
-  return mimeFromFileName(fileName);
+/**
+ * Magic bytes are authoritative. A client-declared Content-Type or a
+ * filename extension can NEVER grant acceptance on its own — they are
+ * ignored entirely for the accept/reject decision (gate: MIME verification
+ * beyond file.type).
+ */
+function normalizeContentType(_raw: string | undefined, _fileName: string, buffer: Buffer): string | null {
+  return detectVideoMime(buffer);
 }
 
 export async function POST(req: NextRequest) {
@@ -175,7 +165,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(uploaded, { status: 201 });
   } catch (error) {
     console.error("Video upload error:", error);
-    const message = error instanceof Error ? error.message : "Failed to upload video";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to upload video. Please try again." },
+      { status: 500 }
+    );
   }
 }

@@ -188,6 +188,7 @@ const updatePropertySchema = z.object({
   agencyFee: optionalNumber,
   serviceCharge: optionalNumber,
   paymentFrequency: z.enum(["MONTHLY", "WEEKLY", "DAILY", "QUARTERLY", "ANNUALLY"]).optional(),
+  minimumMonths: z.coerce.number().int().min(1).max(12).optional(),
   district: optionalTrimmed,
   city: optionalTrimmed,
   neighborhood: optionalTrimmed,

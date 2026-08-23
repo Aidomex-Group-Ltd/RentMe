@@ -1,290 +1,553 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuth, isPropertyManager } from "@/lib/rbac";
 import prisma from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
-import {
-  areReportsEnabled,
-  applyAdminPropertyAction,
-  descriptionRequired,
-  isReportReason,
-  minDescriptionLength,
-  notifyAdminsOfNewReport,
-  REPORT_SEVERITY,
-  syncPropertyFlagState,
-} from "@/lib/flagging";
 
-const OPEN_STATUSES = ["PENDING", "UNDER_REVIEW"] as const;
-
-// POST /api/reports - Submit a report
-export async function POST(req: NextRequest) {
+// GET /api/reports?type=occupancy|financial|maintenance|lease&propertyId=xxx
+export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
 
-    if (!(await areReportsEnabled())) {
+    if (!isPropertyManager(auth.session.user.role) && auth.session.user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Reporting is temporarily disabled" },
+        { error: "Only landlords, agents, or admins can access reports" },
         { status: 403 }
       );
     }
 
-    const body: unknown = await req.json();
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-    }
-
-    const payload = body as Record<string, unknown>;
-    const propertyId = typeof payload.propertyId === "string" ? payload.propertyId.trim() : "";
-    const subjectId = typeof payload.subjectId === "string" ? payload.subjectId.trim() : "";
-    const reasonRaw = payload.reason;
-    const description =
-      typeof payload.description === "string" ? payload.description.trim() : "";
-
-    if (!isReportReason(reasonRaw)) {
-      return NextResponse.json({ error: "Please select a valid reason" }, { status: 400 });
-    }
-
-    if (!propertyId && !subjectId) {
-      return NextResponse.json(
-        { error: "A property or user is required to file a report" },
-        { status: 400 }
-      );
-    }
-
-    const minLen = minDescriptionLength(reasonRaw);
-    if (descriptionRequired(reasonRaw) && description.length < minLen) {
-      return NextResponse.json(
-        {
-          error: `Please add more detail (at least ${minLen} characters) so we can investigate`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const reporter = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, name: true, status: true },
-    });
-    if (!reporter || reporter.status === "BANNED" || reporter.status === "SUSPENDED") {
-      return NextResponse.json({ error: "Your account cannot submit reports" }, { status: 403 });
-    }
-
-    const property = propertyId
-      ? await prisma.property.findFirst({
-          where: { id: propertyId, deletedAt: null },
-          select: { id: true, title: true, userId: true, slug: true },
-        })
-      : null;
-
-    if (propertyId && !property) {
-      return NextResponse.json({ error: "Property not found" }, { status: 404 });
-    }
-
-    if (property && property.userId === session.user.id) {
-      return NextResponse.json({ error: "You cannot report your own listing" }, { status: 400 });
-    }
-
-    const resolvedSubjectId = subjectId || property?.userId || null;
-    if (resolvedSubjectId === session.user.id) {
-      return NextResponse.json({ error: "You cannot report yourself" }, { status: 400 });
-    }
-
-    if (resolvedSubjectId) {
-      const subject = await prisma.user.findUnique({
-        where: { id: resolvedSubjectId },
-        select: { id: true },
-      });
-      if (!subject) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
-    }
-
-    const duplicate = await prisma.report.findFirst({
-      where: {
-        reporterId: session.user.id,
-        status: { in: [...OPEN_STATUSES] },
-        ...(property
-          ? { propertyId: property.id }
-          : { subjectId: resolvedSubjectId, propertyId: null }),
-      },
-      select: { id: true },
-    });
-    if (duplicate) {
-      return NextResponse.json(
-        { error: "You already have an open report on this" },
-        { status: 409 }
-      );
-    }
-
-    const report = await prisma.report.create({
-      data: {
-        reporterId: session.user.id,
-        propertyId: property?.id ?? null,
-        subjectId: resolvedSubjectId,
-        reason: reasonRaw,
-        description: description || null,
-      },
-    });
-
-    if (property) {
-      await syncPropertyFlagState(property.id);
-    }
-
-    void notifyAdminsOfNewReport({
-      reason: reasonRaw,
-      propertyTitle: property?.title ?? null,
-      reporterName: reporter.name,
-    }).catch((error) => console.error("Report admin notify failed:", error));
-
-    return NextResponse.json({ report }, { status: 201 });
-  } catch (error) {
-    console.error("Report creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to submit report" },
-      { status: 500 }
-    );
-  }
-}
-
-// GET /api/reports - List reports (admin only)
-export async function GET(req: NextRequest) {
-  try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return auth.response;
-
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status");
-    const reason = searchParams.get("reason");
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20));
+    const type = searchParams.get("type") || "overview";
+    const propertyId = searchParams.get("propertyId");
 
-    const where: Record<string, unknown> = {};
-    if (status) where.status = status;
-    if (reason && isReportReason(reason)) where.reason = reason;
+    // Base property filter: only properties this user manages
+    const propertyWhere: any = {};
+    if (auth.session.user.role !== "ADMIN") {
+      propertyWhere.userId = auth.session.user.id;
+    }
+    if (propertyId) {
+      propertyWhere.id = propertyId;
+    }
 
-    const [reports, total] = await Promise.all([
-      prisma.report.findMany({
-        where,
-        include: {
-          reporter: {
-            select: { id: true, name: true, email: true, phoneVerified: true },
-          },
-          property: {
-            select: {
-              id: true,
-              title: true,
-              district: true,
-              slug: true,
-              status: true,
-              isFlagged: true,
-              flagReason: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.report.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      reports,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    const properties = await prisma.property.findMany({
+      where: propertyWhere,
+      select: { id: true, title: true, rent: true, status: true },
     });
+    const propertyIds = properties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return NextResponse.json({ report: getEmptyReport(type) });
+    }
+
+    switch (type) {
+      case "occupancy":
+        return NextResponse.json({
+          report: await buildOccupancyReport(propertyIds, properties),
+        });
+      case "financial":
+        return NextResponse.json({
+          report: await buildFinancialReport(propertyIds),
+        });
+      case "maintenance":
+        return NextResponse.json({
+          report: await buildMaintenanceReport(propertyIds),
+        });
+      case "lease":
+        return NextResponse.json({
+          report: await buildLeaseReport(propertyIds),
+        });
+      case "overview":
+      default:
+        return NextResponse.json({
+          report: await buildOverviewReport(propertyIds, properties),
+        });
+    }
   } catch (error) {
-    console.error("Reports fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch reports" },
-      { status: 500 }
-    );
+    console.error("Report error:", error);
+    return NextResponse.json({ error: "Failed to generate report" }, { status: 500 });
   }
 }
 
-// PATCH /api/reports - Resolve / dismiss / review (admin only)
-export async function PATCH(req: NextRequest) {
-  try {
-    const auth = await requireAdmin();
-    if (!auth.ok) return auth.response;
+// ─── Overview Report ────────────────────────────────────
 
-    const body = await req.json();
-    const reportId = typeof body.reportId === "string" ? body.reportId : "";
-    const status = body.status as string | undefined;
-    const adminNotes = typeof body.adminNotes === "string" ? body.adminNotes : undefined;
-    const propertyActionRaw = body.propertyAction;
-    const propertyAction =
-      propertyActionRaw === "suspend" ||
-      propertyActionRaw === "restore" ||
-      propertyActionRaw === "none"
-        ? propertyActionRaw
-        : undefined;
+async function buildOverviewReport(propertyIds: string[], properties: any[]) {
+  const [unitStats, tenantStats, maintenanceStats, financialStats] = await Promise.all([
+    prisma.unit.groupBy({
+      by: ["status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+    prisma.tenancy.groupBy({
+      by: ["status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+    prisma.maintenanceRequest.groupBy({
+      by: ["status"],
+      where: {
+        propertyId: { in: propertyIds },
+        status: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] },
+      },
+      _count: true,
+    }),
+    prisma.rentCharge.aggregate({
+      where: {
+        tenancy: { propertyId: { in: propertyIds } },
+        status: { in: ["PENDING", "OVERDUE", "PARTIAL"] },
+      },
+      _sum: { amount: true, paidAmount: true },
+      _count: true,
+    }),
+  ]);
 
-    const allowed = ["PENDING", "UNDER_REVIEW", "RESOLVED", "DISMISSED"];
-    if (!reportId || !status || !allowed.includes(status)) {
-      return NextResponse.json({ error: "Invalid report update" }, { status: 400 });
-    }
+  const totalUnits = unitStats.reduce((acc, s) => acc + s._count, 0);
+  const occupiedUnits = unitStats.find((s) => s.status === "OCCUPIED")?._count || 0;
+  const availableUnits = unitStats.find((s) => s.status === "AVAILABLE")?._count || 0;
 
-    const existing = await prisma.report.findUnique({
-      where: { id: reportId },
+  const activeTenants = tenantStats.find((s) => s.status === "ACTIVE")?._count || 0;
+  const pendingTenants = tenantStats.find((s) => s.status === "PENDING")?._count || 0;
+
+  const openMaintenance = maintenanceStats.reduce((acc, s) => acc + s._count, 0);
+  const urgentMaintenance = maintenanceStats.find((s) => s.status === "SUBMITTED")?._count || 0;
+
+  const totalDue = financialStats._sum.amount || 0;
+  const totalPaid = financialStats._sum.paidAmount || 0;
+  const outstanding = totalDue - totalPaid;
+
+  return {
+    type: "overview",
+    properties: properties.length,
+    occupancy: {
+      totalUnits,
+      occupiedUnits,
+      availableUnits,
+      occupancyRate: totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0,
+    },
+    tenants: {
+      active: activeTenants,
+      pending: pendingTenants,
+      total: activeTenants + pendingTenants,
+    },
+    financial: {
+      outstanding,
+      totalDue,
+      totalPaid,
+    },
+    maintenance: {
+      open: openMaintenance,
+      urgent: urgentMaintenance,
+    },
+  };
+}
+
+// ─── Occupancy Report ───────────────────────────────────
+
+async function buildOccupancyReport(propertyIds: string[], properties: any[]) {
+  const [unitsByStatus, tenanciesByStatus, unitsByProperty] = await Promise.all([
+    prisma.unit.groupBy({
+      by: ["status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+    prisma.tenancy.groupBy({
+      by: ["status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+    prisma.unit.groupBy({
+      by: ["propertyId", "status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+  ]);
+
+  const totalUnits = unitsByStatus.reduce((acc, s) => acc + s._count, 0);
+  const occupiedUnits = unitsByStatus.find((s) => s.status === "OCCUPIED")?._count || 0;
+  const availableUnits = unitsByStatus.find((s) => s.status === "AVAILABLE")?._count || 0;
+  const reservedUnits = unitsByStatus.find((s) => s.status === "RESERVED")?._count || 0;
+  const maintenanceUnits = unitsByStatus.find((s) => s.status === "MAINTENANCE")?._count || 0;
+  const unavailableUnits = unitsByStatus.find((s) => s.status === "UNAVAILABLE")?._count || 0;
+
+  // Per-property breakdown
+  const perProperty = properties.map((prop) => {
+    const propUnits = unitsByProperty.filter((u) => u.propertyId === prop.id);
+    const propTotal = propUnits.reduce((acc, s) => acc + s._count, 0);
+    const propOccupied = propUnits.find((u) => u.status === "OCCUPIED")?._count || 0;
+    const propAvailable = propUnits.find((u) => u.status === "AVAILABLE")?._count || 0;
+
+    return {
+      propertyId: prop.id,
+      title: prop.title,
+      totalUnits: propTotal,
+      occupied: propOccupied,
+      available: propAvailable,
+      occupancyRate: propTotal > 0 ? Math.round((propOccupied / propTotal) * 100) : 0,
+    };
+  });
+
+  return {
+    type: "occupancy",
+    summary: {
+      totalUnits,
+      occupied: occupiedUnits,
+      available: availableUnits,
+      reserved: reservedUnits,
+      maintenance: maintenanceUnits,
+      unavailable: unavailableUnits,
+      occupancyRate: totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0,
+    },
+    activeTenancies: tenanciesByStatus.find((s) => s.status === "ACTIVE")?._count || 0,
+    pendingTenancies: tenanciesByStatus.find((s) => s.status === "PENDING")?._count || 0,
+    noticeGiven: tenanciesByStatus.find((s) => s.status === "NOTICE_GIVEN")?._count || 0,
+    perProperty,
+  };
+}
+
+// ─── Financial Report ───────────────────────────────────
+
+async function buildFinancialReport(propertyIds: string[]) {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+  const [
+    chargesByStatus,
+    totalChargesAgg,
+    overdueCharges,
+    recentPayments,
+    last30DaysPayments,
+    last90DaysPayments,
+    paymentsByMethod,
+  ] = await Promise.all([
+    prisma.rentCharge.groupBy({
+      by: ["status"],
+      where: { tenancy: { propertyId: { in: propertyIds } } },
+      _count: true,
+      _sum: { amount: true, paidAmount: true },
+    }),
+    prisma.rentCharge.aggregate({
+      where: { tenancy: { propertyId: { in: propertyIds } } },
+      _sum: { amount: true, paidAmount: true, lateFee: true },
+      _count: true,
+    }),
+    prisma.rentCharge.findMany({
+      where: {
+        tenancy: { propertyId: { in: propertyIds } },
+        status: { in: ["OVERDUE", "PARTIAL"] },
+      },
       include: {
-        property: { select: { id: true, status: true, isFlagged: true } },
+        tenancy: {
+          include: {
+            tenant: { select: { id: true, name: true } },
+            property: { select: { title: true } },
+            unit: { select: { unitNumber: true } },
+          },
+        },
       },
-    });
-    if (!existing) {
-      return NextResponse.json({ error: "Report not found" }, { status: 404 });
-    }
-
-    const report = await prisma.report.update({
-      where: { id: reportId },
-      data: {
-        status: status as "PENDING" | "UNDER_REVIEW" | "RESOLVED" | "DISMISSED",
-        ...(adminNotes !== undefined ? { adminNotes } : {}),
-        ...(status === "RESOLVED" || status === "DISMISSED"
-          ? { resolvedBy: auth.user.id, resolvedAt: new Date() }
-          : {}),
+      orderBy: { dueDate: "asc" },
+      take: 50,
+    }),
+    prisma.rentPayment.findMany({
+      where: {
+        rentCharge: { tenancy: { propertyId: { in: propertyIds } } },
+        status: "completed",
       },
-    });
-
-    if (existing.propertyId) {
-      const severity = isReportReason(existing.reason)
-        ? REPORT_SEVERITY[existing.reason]
-        : "LOW";
-      const defaultAction =
-        status === "RESOLVED" &&
-        severity === "HIGH" &&
-        existing.property?.status !== "SUSPENDED"
-          ? "suspend"
-          : "none";
-      const action = propertyAction ?? defaultAction;
-
-      if (action === "suspend" || action === "restore") {
-        await applyAdminPropertyAction(existing.propertyId, action, {
-          reason: existing.reason,
-        });
-      } else {
-        await syncPropertyFlagState(existing.propertyId);
-      }
-    }
-
-    await prisma.auditLog.create({
-      data: {
-        userId: auth.user.id,
-        action: "UPDATE",
-        entity: "Report",
-        entityId: reportId,
-        oldData: { status: existing.status },
-        newData: { status, adminNotes, propertyAction: propertyAction ?? null },
+      include: {
+        user: { select: { name: true } },
+        rentCharge: { select: { dueDate: true, description: true } },
       },
-    });
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.rentPayment.aggregate({
+      where: {
+        rentCharge: { tenancy: { propertyId: { in: propertyIds } } },
+        status: "completed",
+        createdAt: { gte: thirtyDaysAgo },
+      },
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.rentPayment.aggregate({
+      where: {
+        rentCharge: { tenancy: { propertyId: { in: propertyIds } } },
+        status: "completed",
+        createdAt: { gte: ninetyDaysAgo },
+      },
+      _sum: { amount: true },
+      _count: true,
+    }),
+    prisma.rentPayment.groupBy({
+      by: ["paymentMethod"],
+      where: {
+        rentCharge: { tenancy: { propertyId: { in: propertyIds } } },
+        status: "completed",
+      },
+      _sum: { amount: true },
+      _count: true,
+    }),
+  ]);
 
-    return NextResponse.json({ report });
-  } catch (error) {
-    console.error("Reports PATCH error:", error);
-    return NextResponse.json({ error: "Failed to update report" }, { status: 500 });
+  const totalDue = totalChargesAgg._sum.amount || 0;
+  const totalPaid = totalChargesAgg._sum.paidAmount || 0;
+  const totalLateFees = totalChargesAgg._sum.lateFee || 0;
+
+  return {
+    type: "financial",
+    summary: {
+      totalDue,
+      totalPaid,
+      outstanding: totalDue - totalPaid,
+      lateFees: totalLateFees,
+      totalCharges: totalChargesAgg._count,
+    },
+    collectionRate: totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 100,
+    last30Days: {
+      collected: last30DaysPayments._sum.amount || 0,
+      transactions: last30DaysPayments._count,
+    },
+    last90Days: {
+      collected: last90DaysPayments._sum.amount || 0,
+      transactions: last90DaysPayments._count,
+    },
+    overdue: overdueCharges.map((c) => ({
+      id: c.id,
+      amount: c.amount,
+      paidAmount: c.paidAmount,
+      outstanding: c.amount - c.paidAmount,
+      dueDate: c.dueDate,
+      tenant: c.tenancy.tenant.name,
+      property: c.tenancy.property.title,
+      unit: c.tenancy.unit?.unitNumber || null,
+      daysOverdue: Math.floor((now.getTime() - c.dueDate.getTime()) / 86400000),
+    })),
+    recentPayments: recentPayments.map((p) => ({
+      id: p.id,
+      amount: p.amount,
+      currency: p.currency,
+      paymentMethod: p.paymentMethod,
+      reference: p.reference,
+      payer: p.user.name,
+      dueDate: p.rentCharge.dueDate,
+      createdAt: p.createdAt,
+    })),
+    byMethod: paymentsByMethod.map((m) => ({
+      method: m.paymentMethod || "unknown",
+      total: m._sum.amount || 0,
+      count: m._count,
+    })),
+    chargesByStatus: chargesByStatus.map((s) => ({
+      status: s.status,
+      count: s._count,
+      totalAmount: s._sum.amount || 0,
+      totalPaid: s._sum.paidAmount || 0,
+    })),
+  };
+}
+
+// ─── Maintenance Report ─────────────────────────────────
+
+async function buildMaintenanceReport(propertyIds: string[]) {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const [byStatus, byPriority, byCategory, recentResolved, totalCount] = await Promise.all([
+    prisma.maintenanceRequest.groupBy({
+      by: ["status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+    prisma.maintenanceRequest.groupBy({
+      by: ["priority"],
+      where: {
+        propertyId: { in: propertyIds },
+        status: { notIn: ["RESOLVED", "CLOSED", "CANCELLED"] },
+      },
+      _count: true,
+    }),
+    prisma.maintenanceRequest.groupBy({
+      by: ["category"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+    }),
+    prisma.maintenanceRequest.findMany({
+      where: {
+        propertyId: { in: propertyIds },
+        status: { in: ["RESOLVED", "CLOSED"] },
+        resolvedAt: { gte: thirtyDaysAgo },
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        priority: true,
+        createdAt: true,
+        resolvedAt: true,
+      },
+      orderBy: { resolvedAt: "desc" },
+      take: 20,
+    }),
+    prisma.maintenanceRequest.count({
+      where: { propertyId: { in: propertyIds } },
+    }),
+  ]);
+
+  // Average resolution time (days) for recently resolved
+  const resolvedWithTime = recentResolved.filter((r) => r.resolvedAt);
+  const avgResolutionDays =
+    resolvedWithTime.length > 0
+      ? Math.round(
+          resolvedWithTime.reduce(
+            (acc, r) =>
+              acc +
+              (new Date(r.resolvedAt!).getTime() - new Date(r.createdAt).getTime()) /
+                86400000,
+            0
+          ) / resolvedWithTime.length
+        )
+      : 0;
+
+  const openCount = byStatus
+    .filter((s) => !["RESOLVED", "CLOSED", "CANCELLED"].includes(s.status))
+    .reduce((acc, s) => acc + s._count, 0);
+
+  const urgentCount =
+    byPriority.find((p) => p.priority === "URGENT")?._count || 0;
+
+  return {
+    type: "maintenance",
+    summary: {
+      total: totalCount,
+      open: openCount,
+      urgent: urgentCount,
+      resolvedLast30Days: resolvedWithTime.length,
+      avgResolutionDays,
+    },
+    byStatus: byStatus.map((s) => ({
+      status: s.status,
+      count: s._count,
+    })),
+    byPriority: byPriority.map((p) => ({
+      priority: p.priority,
+      count: p._count,
+    })),
+    byCategory: byCategory
+      .map((c) => ({
+        category: c.category || "Uncategorized",
+        count: c._count,
+      }))
+      .sort((a, b) => b.count - a.count),
+    recentResolved,
+  };
+}
+
+// ─── Lease Report ───────────────────────────────────────
+
+async function buildLeaseReport(propertyIds: string[]) {
+  const now = new Date();
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  const [byStatus, expiringWithin30, expiringWithin90, renewals] = await Promise.all([
+    prisma.lease.groupBy({
+      by: ["status"],
+      where: { propertyId: { in: propertyIds } },
+      _count: true,
+      _sum: { rentAmount: true },
+    }),
+    prisma.lease.findMany({
+      where: {
+        propertyId: { in: propertyIds },
+        status: { in: ["ACTIVE", "EXPIRING"] },
+        endDate: { lte: thirtyDaysFromNow, gte: now },
+      },
+      include: {
+        tenancy: {
+          include: {
+            tenant: { select: { id: true, name: true } },
+            property: { select: { title: true } },
+            unit: { select: { unitNumber: true } },
+          },
+        },
+      },
+      orderBy: { endDate: "asc" },
+    }),
+    prisma.lease.findMany({
+      where: {
+        propertyId: { in: propertyIds },
+        status: { in: ["ACTIVE", "EXPIRING"] },
+        endDate: { lte: ninetyDaysFromNow, gte: thirtyDaysFromNow },
+      },
+      include: {
+        tenancy: {
+          include: {
+            tenant: { select: { id: true, name: true } },
+            property: { select: { title: true } },
+            unit: { select: { unitNumber: true } },
+          },
+        },
+      },
+      orderBy: { endDate: "asc" },
+    }),
+    prisma.renewal.groupBy({
+      by: ["status"],
+      where: {
+        tenancy: { propertyId: { in: propertyIds } },
+      },
+      _count: true,
+    }),
+  ]);
+
+  return {
+    type: "lease",
+    summary: {
+      total: byStatus.reduce((acc, s) => acc + s._count, 0),
+      active: byStatus.find((s) => s.status === "ACTIVE")?._count || 0,
+      expiringSoon: expiringWithin30.length,
+      draft: byStatus.find((s) => s.status === "DRAFT")?._count || 0,
+      pendingSignature: byStatus.find((s) => s.status === "PENDING_SIGNATURE")?._count || 0,
+    },
+    byStatus: byStatus.map((s) => ({
+      status: s.status,
+      count: s._count,
+      totalRent: s._sum.rentAmount || 0,
+    })),
+    expiringWithin30Days: expiringWithin30.map((l) => ({
+      id: l.id,
+      endDate: l.endDate,
+      rentAmount: l.rentAmount,
+      tenant: l.tenancy.tenant.name,
+      property: l.tenancy.property.title,
+      unit: l.tenancy.unit?.unitNumber || null,
+    })),
+    expiringWithin90Days: expiringWithin90.map((l) => ({
+      id: l.id,
+      endDate: l.endDate,
+      rentAmount: l.rentAmount,
+      tenant: l.tenancy.tenant.name,
+      property: l.tenancy.property.title,
+      unit: l.tenancy.unit?.unitNumber || null,
+    })),
+    renewals: renewals.map((r) => ({
+      status: r.status,
+      count: r._count,
+    })),
+  };
+}
+
+// ─── Empty Report ───────────────────────────────────────
+
+function getEmptyReport(type: string) {
+  const base = { type, message: "No properties found" };
+  switch (type) {
+    case "occupancy":
+      return { ...base, summary: { totalUnits: 0, occupied: 0, available: 0, occupancyRate: 0 }, perProperty: [] };
+    case "financial":
+      return { ...base, summary: { totalDue: 0, totalPaid: 0, outstanding: 0 }, overdue: [], recentPayments: [] };
+    case "maintenance":
+      return { ...base, summary: { total: 0, open: 0, urgent: 0 }, byStatus: [], byPriority: [] };
+    case "lease":
+      return { ...base, summary: { total: 0, active: 0, expiringSoon: 0 }, byStatus: [], expiringWithin30Days: [] };
+    default:
+      return { ...base, occupancy: { occupancyRate: 0 }, financial: { outstanding: 0 }, maintenance: { open: 0 } };
   }
 }

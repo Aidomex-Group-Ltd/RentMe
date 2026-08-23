@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { deleteFromR2, keyFromPublicUrl } from "@/lib/r2";
 
 // GET /api/properties/[id]/videos - List videos for a property
 export async function GET(
@@ -62,6 +63,18 @@ export async function DELETE(
     }
 
     await prisma.propertyVideo.delete({ where: { id: videoId } });
+
+    // Best-effort storage cleanup — the DB row is the source of truth;
+    // a failed object delete must not fail the request (background
+    // lifecycle policies can catch strays).
+    const key = keyFromPublicUrl(video.url);
+    if (key) {
+      try {
+        await deleteFromR2(key);
+      } catch (storageError) {
+        console.error("Video storage delete failed:", { key, storageError });
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

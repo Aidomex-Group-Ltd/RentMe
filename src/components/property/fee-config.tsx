@@ -19,6 +19,9 @@ interface FeeConfigProps {
   onAgencyFeeChange: (value: number) => void;
   onServiceChargeChange: (value: number) => void;
   onPaymentMethodsChange?: (methods: string[]) => void;
+  /** Controlled minimum months; when omitted the component manages it internally. */
+  minimumMonths?: number;
+  onMinimumMonthsChange?: (value: number) => void;
 }
 
 export default function FeeConfig({
@@ -31,10 +34,20 @@ export default function FeeConfig({
   onAgencyFeeChange,
   onServiceChargeChange,
   onPaymentMethodsChange,
+  minimumMonths: controlledMinimumMonths,
+  onMinimumMonthsChange,
 }: FeeConfigProps) {
-  const [minimumMonths, setMinimumMonths] = useState(1);
+  const [internalMinimumMonths, setInternalMinimumMonths] = useState(1);
   const [paymentMethods, setPaymentMethods] = useState<string[]>(["mobile_money_mtn", "cash"]);
   const [showBreakdown, setShowBreakdown] = useState(true);
+
+  const minimumMonths =
+    controlledMinimumMonths ?? internalMinimumMonths;
+
+  const setMinimumMonths = (value: number) => {
+    setInternalMinimumMonths(value);
+    onMinimumMonthsChange?.(value);
+  };
 
   const fees: FeeBreakdown = calculatePropertyFees({
     monthlyRent: rent,
