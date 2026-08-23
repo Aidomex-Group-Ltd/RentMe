@@ -126,7 +126,7 @@ export default function TenantDocumentsPage() {
 
   return (
     <MainLayout>
-      <div className="bg-gray-50 min-h-screen pb-20 md:pb-0">
+      <div className="bg-gray-50 min-h-screen pb-20 md:pb-0 md:pl-64">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-6">
             <div className="flex items-center justify-between">

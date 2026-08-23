@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -17,6 +18,8 @@ import {
   ScrollText,
   LogOut,
   Key,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +125,8 @@ const QUICK_ACTIONS: NavItem[] = [
  * TenantSidebar - Shared navigation component for tenant dashboard pages
  *
  * Features:
- * - Responsive: horizontal on mobile, vertical sidebar on desktop
+ * - Desktop (md+): fixed rail anchored to the top and left viewport edges
+ * - Mobile: collapsed behind a hamburger menu with an overlay drawer
  * - Active state highlighting based on current route
  * - Optional badge counts for pending items
  * - Consistent with RentMe design system
@@ -147,6 +151,7 @@ export default function TenantSidebar({
   className,
 }: TenantSidebarProps) {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   /**
    * Check if a nav item is currently active
@@ -158,119 +163,132 @@ export default function TenantSidebar({
     return pathname.startsWith(href);
   };
 
-  return (
-    <nav className={cn("w-full", className)}>
-      {/* Mobile: Horizontal scrollable nav */}
-      <div className="md:hidden">
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-200 px-1 py-2">
-          {navItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-brand-50 text-brand-600"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
-                {item.badge !== undefined && item.badge !== 0 && (
-                  <span
-                    className={cn(
-                      "ml-1 rounded-full px-1.5 py-0.5 text-xs font-medium",
-                      item.badgeColor || "bg-red-100 text-red-700"
-                    )}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-          {QUICK_ACTIONS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-600"
+  const activeItem =
+    [...navItems, ...QUICK_ACTIONS].find((item) => isActive(item.href)) ??
+    null;
+
+  const linkClass = (active: boolean) =>
+    cn(
+      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+      active
+        ? "bg-brand-50 text-brand-600"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+    );
+
+  const renderNavItems = (onNavigate?: () => void) =>
+    navItems.map((item) => {
+      const active = isActive(item.href);
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={onNavigate}
+          className={linkClass(active)}
+        >
+          <item.icon
+            className={cn(
+              "h-5 w-5 shrink-0",
+              active
+                ? "text-brand-600"
+                : "text-gray-400 group-hover:text-gray-600"
+            )}
+          />
+          <span className="flex-1">{item.label}</span>
+          {item.badge !== undefined && item.badge !== 0 && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-medium",
+                item.badgeColor || "bg-red-100 text-red-700"
+              )}
             >
-              <item.icon className="h-4 w-4" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </div>
+              {item.badge}
+            </span>
+          )}
+          {active && <ChevronRight className="h-4 w-4 text-brand-400" />}
+        </Link>
+      );
+    });
+
+  const renderQuickActions = (onNavigate?: () => void) => (
+    <div className="space-y-1">
+      <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        Quick Actions
+      </p>
+      {QUICK_ACTIONS.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={onNavigate}
+          className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+        >
+          <item.icon className="h-5 w-5 shrink-0 text-gray-400 group-hover:text-brand-500" />
+          <span className="flex-1">{item.label}</span>
+        </Link>
+      ))}
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile: hamburger trigger */}
+      <div className="md:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation menu"
+          aria-expanded={mobileOpen}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+        >
+          <Menu className="h-5 w-5" />
+          <span>{activeItem?.label ?? "Menu"}</span>
+        </button>
       </div>
 
-      {/* Desktop: Vertical sidebar */}
-      <div className="hidden md:block">
-        <div className="sticky top-20 space-y-1">
-          {/* Main Navigation */}
-          <div className="space-y-1">
-            {navItems.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-brand-50 text-brand-600"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      "h-5 w-5 shrink-0",
-                      active
-                        ? "text-brand-600"
-                        : "text-gray-400 group-hover:text-gray-600"
-                    )}
-                  />
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge !== undefined && item.badge !== 0 && (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs font-medium",
-                        item.badgeColor || "bg-red-100 text-red-700"
-                      )}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                  {active && (
-                    <ChevronRight className="h-4 w-4 text-brand-400" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Divider */}
-          <div className="my-4 border-t border-gray-200" />
-
-          {/* Quick Actions */}
-          <div className="space-y-1">
-            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Quick Actions
-            </p>
-            {QUICK_ACTIONS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+      {/* Mobile: overlay drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/30"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-white shadow-xl">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-4">
+              <span className="font-display text-base font-bold text-brand-700">
+                RentMe Tenant
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation menu"
               >
-                <item.icon className="h-5 w-5 shrink-0 text-gray-400" />
-                <span className="flex-1">{item.label}</span>
-              </Link>
-            ))}
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+              {renderNavItems(() => setMobileOpen(false))}
+              <div className="my-4 border-t border-gray-200" />
+              {renderQuickActions(() => setMobileOpen(false))}
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      )}
+
+      {/* Desktop: fixed rail anchored to the top and left edges (below global navbar) */}
+      <aside
+        className={cn(
+          "hidden md:fixed md:inset-y-0 md:left-0 md:z-20 md:flex md:w-64 md:flex-col md:border-r md:border-gray-200 md:bg-white",
+          className
+        )}
+      >
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-6 pt-20">
+          {renderNavItems()}
+          <div className="my-4 border-t border-gray-200" />
+          {renderQuickActions()}
+        </nav>
+      </aside>
+    </>
   );
 }
 
@@ -310,7 +328,7 @@ export function TenantPageLayout({
   }));
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20 md:pb-0">
+    <div className="bg-gray-50 min-h-screen pb-20 md:pb-0 md:pl-64">
       {/* Header */}
       {(title || headerActions) && (
         <div className="bg-white border-b border-gray-100">

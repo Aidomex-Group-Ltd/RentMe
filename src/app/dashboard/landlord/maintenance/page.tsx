@@ -125,7 +125,7 @@ export default function LandlordMaintenancePage() {
 
   return (
     <MainLayout>
-      <div className="bg-gray-50 min-h-screen pb-20 md:pb-0">
+      <div className="bg-gray-50 min-h-screen pb-20 md:pb-0 md:pl-64">
         {/* Header */}
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-6">

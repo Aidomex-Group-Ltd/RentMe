@@ -11,8 +11,7 @@ import {
   FileText,
   Eye,
 } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
-import UnifiedSidebar from "@/components/home/unified-sidebar";
+import PlatformChrome from "@/components/home/platform-chrome";
 import { districtsByRegion, ugandanRegions } from "@/lib/uganda-districts";
 import { formatUGX } from "@/lib/utils";
 import prisma from "@/lib/prisma";
@@ -155,7 +154,7 @@ export default async function HomePage() {
   const featured = await getFeaturedProperties();
 
   return (
-    <MainLayout>
+    <PlatformChrome>
       <div className="bg-slate-50 font-sans text-slate-800">
         {/* ─── Hero + unified dashboard rail (first screen) ── */}
         <section className="relative overflow-hidden bg-slate-900 px-4 py-10 text-white sm:px-6 lg:py-14">
@@ -166,16 +165,7 @@ export default async function HomePage() {
           />
           <div className="absolute inset-0 z-0 bg-gradient-to-b from-slate-900/40 via-transparent to-slate-900/70" aria-hidden />
 
-          <div className="relative z-10 mx-auto grid max-w-7xl items-stretch gap-8 lg:grid-cols-[300px_1fr]">
-            {/* Unified multi-role dashboard rail — above the fold */}
-            <aside className="order-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
-              <UnifiedSidebar />
-              <p className="mt-3 text-center text-[11px] text-slate-400">
-                One rail, every role — pick a section to jump in.
-              </p>
-            </aside>
-
-            <div className="order-1 space-y-8 text-center lg:order-2 lg:py-6">
+          <div className="relative z-10 mx-auto max-w-4xl space-y-4 text-center">
             <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
               Discover Your Perfect Home Across Uganda
             </h1>
@@ -191,10 +181,9 @@ export default async function HomePage() {
                 Browse Featured Listings
               </Link>
             </div>
-          </div>
 
           {/* ─── Floating search card ─────────────────────── */}
-          <div className="relative z-20 col-span-full mx-auto w-full max-w-4xl rounded-xl bg-white p-6 text-slate-800 shadow-2xl lg:col-span-2">
+          <div className="relative z-20 mx-auto mt-10 w-full max-w-4xl rounded-xl bg-white p-6 text-slate-800 shadow-2xl">
             <h2 className="mb-4 text-center text-lg font-bold text-slate-900">
               Start Your Search Now
             </h2>
@@ -405,6 +394,6 @@ export default async function HomePage() {
           </div>
         </section>
       </div>
-    </MainLayout>
+    </PlatformChrome>
   );
 }

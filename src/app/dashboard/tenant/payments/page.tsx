@@ -97,7 +97,7 @@ export default function TenantPaymentsPage() {
 
   return (
     <MainLayout>
-      <div className="bg-gray-50 min-h-screen pb-20 md:pb-0">
+      <div className="bg-gray-50 min-h-screen pb-20 md:pb-0 md:pl-64">
         <div className="bg-white border-b border-gray-100">
           <div className="page-container py-6">
             <h1 className="text-2xl font-bold text-gray-900 font-display">Rent & Payments</h1>
