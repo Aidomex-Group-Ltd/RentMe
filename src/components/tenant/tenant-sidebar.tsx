@@ -14,6 +14,8 @@ import {
   MessageSquare,
   ChevronRight,
   ClipboardList,
+  ScrollText,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +55,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     icon: Building2,
   },
   {
+    label: "Lease",
+    href: "/dashboard/tenant/lease",
+    icon: ScrollText,
+  },
+  {
     label: "Applications",
     href: "/dashboard/tenant/applications",
     icon: ClipboardList,
@@ -76,6 +83,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     label: "Documents",
     href: "/dashboard/tenant/documents",
     icon: FileText,
+  },
+  {
+    label: "Move Out",
+    href: "/dashboard/tenant/move-out",
+    icon: LogOut,
   },
   {
     label: "Profile",

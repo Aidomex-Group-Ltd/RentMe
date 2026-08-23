@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ClipboardList,
   Building2,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +59,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     icon: Building2,
   },
   {
+    label: "Units",
+    href: "/dashboard/landlord/units",
+    icon: Home,
+  },
+  {
     label: "Tenants",
     href: "/dashboard/landlord/tenants",
     icon: Users,
@@ -73,6 +79,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     icon: FileText,
   },
   {
+    label: "Renewals",
+    href: "/dashboard/landlord/renewals",
+    icon: RefreshCw,
+  },
+  {
     label: "Maintenance",
     href: "/dashboard/landlord/maintenance",
     icon: Wrench,
@@ -86,6 +97,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     label: "Messages",
     href: "/messages",
     icon: MessageSquare,
+  },
+  {
+    label: "Settings",
+    href: "/dashboard/landlord/settings",
+    icon: Settings,
   },
 ];
 
