@@ -12,6 +12,9 @@ import {
   Eye,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
+import LandlordSidebar from "@/components/landlord/landlord-sidebar";
+import TenantSidebar from "@/components/tenant/tenant-sidebar";
+import { districtsByRegion, ugandanRegions } from "@/lib/uganda-districts";
 import { formatUGX } from "@/lib/utils";
 import prisma from "@/lib/prisma";
 
@@ -197,12 +200,16 @@ export default async function HomePage() {
                 aria-label="Location"
                 className="w-full rounded-md border border-slate-300 p-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-700"
               >
-                <option value="">Location (All Uganda)</option>
-                <option value="Kampala">Kampala</option>
-                <option value="Wakiso">Entebbe</option>
-                <option value="Jinja">Jinja</option>
-                <option value="Kabarole">Fort Portal</option>
-                <option value="Pallisa">Pallisa</option>
+                <option value="">Location (All Uganda — 100+ districts)</option>
+                {ugandanRegions.map((region) => (
+                  <optgroup key={region} label={`${region} Region`}>
+                    {districtsByRegion[region].map((district) => (
+                      <option key={district} value={district}>
+                        {district}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
 
               <select
@@ -341,6 +348,15 @@ export default async function HomePage() {
                 >
                   Landlord Solutions
                 </Link>
+
+                {/* Live landlord dashboard navigation — guests are routed
+                    through login contextually when they pick a section. */}
+                <div className="rounded-lg bg-white p-3">
+                  <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    Dashboard sections
+                  </p>
+                  <LandlordSidebar />
+                </div>
               </div>
 
               {/* Tenants */}
@@ -366,6 +382,15 @@ export default async function HomePage() {
                 >
                   Tenant Solutions
                 </Link>
+
+                {/* Live tenant dashboard navigation — guests are routed
+                    through login contextually when they pick a section. */}
+                <div className="rounded-lg bg-white p-3">
+                  <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    Dashboard sections
+                  </p>
+                  <TenantSidebar />
+                </div>
               </div>
             </div>
 
