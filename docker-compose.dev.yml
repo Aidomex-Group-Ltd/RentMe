@@ -10,7 +10,10 @@ services:
       POSTGRES_PASSWORD: rentme_dev_password
       POSTGRES_DB: rentme
     ports:
-      - "5432:5432"
+      # Host port defaults to 15433 because Windows-side Postgres installs
+      # often already claim 5432 inside WSL2 (mirrored localhost).
+      # Override with DEV_DB_HOST_PORT=5432 if that port is genuinely free.
+      - "${DEV_DB_HOST_PORT:-15433}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rentme -d rentme"]
       interval: 5s
