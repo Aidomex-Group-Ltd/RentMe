@@ -22,6 +22,11 @@ async function parseJson(res) {
 // ─── Cookie-jar auth helper (NextAuth credentials flow) ────
 function makeClient() {
   const jar = new Map();
+  // Synthetic per-client IP → isolated rate-limit buckets across suites
+  // (middleware and route limiters both honor X-Forwarded-For).
+  const xff = `10.${Math.floor(Math.random() * 200) + 10}.${Math.floor(Math.random() * 254)}.${Math.floor(Math.random() * 250) + 1}`;
+  const f = (url, opts = {}) =>
+    fetch(url, { ...opts, headers: { "X-Forwarded-For": xff, ...(opts.headers || {}) } });
   const storeCookies = (res) => {
     const raw = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [];
     const list = raw.length ? raw : (res.headers.get("set-cookie") || "").split(/,(?=\s*[^;]+=)/);
@@ -33,7 +38,7 @@ function makeClient() {
   };
   const cookie = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
   async function register(name, email, phone, password, role) {
-    const res = await fetch(`${BASE}/api/auth/register`, {
+    const res = await f(`${BASE}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, phone, password, role }),
@@ -44,10 +49,10 @@ function makeClient() {
     }
   }
   async function login(email, password) {
-    const csrfRes = await fetch(`${BASE}/api/auth/csrf`);
+    const csrfRes = await f(`${BASE}/api/auth/csrf`);
     storeCookies(csrfRes);
     const { csrfToken } = await parseJson(csrfRes);
-    const res = await fetch(`${BASE}/api/auth/callback/credentials`, {
+    const res = await f(`${BASE}/api/auth/callback/credentials`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookie() },
       body: new URLSearchParams({ csrfToken, email, password, json: "true", redirect: "false" }),
@@ -57,12 +62,12 @@ function makeClient() {
     assert(res.status === 200, `login ${email}`);
   }
   async function api(path, opts = {}) {
-    let res = await fetch(`${BASE}${path}`, { ...opts, headers: { ...(opts.headers || {}), Cookie: cookie() } });
+    let res = await f(`${BASE}${path}`, { ...opts, headers: { ...(opts.headers || {}), Cookie: cookie() } });
     if (res.status === 429 && !opts._retried) {
       const retryAfter = Number(res.headers.get("retry-after") || 60);
       console.log(`  … ${path} rate limited, waiting ${retryAfter}s`);
       await new Promise((r) => setTimeout(r, (retryAfter + 1) * 1000));
-      res = await fetch(`${BASE}${path}`, { ...opts, _retried: true, headers: { ...(opts.headers || {}), Cookie: cookie() } });
+      res = await f(`${BASE}${path}`, { ...opts, _retried: true, headers: { ...(opts.headers || {}), Cookie: cookie() } });
     }
     return res;
   }

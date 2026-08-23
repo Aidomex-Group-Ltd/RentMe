@@ -51,6 +51,22 @@ export default function SupportChatbot() {
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
 
+    // Offline fallback — fail fast without a doomed network round-trip.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `offline-${Date.now()}`,
+          role: "assistant",
+          content:
+            "You appear to be offline. Please check your connection and try again — or reach us at support@rentme.ug.",
+          timestamp: new Date().toISOString(),
+          quickReplies: ["Contact Support", "FAQ"],
+        } as ChatMessage,
+      ]);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -63,7 +79,7 @@ export default function SupportChatbot() {
     setIsTyping(true);
 
     try {
-      const res = await fetch("/api/chatbot", {
+      const res = await fetch("/api/chatbot/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

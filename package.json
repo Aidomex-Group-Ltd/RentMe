@@ -7,6 +7,14 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "test": "CI=true next lint",
+    "test:location": "tsx tests/stage1-location.test.ts",
+    "test:fees": "tsx tests/stage4-fees.test.ts",
+    "test:tms": "tsx tests/tms-state-machine.test.ts",
+    "test:tms:integration": "tsx tests/tms-integration.test.ts",
+    "test:tms:all": "tsx tests/tms-state-machine.test.ts && tsx tests/tms-integration.test.ts",
+    "test:geolocation": "tsx tests/stage6-geolocation.test.ts",
+    "test:chatbot": "tsx tests/stage7-chatbot.test.ts",
+    "test:gates": "npm run test:location && npm run test:fees && npm run test:tms:all && npm run test:geolocation && npm run test:chatbot",
     "lint": "CI=true next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
@@ -14,7 +22,14 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "test:e2e": "node scripts/e2e-auth-listings.mjs"
+    "test:e2e": "node scripts/e2e-auth-listings.mjs",
+    "test:e2e:messaging": "node tests/stage2-messaging.e2e.mjs",
+    "test:e2e:video": "node tests/stage3-video.e2e.mjs",
+    "test:e2e:fees": "node tests/stage45-fees.e2e.mjs",
+    "test:e2e:chatbot": "node tests/stage7-chatbot.e2e.mjs",
+    "test:e2e:smoke": "node scripts/e2e-stage14-smoke.mjs",
+    "test:e2e:security": "node scripts/e2e-security-audit.mjs",
+    "cron:rent-reminders": "tsx scripts/rent-reminders.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

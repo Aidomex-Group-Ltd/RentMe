@@ -280,6 +280,7 @@ export const config = {
     "/api/notifications",
     "/api/notifications/:path*",
     "/api/chatbot",
+    "/api/chatbot/:path*",
     "/api/inspections",
     "/api/inspections/:path*",
     "/api/auth/register",

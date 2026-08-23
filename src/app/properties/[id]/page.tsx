@@ -37,6 +37,7 @@ import {
 import MainLayout from "@/components/layout/main-layout";
 import ScamAlert from "@/components/property/scam-alert";
 import InspectionTracker from "@/components/property/inspection-tracker";
+import MessageLandlord from "@/components/messaging/message-landlord";
 import { calculatePropertyFeesFromProperty, type FeeBreakdown } from "@/lib/fees";
 import { formatUGX, timeAgo } from "@/lib/utils";
 import {
@@ -98,7 +99,6 @@ export default function PropertyDetailPage() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [showViewingModal, setShowViewingModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [messageText, setMessageText] = useState("");
   const [viewingDate, setViewingDate] = useState("");
   const [viewingTime, setViewingTime] = useState("");
   const [viewingPeople, setViewingPeople] = useState(1);
@@ -142,36 +142,6 @@ export default function PropertyDetailPage() {
       toast.success(data.saved ? "Property saved" : "Property removed from saved");
     } catch (error) {
       toast.error("Failed to save property");
-    }
-  };
-
-  const handleContact = async () => {
-    if (!session) {
-      router.push("/login");
-      return;
-    }
-    try {
-      const res = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          propertyId: property.id,
-          recipientId: property.user.id,
-        }),
-      });
-      const data = await res.json();
-      if (data.conversation) {
-        if (messageText) {
-          await fetch(`/api/conversations/${data.conversation.id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: messageText }),
-          });
-        }
-        router.push(`/messages/${data.conversation.id}`);
-      }
-    } catch (error) {
-      toast.error("Failed to start conversation");
     }
   };
 
@@ -801,19 +771,16 @@ export default function PropertyDetailPage() {
                 Never send money before viewing this property in person.
               </p>
             )}
-            <textarea
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              placeholder={`Hi, I'm interested in "${property.title}". Is it still available?`}
-              className="input mt-4"
-              rows={4}
+            <MessageLandlord
+              className="mt-4"
+              propertyId={property.id}
+              landlordId={property.user.id}
+              landlordName={property.user.name}
+              label="Send Message"
             />
-            <div className="mt-4 flex gap-3">
+            <div className="mt-3 flex">
               <button onClick={() => setShowContactModal(false)} className="btn-secondary flex-1">
                 Cancel
-              </button>
-              <button onClick={handleContact} className="btn-primary flex-1">
-                Send Message
               </button>
             </div>
           </div>

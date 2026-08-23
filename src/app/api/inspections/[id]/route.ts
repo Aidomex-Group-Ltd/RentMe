@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { calculateDistanceMeters } from "@/lib/geo";
 
 // GET /api/inspections/[id] - Get inspection session details
 export async function GET(
@@ -244,8 +245,8 @@ export async function PATCH(
 }
 
 /**
- * Calculate distance between two coordinates using Haversine formula.
- * Returns distance in meters.
+ * Distance math is shared with the client hook via src/lib/geo.ts so the
+ * server-side arrival authority and the live UI agree on every waypoint.
  */
 function calculateDistance(
   lat1: number,
@@ -253,19 +254,5 @@ function calculateDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(deg: number): number {
-  return (deg * Math.PI) / 180;
+  return calculateDistanceMeters(lat1, lon1, lat2, lon2);
 }
