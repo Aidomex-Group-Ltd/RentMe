@@ -72,9 +72,15 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {session?.user ? (
             <>
-              <Link href="/dashboard/landlord" className="hidden btn-primary text-sm md:flex">
-                List Property
-              </Link>
+              {session.user.role === "TENANT" ? (
+                <Link href="/search" className="hidden btn-primary text-sm md:flex">
+                  Find a House
+                </Link>
+              ) : (
+                <Link href="/dashboard/landlord/create" className="hidden btn-primary text-sm md:flex">
+                  List Property
+                </Link>
+              )}
 
               {/* Profile Dropdown */}
               <div className="relative">
@@ -227,12 +233,21 @@ export default function Navbar() {
 
             {session?.user && (
               <Link
-                href="/dashboard/landlord"
+                href={session.user.role === "TENANT" ? "/dashboard/tenant" : "/dashboard/landlord/create"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
               >
-                <Home className="h-5 w-5" />
-                List Property
+                {session.user.role === "TENANT" ? (
+                  <>
+                    <Home className="h-5 w-5" />
+                    Find a House
+                  </>
+                ) : (
+                  <>
+                    <Home className="h-5 w-5" />
+                    List Property
+                  </>
+                )}
               </Link>
             )}
           </div>

@@ -33,6 +33,8 @@ import {
   Snowflake,
   Users,
   Star,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import ScamAlert from "@/components/property/scam-alert";
@@ -108,6 +110,13 @@ export default function PropertyDetailPage() {
   const [reporting, setReporting] = useState(false);
   const [alreadyReported, setAlreadyReported] = useState(false);
 
+  // Apply-to-rent (legacy listing → TMS application pipeline)
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyMoveIn, setApplyMoveIn] = useState("");
+  const [applyMessage, setApplyMessage] = useState("");
+  const [applySubmitting, setApplySubmitting] = useState(false);
+  const [applyResult, setApplyResult] = useState<{ ok: boolean; message: string } | null>(null);
+
   useEffect(() => {
     async function fetchProperty() {
       try {
@@ -175,6 +184,43 @@ export default function PropertyDetailPage() {
       }
     } catch (error) {
       toast.error("Failed to send viewing request");
+    }
+  };
+
+  const handleApply = async () => {
+    if (!session) {
+      router.push(`/login?callbackUrl=/properties/${params.id}`);
+      return;
+    }
+    setApplySubmitting(true);
+    setApplyResult(null);
+    try {
+      const res = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId: params.id,
+          preferredMoveIn: applyMoveIn || undefined,
+          message: applyMessage || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 201) {
+        setApplyResult({
+          ok: true,
+          message: "Application submitted! The landlord will review it — track progress in your dashboard.",
+        });
+        setApplyOpen(false);
+        toast.success("Application submitted!");
+      } else if (res.status === 409) {
+        setApplyResult({ ok: false, message: "You already have an application for this property." });
+      } else {
+        setApplyResult({ ok: false, message: data.error || "Could not submit application." });
+      }
+    } catch {
+      setApplyResult({ ok: false, message: "Network error — please try again." });
+    } finally {
+      setApplySubmitting(false);
     }
   };
 
@@ -637,9 +683,92 @@ export default function PropertyDetailPage() {
                   </div>
                 )}
 
+                {applyResult && (
+                  <div
+                    className={`mb-3 rounded-lg px-4 py-3 text-sm ${
+                      applyResult.ok
+                        ? "bg-green-50 text-green-800"
+                        : "bg-amber-50 text-amber-800"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {applyResult.ok ? (
+                        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      ) : (
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      )}
+                      <div>
+                        <p>{applyResult.message}</p>
+                        {applyResult.ok && (
+                          <a
+                            href="/dashboard/tenant/applications"
+                            className="mt-1 inline-block font-semibold underline"
+                          >
+                            Go to my applications →
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {session?.user?.id === property.user?.id ? (
+                  <a href="/dashboard/landlord/applications" className="btn-primary w-full">
+                    Review applications
+                  </a>
+                ) : session?.user?.role === "TENANT" || !session ? (
+                  <>
+                    <button
+                      onClick={() => setApplyOpen((v) => !v)}
+                      className="btn-primary w-full"
+                      disabled={inquiriesBlocked}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Apply to Rent
+                    </button>
+
+                    {applyOpen && (
+                      <div className="mt-3 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600">
+                            Preferred move-in date (optional)
+                          </label>
+                          <input
+                            type="date"
+                            value={applyMoveIn}
+                            min={new Date().toISOString().slice(0, 10)}
+                            onChange={(e) => setApplyMoveIn(e.target.value)}
+                            className="input mt-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600">
+                            Message to the landlord (optional)
+                          </label>
+                          <textarea
+                            value={applyMessage}
+                            onChange={(e) => setApplyMessage(e.target.value)}
+                            rows={2}
+                            maxLength={500}
+                            placeholder="Tell the landlord about yourself…"
+                            className="input mt-1 resize-none"
+                          />
+                        </div>
+                        <button
+                          onClick={handleApply}
+                          disabled={applySubmitting || inquiriesBlocked}
+                          className="btn-primary w-full"
+                        >
+                          {applySubmitting ? "Submitting…" : "Submit application"}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : null}
+
                 <button
                   onClick={() => setShowViewingModal(true)}
-                  className="btn-primary w-full"
+                  className="btn-secondary mt-3 w-full"
                   disabled={inquiriesBlocked}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
