@@ -58,7 +58,9 @@ spec:
     browserXssFilter: true
     referrerPolicy: "strict-origin-when-cross-origin"
     customResponseHeaders:
-      Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+      # Keep feature permissions aligned with the app policy in next.config.mjs:
+      # geolocation powers the inspection tracker; camera powers listing photos.
+      Permissions-Policy: "camera=(self), microphone=(), geolocation=(self)"
       X-Robots-Tag: "index, follow"
 ---
 apiVersion: traefik.io/v1alpha1

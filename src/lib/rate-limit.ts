@@ -111,10 +111,34 @@ export const RateLimits = {
     windowMs: 60_000,
     keyPrefix: "upload",
   },
+  /** Listing reports — 8 req / 10 min per IP to slow abuse */
+  reports: {
+    maxRequests: 8,
+    windowMs: 10 * 60_000,
+    keyPrefix: "reports",
+  },
   /** General API reads — 60 req/min per IP */
   apiRead: {
     maxRequests: 60,
     windowMs: 60_000,
     keyPrefix: "api",
+  },
+  /** Chatbot — 30 req/min per IP */
+  chatbot: {
+    maxRequests: 30,
+    windowMs: 60_000,
+    keyPrefix: "chatbot",
+  },
+  /** Inspections — 10 req/min per IP */
+  inspections: {
+    maxRequests: 10,
+    windowMs: 60_000,
+    keyPrefix: "inspect",
+  },
+  /** Message sends — 30/min per user (enforced route-side, keyed by userId) */
+  messages: {
+    maxRequests: 30,
+    windowMs: 60_000,
+    keyPrefix: "msg",
   },
 } as const;

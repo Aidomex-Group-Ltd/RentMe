@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, MapPin, BedDouble, Bath, Maximize, Eye, ShieldCheck } from "lucide-react";
+import { Heart, MapPin, BedDouble, Bath, Maximize, Eye, ShieldCheck, AlertTriangle } from "lucide-react";
 import { cn, formatUGX, truncate } from "@/lib/utils";
 
 interface PropertyCardProps {
@@ -22,6 +22,7 @@ interface PropertyCardProps {
     viewCount: number;
     saveCount: number;
     isVerified: boolean;
+    isFlagged?: boolean;
     listedAt: string;
     images: { url: string; alt?: string | null }[];
     user: {
@@ -102,10 +103,16 @@ export default function PropertyCard({ property, onSave, isSaved }: PropertyCard
         </button>
 
         {/* Verification badge */}
-        {property.isVerified && (
+        {property.isVerified && !property.isFlagged && (
           <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-green-500 px-2 py-1 text-xs font-medium text-white shadow">
             <ShieldCheck className="h-3 w-3" />
             Verified
+          </div>
+        )}
+        {property.isFlagged && (
+          <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-xs font-medium text-white shadow">
+            <AlertTriangle className="h-3 w-3" />
+            Scam alert
           </div>
         )}
 

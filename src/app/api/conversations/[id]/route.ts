@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { sanitizeText, validateMessageContent } from "@/lib/sanitize";
+import { checkRateLimit, RateLimits } from "@/lib/rate-limit";
 
 // GET /api/conversations/[id] - Get messages for a conversation
 export async function GET(
@@ -59,7 +61,23 @@ export async function GET(
       data: { lastReadAt: new Date() },
     });
 
-    return NextResponse.json({ messages });
+    // Conversation metadata (participants + property) so clients can render
+    // the header without a second round-trip.
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        propertyId: true,
+        property: { select: { id: true, title: true, rent: true, district: true } },
+        participants: {
+          include: {
+            user: { select: { id: true, name: true, avatar: true, role: true } },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ messages, conversation });
   } catch (error) {
     console.error("Messages fetch error:", error);
     return NextResponse.json(
@@ -94,20 +112,42 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Per-user send throttle — authenticated traffic is keyed by userId,
+    // not IP, so shared egress IPs cannot lock legitimate users out.
+    const rl = checkRateLimit(session.user.id, RateLimits.messages);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many messages. Please slow down." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil(rl.resetMs / 1000)),
+            "X-RateLimit-Limit": String(RateLimits.messages.maxRequests),
+            "X-RateLimit-Remaining": "0",
+          },
+        }
+      );
+    }
+
     const { content, imageUrl } = await req.json();
 
     if (!content && !imageUrl) {
-      return NextResponse.json(
-        { error: "Content is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Content is required" }, { status: 400 });
     }
+
+    // Validate and sanitize message content
+    const rawContent = typeof content === "string" ? content : "";
+    const contentError = validateMessageContent(rawContent);
+    if (contentError) {
+      return NextResponse.json({ error: contentError }, { status: 400 });
+    }
+    const sanitizedContent = sanitizeText(rawContent, 5000);
 
     const message = await prisma.message.create({
       data: {
         conversationId: params.id,
         senderId: session.user.id,
-        content: content || "",
+        content: sanitizedContent,
         imageUrl: imageUrl || null,
       },
       include: {

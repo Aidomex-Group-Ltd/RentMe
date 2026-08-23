@@ -60,12 +60,26 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Unit stage gates (Stages 1–7)
+        run: npm run test:gates
+
       - name: Build application
         run: npm run build
         env:
           DATABASE_URL: postgresql://rentme:test_password@localhost:5432/rentme?schema=public
           NEXTAUTH_SECRET: test-secret-for-ci-only-not-production
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+      # Stage 11 gate — keep client bundles lean for <3s page loads.
+      - name: Bundle size guard
+        run: |
+          BIG=$(find .next/static -name "*.js" -size +500k 2>/dev/null || true)
+          if [ -n "$BIG" ]; then
+            echo "::error::Client chunks exceed 500KB:"
+            echo "$BIG"
+            exit 1
+          fi
+          echo "✓ All client JS chunks are under 500KB"
 
       - name: Validate kustomize
         run: |
@@ -95,6 +109,27 @@ jobs:
         run: npm run test:e2e -- http://127.0.0.1:3000
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
+          DATABASE_URL: postgresql://rentme:test_password@localhost:5432/rentme?schema=public
+          NEXTAUTH_SECRET: test-secret-for-ci-only-not-production
+
+      # Full stage-gate matrix (Stages 2–10) against the booted app.
+      # Each client carries a synthetic X-Forwarded-For so per-IP rate-limit
+      # buckets stay isolated between suites; 429 assertions stay genuine.
+      - name: E2E stage gates
+        run: |
+          set -e
+          node tests/stage2-messaging.e2e.mjs http://127.0.0.1:3000
+          node tests/stage3-video.e2e.mjs http://127.0.0.1:3000
+          node tests/stage45-fees.e2e.mjs http://127.0.0.1:3000
+          node tests/stage7-chatbot.e2e.mjs http://127.0.0.1:3000
+          node scripts/e2e-stage14-smoke.mjs http://127.0.0.1:3000
+        env:
+          DATABASE_URL: postgresql://rentme:test_password@localhost:5432/rentme?schema=public
+          NEXTAUTH_SECRET: test-secret-for-ci-only-not-production
+
+      - name: Zero-trust security audit
+        run: node scripts/e2e-security-audit.mjs http://127.0.0.1:3000
+        env:
           DATABASE_URL: postgresql://rentme:test_password@localhost:5432/rentme?schema=public
           NEXTAUTH_SECRET: test-secret-for-ci-only-not-production
 

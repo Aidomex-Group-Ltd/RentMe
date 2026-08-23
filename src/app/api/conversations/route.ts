@@ -74,13 +74,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { propertyId, recipientId } = await req.json();
+    const body = await req.json();
+    const propertyId = typeof body.propertyId === "string" ? body.propertyId.trim() : "";
+    const recipientId = typeof body.recipientId === "string" ? body.recipientId.trim() : "";
 
     if (!propertyId || !recipientId) {
       return NextResponse.json(
         { error: "propertyId and recipientId are required" },
         { status: 400 }
       );
+    }
+
+    // Prevent users from messaging themselves
+    if (recipientId === session.user.id) {
+      return NextResponse.json({ error: "Cannot create a conversation with yourself" }, { status: 400 });
+    }
+
+    // Validate IDs are cuid-like format (not SQL injectable)
+    if (!/^c[a-z0-9]{24,}$/i.test(propertyId) || !/^c[a-z0-9]{24,}$/i.test(recipientId)) {
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+    }
+
+    // Verify property exists
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      select: { id: true, userId: true },
+    });
+    if (!property) {
+      return NextResponse.json({ error: "Property not found" }, { status: 404 });
+    }
+
+    // Verify recipient exists
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { id: true },
+    });
+    if (!recipient) {
+      return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
     }
 
     // Check if conversation already exists
@@ -125,9 +155,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ conversation }, { status: 201 });
   } catch (error) {
     console.error("Conversation creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to create conversation" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create conversation" }, { status: 500 });
   }
 }

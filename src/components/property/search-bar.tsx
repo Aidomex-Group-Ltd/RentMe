@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, Home, DollarSign } from "lucide-react";
-import { PROPERTY_TYPES, UGANDA_DISTRICTS } from "@/lib/utils";
+import { PROPERTY_TYPES } from "@/lib/utils";
+import { allUgandanDistricts } from "@/lib/uganda-districts";
 
 export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "compact" }) {
   const router = useRouter();
@@ -37,10 +38,9 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "co
             list="districts-compact"
             className="input pl-10"
           />
-          <datalist id="districts-compact">
-            {UGANDA_DISTRICTS.map((d) => (
-              <option key={d} value={d} />
-            ))}
+          <datalist id="districts-compact">            {allUgandanDistricts.map((d) => (
+            <option key={d} value={d} />
+          ))}
           </datalist>
         </div>
         <button type="submit" className="btn-primary">
@@ -67,10 +67,9 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "co
             list="districts"
             className="input pl-10"
           />
-          <datalist id="districts">
-            {UGANDA_DISTRICTS.map((d) => (
-              <option key={d} value={d} />
-            ))}
+          <datalist id="districts">            {allUgandanDistricts.map((d) => (
+            <option key={d} value={d} />
+          ))}
           </datalist>
         </div>
 

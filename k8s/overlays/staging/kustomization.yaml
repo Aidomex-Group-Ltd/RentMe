@@ -1,0 +1,61 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ─── Staging environment ──────────────────────────────────
+# Fully isolated from production: own namespace, database (PVC),
+# secrets, and ingress host. Deploy with:  make k3s-deploy-staging
+#
+# Never point this overlay at the production namespace or database.
+resources:
+  - ../../base
+
+namespace: rentme-staging
+
+images:
+  - name: ghcr.io/aidomex-group-ltd/rentme
+    newName: ghcr.io/aidomex-group-ltd/rentme
+    newTag: latest
+
+replicas:
+  - name: rentme-app
+    count: 1
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: rentme-config
+    patch: |-
+      - op: replace
+        path: /data/NEXT_PUBLIC_SITE_URL
+        value: http://staging.rentme.ug
+      - op: replace
+        path: /data/NEXTAUTH_URL
+        value: http://staging.rentme.ug
+      # Staging must never trigger the production domain redirect
+      - op: remove
+        path: /data/PRODUCTION_DOMAIN
+
+  # Plain HTTP until staging.rentme.ug DNS points at the node;
+  # cert-manager ACME HTTP-01 cannot issue without public DNS.
+  - target:
+      kind: Ingress
+      name: rentme
+    patch: |-
+      - op: remove
+        path: /spec/tls
+      - op: remove
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.rentme.ug
+      - op: remove
+        path: /spec/rules/1
+
+  # Single-node staging: pod anti-affinity is irrelevant, drop it so one
+  # replica always schedules even if labels change.
+  - target:
+      kind: Deployment
+      name: rentme-app
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/affinity

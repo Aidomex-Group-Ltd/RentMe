@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 
 function requiredEnv(name: string): string {
@@ -97,4 +97,31 @@ export async function uploadToR2(params: {
     contentType: params.contentType,
     size: params.file.length,
   };
+}
+
+/**
+ * Delete a previously uploaded object by key.
+ * Returns false when storage is not configured so callers can degrade
+ * gracefully (e.g., best-effort cleanup paths).
+ */
+export async function deleteFromR2(key: string): Promise<boolean> {
+  if (!isR2Configured()) return false;
+
+  await getR2Client().send(
+    new DeleteObjectCommand({
+      Bucket: getBucket(),
+      Key: key,
+    })
+  );
+  return true;
+}
+
+/**
+ * Extract the object key from a public upload URL produced by uploadToR2.
+ * Returns null when the URL does not belong to the configured public base.
+ */
+export function keyFromPublicUrl(url: string): string | null {
+  const base = getR2PublicBaseUrl();
+  if (!base || !url.startsWith(`${base}/`)) return null;
+  return url.slice(base.length + 1);
 }

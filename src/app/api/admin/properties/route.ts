@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import type { Prisma } from "@prisma/client";
+import { invalidatePropertyCaches } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
     const district = searchParams.get("district") || "";
     const propertyType = searchParams.get("propertyType") || "";
     const verified = searchParams.get("verified");
+    const flagged = searchParams.get("flagged");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20));
 
@@ -25,6 +27,8 @@ export async function GET(req: NextRequest) {
     if (propertyType) where.propertyType = propertyType;
     if (verified === "true") where.isVerified = true;
     if (verified === "false") where.isVerified = false;
+    if (flagged === "true") where.isFlagged = true;
+    if (flagged === "false") where.isFlagged = false;
     if (q) {
       where.OR = [
         { title: { contains: q, mode: "insensitive" } },
@@ -40,7 +44,12 @@ export async function GET(req: NextRequest) {
         include: {
           user: { select: { id: true, name: true, email: true, role: true } },
           images: { where: { isCover: true }, take: 1 },
-          _count: { select: { savedBy: true, reports: true } },
+          _count: {
+            select: {
+              savedBy: true,
+              reports: { where: { status: { in: ["PENDING", "UNDER_REVIEW"] } } },
+            },
+          },
         },
         orderBy: { listedAt: "desc" },
         skip: (page - 1) * limit,
@@ -86,6 +95,9 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Property not found" }, { status: 404 });
     }
 
+    const restoring = status === "ACTIVE" && existing.status === "SUSPENDED";
+    const suspending = status === "SUSPENDED" && existing.status !== "SUSPENDED";
+
     const property = await prisma.property.update({
       where: { id: propertyId },
       data: {
@@ -101,8 +113,14 @@ export async function PATCH(req: NextRequest) {
             }
           : {}),
         ...(isVerified !== undefined ? { isVerified } : {}),
+        ...(restoring
+          ? { isFlagged: false, flaggedAt: null, flagReason: null }
+          : {}),
+        ...(suspending ? { isFlagged: true, flaggedAt: new Date() } : {}),
       },
     });
+
+    invalidatePropertyCaches(property.id, property.slug);
 
     if (status === "ACTIVE" && existing.status !== "ACTIVE") {
       await prisma.notification.create({

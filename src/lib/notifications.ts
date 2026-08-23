@@ -17,7 +17,8 @@ interface PropertyNotificationData {
   propertyId: string;
   propertyTitle: string;
   rent: number;
-  district: string;
+  /** District is optional/nullable in the Property model (district String?). */
+  district?: string | null;
   city?: string;
   neighborhood?: string;
   landlordName: string;
