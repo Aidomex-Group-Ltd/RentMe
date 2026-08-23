@@ -35,7 +35,8 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts",
-    "/tmp/opencode/next-prod/types/**/*.ts"
+    "/tmp/opencode/next-prod/types/**/*.ts",
+    ".next-rentme/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

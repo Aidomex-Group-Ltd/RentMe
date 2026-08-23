@@ -8,17 +8,18 @@ import {
   FileText,
   Wrench,
   BarChart3,
-  MessageSquare,
   Plus,
   Settings,
-  Bell,
-  DollarSign,
-  Calendar,
   ChevronRight,
   ClipboardList,
   Building2,
   RefreshCw,
+  LayoutDashboard,
+  KeyRound,
+  CreditCard,
+  LogOut,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,62 +49,31 @@ interface LandlordSidebarProps {
  * Default navigation items for the landlord dashboard
  */
 const DEFAULT_NAV_ITEMS: NavItem[] = [
-  {
-    label: "Dashboard",
-    href: "/dashboard/landlord",
-    icon: Home,
-  },
-  {
-    label: "Properties",
-    href: "/dashboard/landlord/properties",
-    icon: Building2,
-  },
-  {
-    label: "Units",
-    href: "/dashboard/landlord/units",
-    icon: Home,
-  },
-  {
-    label: "Tenants",
-    href: "/dashboard/landlord/tenants",
-    icon: Users,
-  },
-  {
-    label: "Applications",
-    href: "/dashboard/landlord/applications",
-    icon: ClipboardList,
-  },
-  {
-    label: "Leases",
-    href: "/dashboard/landlord/leases",
-    icon: FileText,
-  },
-  {
-    label: "Renewals",
-    href: "/dashboard/landlord/renewals",
-    icon: RefreshCw,
-  },
-  {
-    label: "Maintenance",
-    href: "/dashboard/landlord/maintenance",
-    icon: Wrench,
-  },
-  {
-    label: "Reports",
-    href: "/dashboard/landlord/reports",
-    icon: BarChart3,
-  },
-  {
-    label: "Messages",
-    href: "/messages",
-    icon: MessageSquare,
-  },
-  {
-    label: "Settings",
-    href: "/dashboard/landlord/settings",
-    icon: Settings,
-  },
+  { label: "Dashboard", href: "/dashboard/landlord", icon: LayoutDashboard },
+  { label: "Properties", href: "/dashboard/landlord/properties", icon: Building2 },
+  { label: "Units & Occupancy", href: "/dashboard/landlord/units", icon: KeyRound },
+  { label: "Tenant Management", href: "/dashboard/landlord/tenants", icon: Users },
+  { label: "Applications", href: "/dashboard/landlord/applications", icon: ClipboardList },
+  { label: "Rent & Collections", href: "/dashboard/landlord/rent", icon: CreditCard },
+  { label: "Maintenance", href: "/dashboard/landlord/maintenance", icon: Wrench },
+  { label: "Leases", href: "/dashboard/landlord/leases", icon: FileText },
+  { label: "Renewals", href: "/dashboard/landlord/renewals", icon: RefreshCw },
+  { label: "Financial Reports", href: "/dashboard/landlord/reports", icon: BarChart3 },
+  { label: "Settings", href: "/dashboard/landlord/settings", icon: Settings },
 ];
+
+/** Session terminator rendered beneath the nav (mock: 🚪 Sign Out). */
+function SignOutItem() {
+  return (
+    <button
+      onClick={() => void signOut({ callbackUrl: "/" })}
+      className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+    >
+      <LogOut className="h-5 w-5 shrink-0 text-red-400 group-hover:text-red-500" />
+      <span className="flex-1 text-left">Sign Out</span>
+    </button>
+  );
+}
 
 /**
  * Additional quick action items
@@ -199,6 +169,7 @@ export default function LandlordSidebar({
               <span>{item.label}</span>
             </Link>
           ))}
+          <SignOutItem />
         </div>
       </div>
 
@@ -246,6 +217,10 @@ export default function LandlordSidebar({
               );
             })}
           </div>
+
+          {/* Session */}
+          <div className="my-3 border-t border-gray-100" />
+          <SignOutItem />
 
           {/* Divider */}
           <div className="my-4 border-t border-gray-200" />

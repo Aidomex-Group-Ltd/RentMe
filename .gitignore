@@ -56,3 +56,6 @@ k8s/**/secret.yaml
 next-env.d.ts
 tmp/
 .next-prod/
+
+# isolated dev build dir for the canonical RentMe dev server
+.next-rentme/
