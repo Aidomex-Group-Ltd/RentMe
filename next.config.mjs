@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+
+// Dev needs 'unsafe-eval' for React Refresh/HMR and ws: for hot reload;
+// production stays strict.
+const isDev = process.env.NODE_ENV !== "production";
+
 const nextConfig = {
   // Standalone output for minimal production Docker images
   output: "standalone",
@@ -42,12 +47,13 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js requires inline bootstrap scripts in production
-              "script-src 'self' 'unsafe-inline'",
+              // Next.js requires inline bootstrap scripts in production;
+              // dev additionally needs eval for React Refresh.
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://images.unsplash.com https://plus.unsplash.com https://*.r2.dev https://*.r2.cloudflarestorage.com blob: data:",
               "font-src 'self'",
-              "connect-src 'self'",
+              `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
               "media-src 'self' https://images.unsplash.com",
               "frame-src 'self'",
               "base-uri 'self'",
