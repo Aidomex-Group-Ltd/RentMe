@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import LandlordSidebar from "@/components/landlord/landlord-sidebar";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { formatUGX, timeAgo } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -141,6 +142,7 @@ export default function LandlordDashboard() {
         </div>
 
         <div className="page-container py-6">
+          <ErrorBoundary sectionName="Dashboard">
           {/* Stats */}
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {stats.map((stat) => (
@@ -467,6 +469,7 @@ export default function LandlordDashboard() {
               )}
             </div>
           </div>
+          </ErrorBoundary>
         </div>
       </div>
     </MainLayout>

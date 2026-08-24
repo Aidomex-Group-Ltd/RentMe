@@ -13,6 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { formatUGX } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -142,6 +143,7 @@ export default function AgentDashboard() {
         </div>
 
         <div className="page-container py-6">
+          <ErrorBoundary sectionName="Dashboard">
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {stats.map((stat) => (
               <div key={stat.label} className="card p-4">
@@ -296,6 +298,7 @@ export default function AgentDashboard() {
               </div>
             </div>
           </div>
+          </ErrorBoundary>
         </div>
       </div>
     </MainLayout>

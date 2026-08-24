@@ -30,6 +30,7 @@ import {
 import MainLayout from "@/components/layout/main-layout";
 import TenantSidebar from "@/components/tenant/tenant-sidebar";
 import PropertyCard from "@/components/property/property-card";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { formatUGX, timeAgo } from "@/lib/utils";
 
 type Tenancy = {
@@ -173,6 +174,7 @@ export default function TenantDashboard() {
         </div>
 
         <div className="page-container py-6 space-y-8">
+          <ErrorBoundary sectionName="Dashboard">
           {/* Active Tenancy Card */}
           {activeTenancy && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -472,6 +474,7 @@ export default function TenantDashboard() {
               </div>
             )}
           </section>
+          </ErrorBoundary>
         </div>
       </div>
     </MainLayout>
