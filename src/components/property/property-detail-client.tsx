@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -323,10 +324,13 @@ export default function PropertyDetailClient({
             <div className="relative overflow-hidden rounded-xl bg-gray-100">
               {images.length > 0 ? (
                 <div className="relative aspect-video">
-                  <img
-                    src={images[currentImage]?.url}
+                  <Image
+                    src={images[currentImage]?.url || ""}
                     alt={images[currentImage]?.alt || property.title}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 66vw"
+                    className="object-cover"
+                    priority
                   />
                   {images.length > 1 && (
                     <>
@@ -380,11 +384,11 @@ export default function PropertyDetailClient({
                   <button
                     key={img.id}
                     onClick={() => setCurrentImage(i)}
-                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                    className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
                       i === currentImage ? "border-brand-500" : "border-transparent opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <img src={img.url} alt="" className="h-full w-full object-cover" />
+                    <Image src={img.url} alt="" fill sizes="96px" className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -740,7 +744,13 @@ export default function PropertyDetailClient({
           <button onClick={() => setCurrentImage(i => (i === 0 ? images.length - 1 : i - 1))} className="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <img src={images[currentImage]?.url} alt="" className="max-h-[90vh] max-w-[90vw] object-contain" />
+          <Image
+            src={images[currentImage]?.url || ""}
+            alt=""
+            width={1200}
+            height={800}
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+          />
           <button onClick={() => setCurrentImage(i => (i === images.length - 1 ? 0 : i + 1))} className="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">
             <ChevronRight className="h-6 w-6" />
           </button>

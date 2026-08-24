@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { Heart, MapPin, BedDouble, Bath, Maximize, Eye, ShieldCheck, AlertTriangle, FileText } from "lucide-react";
 import { cn, formatUGX, truncate } from "@/lib/utils";
@@ -83,11 +84,12 @@ export default function PropertyCard({ property, onSave, isSaved }: PropertyCard
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {property.images?.[0]?.url && !imageError ? (
-          <img
+          <Image
             src={property.images[0].url}
             alt={property.images[0].alt || property.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             onError={() => setImageError(true)}
           />
         ) : (

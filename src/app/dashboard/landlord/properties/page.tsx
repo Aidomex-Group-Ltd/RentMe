@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -349,10 +350,12 @@ export default function LandlordPropertiesPage() {
                       {/* Image */}
                       <div className="relative h-48 sm:h-auto sm:w-48 shrink-0 bg-gray-100">
                         {coverImage ? (
-                          <img
+                          <Image
                             src={coverImage.url}
                             alt={property.title}
-                            className="h-full w-full object-cover"
+                            fill
+                            sizes="(max-width: 640px) 100vw, 192px"
+                            className="object-cover"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-4xl">

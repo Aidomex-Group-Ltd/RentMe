@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Search, Home, ArrowLeft, MapPin, BedDouble, Bath, ShieldCheck } from "lucide-react";
 import MainLayout from "@/components/layout/main-layout";
 import { formatUGX } from "@/lib/utils";
@@ -113,11 +114,12 @@ export default function PropertyNotFound({
                       {/* Image */}
                       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                         {property.images?.[0]?.url ? (
-                          <img
+                          <Image
                             src={property.images[0].url}
                             alt={property.images[0].alt || property.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">

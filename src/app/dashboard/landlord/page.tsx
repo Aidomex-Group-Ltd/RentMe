@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -336,7 +337,7 @@ export default function LandlordDashboard() {
                       <div key={property.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50">
                         <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                           {property.images?.[0] ? (
-                            <img src={property.images[0].url} alt="" className="h-full w-full object-cover" />
+                            <Image src={property.images[0].url} alt="" fill sizes="80px" className="object-cover" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xl">🏠</div>
                           )}
