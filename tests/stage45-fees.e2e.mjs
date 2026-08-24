@@ -51,7 +51,7 @@ function makeClient() {
   let r = await L.api("/api/properties", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title: `S4 Fees ${stamp}`, description: "fee engine gate", propertyType: "apartment", rent: 800000, district: "Kampala", minimumMonths: 2 }),
+    body: JSON.stringify({ title: `S4 Fees ${stamp}`, description: "fee engine verification property", propertyType: "apartment", rent: 800000, district: "Kampala", minimumMonths: 2 }),
   });
   const property = (await r.json()).property;
   if (!property?.id) throw new Error("listing failed");

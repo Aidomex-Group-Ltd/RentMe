@@ -92,7 +92,7 @@ async function main() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      title: `Stage3 Villa ${stamp}`, description: "video gate property",
+      title: `Stage3 Villa ${stamp}`, description: "video gate verification property",
       propertyType: "apartment", rent: 900000, district: "Pallisa", city: "Pallisa",
     }),
   });
