@@ -235,12 +235,22 @@ const createPropertySchema = z.object({
     .trim()
     .min(5, "Title must be at least 5 characters.")
     .max(200, "Title must be 200 characters or fewer."),
-  // Optional — empty descriptions are stored as ""
-  description: z.preprocess((value) => {
-    if (value === null || value === undefined) return "";
-    if (typeof value === "string") return value.trim();
-    return value;
-  }, z.string().max(5000, "Description must be 5,000 characters or fewer.").default("")),
+  // Optional — empty descriptions are stored as ""; non-empty ones need substance.
+  description: z.preprocess(
+    (value) => {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "string") return value.trim();
+      return value;
+    },
+    z
+      .string()
+      .max(5000, "Description must be 5,000 characters or fewer.")
+      .refine(
+        (v) => v === "" || v.length >= 20,
+        "Description must be at least 20 characters."
+      )
+      .default("")
+  ),
   propertyType: z.string().min(1, "Please select a property type."),
   bedrooms: optionalCount,
   bathrooms: optionalCount,
