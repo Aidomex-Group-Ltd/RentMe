@@ -4,7 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { dashboardPathForRole } from "@/lib/utils";
 
 export default async function DashboardRedirect() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    session = null;
+  }
   if (!session?.user) {
     redirect("/login?callbackUrl=/dashboard");
   }

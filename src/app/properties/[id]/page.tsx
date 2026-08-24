@@ -17,30 +17,44 @@ export default async function PropertyDetailPage({
 }: {
   params: { id: string };
 }) {
-  // Shared cached fetch — layout's generateMetadata and this page
-  // both call getPublicProperty(key), but Next.js deduplicates
-  // within the same request via unstable_cache.
-  const property = await getPublicProperty(params.id);
+  let property;
+  try {
+    // Shared cached fetch — layout's generateMetadata and this page
+    // both call getPublicProperty(key), but Next.js deduplicates
+    // within the same request via unstable_cache.
+    property = await getPublicProperty(params.id);
+  } catch {
+    notFound();
+  }
 
   if (!property) {
     notFound();
   }
 
   // Server-side session check
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    session = null;
+  }
   const userId = session?.user?.id || null;
   const isOwner = userId === property.userId;
 
   // Check if user already reported this property
   let alreadyReported = false;
   if (userId) {
-    const report = await prisma.report.findFirst({
-      where: {
-        reporterId: userId,
-        propertyId: property.id,
-      },
-    });
-    alreadyReported = Boolean(report);
+    try {
+      const report = await prisma.report.findFirst({
+        where: {
+          reporterId: userId,
+          propertyId: property.id,
+        },
+      });
+      alreadyReported = Boolean(report);
+    } catch {
+      alreadyReported = false;
+    }
   }
 
   // Flatten amenity keys for the client component

@@ -19,33 +19,43 @@ export const metadata = { title: "Rent & Collections | RentMe" };
  * on their properties (mock section: 💳 Rent & Collections).
  */
 export default async function RentCollectionsPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    session = null;
+  }
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard/landlord/rent");
   if (!["LANDLORD", "AGENT", "ADMIN"].includes(session.user.role)) {
     redirect("/dashboard/tenant");
   }
 
-  const tenancies = await prisma.tenancy.findMany({
-    where: { property: { userId: session.user.id } },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    select: {
-      id: true,
-      status: true,
-      property: { select: { title: true, district: true } },
-      unit: { select: { unitNumber: true } },
-      tenant: { select: { name: true } },
-      rentCharges: {
-        orderBy: { dueDate: "desc" },
-        take: 6,
-        select: { id: true, amount: true, dueDate: true, status: true },
+  let tenancies: any[] = [];
+  try {
+    tenancies = await prisma.tenancy.findMany({
+      where: { property: { userId: session.user.id } },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        status: true,
+        property: { select: { title: true, district: true } },
+        unit: { select: { unitNumber: true } },
+        tenant: { select: { name: true } },
+        rentCharges: {
+          orderBy: { dueDate: "desc" },
+          take: 6,
+          select: { id: true, amount: true, dueDate: true, status: true },
+        },
       },
-    },
-  });
+    });
+  } catch {
+    tenancies = [];
+  }
 
   // ── Aggregates ──────────────────────────────────────────────
-  const activeCharges = tenancies.flatMap((t) =>
-    t.rentCharges.filter((c) => c.status !== "WAIVED")
+  const activeCharges = tenancies.flatMap((t: any) =>
+    t.rentCharges.filter((c: any) => c.status !== "WAIVED")
   );
   const monthlyExpected = activeCharges
     .filter((c) => c.status === "PENDING" || c.status === "PARTIAL" || c.status === "OVERDUE")
@@ -161,7 +171,7 @@ export default async function RentCollectionsPage() {
                           </td>
                         </tr>,
                       ]
-                    : t.rentCharges.map((c) => {
+                    : t.rentCharges.map((c: any) => {
                         const daysLate = Math.floor(
                           (Date.now() - new Date(c.dueDate).getTime()) / 86_400_000
                         );

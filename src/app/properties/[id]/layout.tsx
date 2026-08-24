@@ -22,7 +22,16 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const property = await getPublicProperty(params.id);
+  let property;
+  try {
+    property = await getPublicProperty(params.id);
+  } catch {
+    return {
+      title: "Property Not Found | RentMe",
+      description:
+        "This property may have been removed or is no longer available.",
+    };
+  }
 
   if (!property) {
     return {
@@ -176,7 +185,12 @@ export default async function PropertyLayout({
   children: React.ReactNode;
   params: { id: string };
 }) {
-  const property = await getPublicProperty(params.id);
+  let property;
+  try {
+    property = await getPublicProperty(params.id);
+  } catch {
+    property = null;
+  }
 
   return (
     <>

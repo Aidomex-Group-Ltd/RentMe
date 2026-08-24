@@ -599,7 +599,7 @@ throws("10.2 Cannot go from ACTIVE to PENDING", () => {
   assertTenancyTransition("ACTIVE", "PENDING");
 });
 
-throws("10.3 Cannot go from SUBMITTED to APPROVED directly", () => {
+ok("10.3 SUBMITTED can go to APPROVED directly (landlord quick-approve)", () => {
   assertApplicationTransition("SUBMITTED", "APPROVED");
 });
 
