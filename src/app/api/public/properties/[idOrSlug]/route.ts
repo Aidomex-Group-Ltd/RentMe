@@ -34,36 +34,52 @@ export async function GET(
     }
 
     const key = params.idOrSlug;
-    const property = await prisma.property.findFirst({
-      where: {
-        OR: [{ id: key }, { slug: key }],
-        deletedAt: null,
-        status: "ACTIVE",
-      },
-      select: {
-        ...PUBLIC_PROPERTY_SELECT,
-        videos: {
-          select: { id: true, url: true, thumbnail: true, order: true },
-          orderBy: { order: "asc" },
-        },
-        amenities: {
-          select: { amenity: { select: { id: true, name: true, icon: true } } },
-        },
-        units: {
-          where: { status: "AVAILABLE" },
-          select: {
-            id: true,
-            unitNumber: true,
-            unitType: true,
-            bedrooms: true,
-            bathrooms: true,
-            rent: true,
-            status: true,
+    const where = {
+      OR: [{ id: key }, { slug: key }],
+      deletedAt: null,
+      status: "ACTIVE" as const,
+    };
+
+    let property: any = null;
+
+    // Step 1: Try the full detail query with videos, amenities, and units.
+    try {
+      property = await prisma.property.findFirst({
+        where,
+        select: {
+          ...PUBLIC_PROPERTY_SELECT,
+          videos: {
+            select: { id: true, url: true, thumbnail: true, order: true },
+            orderBy: { order: "asc" },
           },
-          orderBy: { unitNumber: "asc" },
+          amenities: {
+            select: { amenity: { select: { id: true, name: true, icon: true } } },
+          },
+          units: {
+            where: { status: "AVAILABLE" },
+            select: {
+              id: true,
+              unitNumber: true,
+              unitType: true,
+              bedrooms: true,
+              bathrooms: true,
+              rent: true,
+              status: true,
+            },
+            orderBy: { unitNumber: "asc" },
+          },
         },
-      },
-    });
+      });
+    } catch (detailError) {
+      // Step 2: If the full query fails (schema drift), fall back to
+      // the basic public select that we know works from the list endpoint.
+      console.warn("Detail query failed, falling back to list select:",
+        detailError instanceof Error ? detailError.message : detailError);
+      property = await prisma.property.findFirst({
+        where,
+        select: PUBLIC_PROPERTY_SELECT,
+      });
+    }
 
     if (!property) {
       return NextResponse.json(

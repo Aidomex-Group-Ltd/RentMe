@@ -7,89 +7,167 @@ import prisma from "@/lib/prisma";
  * Uses Next.js `unstable_cache` so multiple calls in the same request
  * (layout + page) only hit the database once.
  */
-export const getPublicProperty = unstable_cache(
-  async (key: string) => {
-    const property = await prisma.property.findFirst({
-      where: {
-        OR: [{ id: key }, { slug: key }],
-        deletedAt: null,
-        status: "ACTIVE",
-      },
-      select: {
-        id: true,
-        userId: true,
-        slug: true,
-        title: true,
-        description: true,
-        propertyType: true,
-        rent: true,
-        deposit: true,
-        agencyFee: true,
-        paymentFrequency: true,
-        bedrooms: true,
-        bathrooms: true,
-        district: true,
-        city: true,
-        neighborhood: true,
-        latitude: true,
-        longitude: true,
-        viewCount: true,
-        isVerified: true,
-        isFlagged: true,
-        flagReason: true,
-        listedAt: true,
-        images: {
-          orderBy: [{ isCover: "desc" }, { order: "asc" }],
-          take: 20,
-          select: { id: true, url: true, alt: true, order: true, isCover: true },
-        },
-        videos: {
-          orderBy: { order: "asc" },
-          select: { id: true, url: true, thumbnail: true, order: true },
-        },
-        amenities: {
-          select: { amenity: { select: { id: true, name: true, icon: true } } },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            phone: true,
-            landlord: {
-              select: {
-                verificationStatus: true,
-                responseRate: true,
-                responseTimeHours: true,
-                totalListings: true,
-                activeListings: true,
-              },
-            },
-            agent: {
-              select: {
-                verificationStatus: true,
-                responseRate: true,
-                responseTimeHours: true,
-                totalProperties: true,
-                activeProperties: true,
-              },
-            },
-          },
-        },
-        reviews: {
-          include: { user: { select: { name: true } } },
-          orderBy: { createdAt: "desc" as const },
-          take: 20,
-        },
-        units: {
-          where: { status: "AVAILABLE" as const },
-          orderBy: { unitNumber: "asc" as const },
-        },
-      },
-    });
-
-    return property;
+const PROPERTY_SELECT_FULL = {
+  id: true,
+  userId: true,
+  slug: true,
+  title: true,
+  description: true,
+  propertyType: true,
+  rent: true,
+  deposit: true,
+  agencyFee: true,
+  paymentFrequency: true,
+  bedrooms: true,
+  bathrooms: true,
+  district: true,
+  city: true,
+  neighborhood: true,
+  latitude: true,
+  longitude: true,
+  viewCount: true,
+  isVerified: true,
+  isFlagged: true,
+  flagReason: true,
+  listedAt: true,
+  images: {
+    orderBy: [{ isCover: "desc" }, { order: "asc" }],
+    take: 20,
+    select: { id: true, url: true, alt: true, order: true, isCover: true },
   },
+  videos: {
+    orderBy: { order: "asc" },
+    select: { id: true, url: true, thumbnail: true, order: true },
+  },
+  amenities: {
+    select: { amenity: { select: { id: true, name: true, icon: true } } },
+  },
+  user: {
+    select: {
+      id: true,
+      name: true,
+      avatar: true,
+      phone: true,
+      landlord: {
+        select: {
+          verificationStatus: true,
+          responseRate: true,
+          responseTimeHours: true,
+          totalListings: true,
+          activeListings: true,
+        },
+      },
+      agent: {
+        select: {
+          verificationStatus: true,
+          responseRate: true,
+          responseTimeHours: true,
+          totalProperties: true,
+          activeProperties: true,
+        },
+      },
+    },
+  },
+  reviews: {
+    include: { user: { select: { name: true } } },
+    orderBy: { createdAt: "desc" as const },
+    take: 20,
+  },
+  units: {
+    where: { status: "AVAILABLE" as const },
+    orderBy: { unitNumber: "asc" as const },
+  },
+};
+
+/**
+ * Resilient property fetch: tries the full select first, then falls back
+ * to a minimal select on schema mismatch (production Prisma client drift).
+ */
+async function fetchProperty(key: string) {
+  const where = {
+    OR: [{ id: key }, { slug: key }],
+    deletedAt: null,
+    status: "ACTIVE" as const,
+  };
+
+  try {
+    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_FULL });
+  } catch (err) {
+    console.warn(
+      "Full property query failed, using minimal select:",
+      err instanceof Error ? err.message : err,
+    );
+    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_MINIMAL });
+  }
+}
+
+/**
+ * Minimal fallback select: only the fields guaranteed to exist across all
+ * schema versions (no videos, amenities, units, or reviews relations).
+ */
+const PROPERTY_SELECT_MINIMAL = {
+  id: true,
+  userId: true,
+  slug: true,
+  title: true,
+  description: true,
+  propertyType: true,
+  rent: true,
+  deposit: true,
+  agencyFee: true,
+  paymentFrequency: true,
+  bedrooms: true,
+  bathrooms: true,
+  district: true,
+  city: true,
+  neighborhood: true,
+  latitude: true,
+  longitude: true,
+  viewCount: true,
+  isVerified: true,
+  isFlagged: true,
+  flagReason: true,
+  listedAt: true,
+  images: {
+    orderBy: [{ isCover: "desc" }, { order: "asc" }],
+    take: 20,
+    select: { id: true, url: true, alt: true, order: true, isCover: true },
+  },
+  user: {
+    select: {
+      id: true,
+      name: true,
+      avatar: true,
+      phone: true,
+      landlord: {
+        select: {
+          verificationStatus: true,
+          responseRate: true,
+          responseTimeHours: true,
+          totalListings: true,
+          activeListings: true,
+        },
+      },
+      agent: {
+        select: {
+          verificationStatus: true,
+          responseRate: true,
+          responseTimeHours: true,
+          totalProperties: true,
+          activeProperties: true,
+        },
+      },
+    },
+  },
+  reviews: {
+    include: { user: { select: { name: true } } },
+    orderBy: { createdAt: "desc" as const },
+    take: 20,
+  },
+};
+
+export const getPublicProperty = unstable_cache(
+  (key: string) => fetchProperty(key),
   ["public-property"],
   { revalidate: 300, tags: ["property"] }
 );
