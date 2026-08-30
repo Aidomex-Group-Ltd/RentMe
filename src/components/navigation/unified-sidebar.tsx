@@ -25,17 +25,6 @@ import {
   X,
 } from "lucide-react";
 
-/**
- * Unified multi-role navigation rail.
- *
- * Desktop (≥lg): pinned to the viewport — fixed top-0 left-0 h-screen w-64 —
- * so it never hangs, floats, or scrolls away; page content offsets itself
- * with lg:pl-64.
- *
- * Mobile (<lg): off-canvas drawer controlled by the header hamburger
- * (isOpen/onClose) with a dark backdrop overlay.
- */
-
 type UserRole = "LANDLORD" | "TENANT" | "AGENT";
 
 interface UnifiedSidebarProps {
@@ -102,14 +91,18 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
           {/* Brand + mobile close */}
           <div className="flex items-center justify-between px-1 pt-1">
             <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 font-bold text-xl text-white shadow-md">
-                R
-              </div>
+              <img
+                src="/icons/rentmesh-192.png"
+                alt="Rent Mesh"
+                className="h-9 w-9 rounded-xl object-contain"
+                width={36}
+                height={36}
+              />
               <div>
                 <h2 className="text-base font-bold leading-none text-white">
-                  RentMe TMS
+                  Rent <span className="text-brand-400">Mesh</span>
                 </h2>
-                <span className="text-[10px] font-medium tracking-wide text-teal-400">
+                <span className="text-[10px] font-medium tracking-wide text-slate-400">
                   Unified Platform
                 </span>
               </div>
@@ -128,7 +121,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
             <button
               onClick={() => setRoleMenuOpen((v) => !v)}
               aria-expanded={roleMenuOpen}
-              className="flex w-full items-center justify-between rounded-lg border border-slate-700/60 bg-slate-800/80 p-2.5 text-left transition hover:bg-slate-800"
+              className="flex w-full items-center justify-between rounded-xl border border-slate-700/60 bg-slate-800/80 p-2.5 text-left transition hover:bg-slate-800"
             >
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -145,7 +138,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
             </button>
 
             {roleMenuOpen && (
-              <div className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-slate-700 bg-slate-800 py-1 shadow-xl">
+              <div className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-700 bg-slate-800 py-1 shadow-xl">
                 {(Object.keys(NAVIGATION_BY_ROLE) as UserRole[]).map((role) => (
                   <button
                     key={role}
@@ -155,13 +148,13 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
                     }}
                     className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium transition ${
                       activeRole === role
-                        ? "bg-slate-700/50 text-teal-400"
+                        ? "bg-slate-700/50 text-brand-400"
                         : "text-slate-300 hover:bg-slate-700"
                     }`}
                   >
                     <span className="capitalize">{role.toLowerCase()} View</span>
                     {activeRole === role && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
                     )}
                   </button>
                 ))}
@@ -169,15 +162,15 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
             )}
           </div>
 
-          {/* Public discovery — open to everyone */}
+          {/* Public discovery */}
           <div className="px-1">
             <Link
               href="/search"
               onClick={onClose}
-              className={`flex items-center gap-2.5 rounded-md border px-3 py-2 text-xs font-medium transition ${
+              className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 text-xs font-medium transition ${
                 pathname === "/search"
-                  ? "border-teal-500 bg-teal-600/70 text-white"
-                  : "border-teal-700/50 bg-teal-900/40 text-teal-200 hover:bg-teal-900/70"
+                  ? "border-brand-500 bg-brand-500/20 text-white"
+                  : "border-slate-700/50 bg-slate-900/40 text-slate-300 hover:bg-slate-800"
               }`}
             >
               <Search size={15} />
@@ -200,9 +193,9 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
                   key={`${activeRole}-${item.href}-${item.label}`}
                   href={item.href}
                   onClick={onClose}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                  className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                     isActive
-                      ? "bg-teal-700 text-white shadow-sm"
+                      ? "bg-brand-600 text-white shadow-sm"
                       : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`}
                 >
@@ -226,7 +219,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
           <Link
             href="/messages"
             onClick={onClose}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
           >
             <MessageSquare size={18} />
             Messages
@@ -234,7 +227,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
           <Link
             href="/settings"
             onClick={onClose}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
           >
             <Settings size={18} />
             Settings
@@ -242,7 +235,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
           {session?.user ? (
             <button
               onClick={() => void signOut({ callbackUrl: "/" })}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-rose-400"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-rose-400"
             >
               <LogOut size={18} />
               Sign Out
@@ -251,7 +244,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
             <Link
               href="/login"
               onClick={onClose}
-              className="flex w-full items-center gap-3 rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-teal-500"
+              className="flex w-full items-center gap-3 rounded-xl bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-500"
             >
               <LogOut size={18} />
               Sign In

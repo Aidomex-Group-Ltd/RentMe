@@ -38,7 +38,7 @@ const DEFAULT_SETTINGS: SettingDef[] = [
     category: "general",
     type: "text",
     description: "Display name of the platform",
-    defaultValue: "RentMe",
+    defaultValue: "Rent Mesh",
   },
   {
     key: "site_url",

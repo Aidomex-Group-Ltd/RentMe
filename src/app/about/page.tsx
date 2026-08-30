@@ -6,7 +6,7 @@ import { Shield, Users, Home, MapPin, Heart, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about RentMe — Uganda's trusted rental housing marketplace connecting tenants with landlords.",
+    "Learn about Rent Mesh — Uganda's trusted rental housing marketplace connecting tenants with landlords.",
 };
 
 const values = [
@@ -43,7 +43,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-br from-[#1a4d42] via-[#1f6d5e] to-[#2f8b76] py-16 sm:py-20">
         <div className="page-container text-center">
           <h1 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl font-display">
-            About RentMe
+            About Rent Mesh
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
             Uganda&apos;s trusted rental marketplace. We&apos;re on a mission to make
@@ -58,21 +58,21 @@ export default function AboutPage() {
           <h2 className="text-2xl font-bold text-gray-900 font-display">Our Story</h2>
           <div className="prose prose-gray mt-4 space-y-4 text-gray-600">
             <p>
-              RentMe was born out of a simple frustration: finding a rental home in Uganda
+              Rent Mesh was born out of a simple frustration: finding a rental home in Uganda
               was unnecessarily difficult. Scattered listings, unreliable agents, fake
               photos, and hidden fees made the process stressful and time-consuming.
             </p>
             <p>
-              We built RentMe to change that. Our platform brings together verified
+              We built Rent Mesh to change that. Our platform brings together verified
               properties from across Uganda — from single rooms in Kampala to luxury
               villas in Kololo — all in one place with transparent pricing and direct
               landlord contact.
             </p>
             <p>
-              Today, RentMe serves thousands of tenants and landlords across Kampala,
+              Today, Rent Mesh serves thousands of tenants and landlords across Kampala,
               Wakiso, Mukono, Entebbe, Jinja, and beyond. Whether you&apos;re a student
               looking for an affordable room or a family searching for a forever home,
-              RentMe helps you find the right match.
+              Rent Mesh helps you find the right match.
             </p>
           </div>
         </div>

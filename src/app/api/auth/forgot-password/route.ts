@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       const safeUrl = escapeHtml(resetUrl);
       await sendEmail({
         to: user.email,
-        subject: "Reset your RentMe password",
+        subject: "Reset your Rent Mesh password",
         text: `Hi ${user.name},\n\nReset your password using this link (valid for 1 hour):\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
         html: `<p>Hi ${safeName},</p><p>Reset your password using this link (valid for 1 hour):</p><p><a href="${safeUrl}">${safeUrl}</a></p><p>If you did not request this, you can ignore this email.</p>`,
       });

@@ -100,7 +100,7 @@ const QUICK_ACTIONS: NavItem[] = [
  * - Mobile: collapsed behind a hamburger menu with an overlay drawer
  * - Active state highlighting based on current route
  * - Optional badge counts for pending items
- * - Consistent with RentMe design system
+ * - Consistent with Rent Mesh design system
  *
  * @example
  * ```tsx
@@ -225,9 +225,12 @@ export default function LandlordSidebar({
           />
           <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-white shadow-xl">
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-4">
-              <span className="font-display text-base font-bold text-brand-700">
-                RentMe Landlord
-              </span>
+              <div className="flex items-center gap-2">
+                <img src="/icons/rentmesh-48.png" alt="" className="h-6 w-6 rounded-md object-contain" width={24} height={24} aria-hidden />
+                <span className="font-display text-base font-bold text-brand-700">
+                  Rent Mesh Landlord
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}

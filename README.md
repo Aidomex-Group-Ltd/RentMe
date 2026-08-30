@@ -1,4 +1,4 @@
-# RentMe
+# Rent Mesh
 
 Next.js 14 rental marketplace for Uganda. **UI is unchanged** by infrastructure work.
 

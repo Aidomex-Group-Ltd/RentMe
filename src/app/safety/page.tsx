@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Safety Tips",
   description:
-    "Stay safe when renting in Uganda. Tips for tenants and landlords on RentMe.",
+    "Stay safe when renting in Uganda. Tips for tenants and landlords on Rent Mesh.",
 };
 
 const tenantTips = [
@@ -28,11 +28,11 @@ const tenantTips = [
     icon: Lock,
     title: "Verify the Landlord",
     description:
-      "Look for the verified badge on listings. Verified landlords have been checked by the RentMe team.",
+      "Look for the verified badge on listings. Verified landlords have been checked by the Rent Mesh team.",
   },
   {
     icon: Phone,
-    title: "Communicate on RentMe",
+    title: "Communicate on Rent Mesh",
     description:
       "Keep conversations on the platform. This creates a record and helps our team assist if issues arise.",
   },
@@ -79,7 +79,7 @@ const landlordTips = [
     icon: Shield,
     title: "Protect Your Information",
     description:
-      "Don't share personal financial details. Use RentMe's messaging for communication.",
+      "Don't share personal financial details. Use Rent Mesh's messaging for communication.",
   },
 ];
 
@@ -179,7 +179,7 @@ export default function SafetyPage() {
       <section className="section bg-[#1a4d42]">
         <div className="page-container text-center">
           <h2 className="mb-4 text-2xl font-bold text-white font-display sm:text-3xl">
-            Stay safe on RentMe
+            Stay safe on Rent Mesh
           </h2>
           <p className="mb-8 text-white/80">
             Report suspicious listings or users to keep our community safe.

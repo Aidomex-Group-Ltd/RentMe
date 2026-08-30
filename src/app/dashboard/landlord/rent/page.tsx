@@ -12,7 +12,7 @@ import prisma from "@/lib/prisma";
 import { formatUGX } from "@/lib/utils";
 import { LandlordPageLayout } from "@/components/landlord/landlord-sidebar";
 
-export const metadata = { title: "Rent & Collections | RentMe" };
+export const metadata = { title: "Rent & Collections | Rent Mesh" };
 
 /**
  * Rent & Collections — landlord overview of charges across every tenancy

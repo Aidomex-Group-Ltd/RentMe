@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/main-layout";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms and conditions for using the RentMe rental marketplace.",
+  description: "Terms and conditions for using the Rent Mesh rental marketplace.",
 };
 
 export default function TermsPage() {
@@ -23,15 +23,15 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="text-xl font-semibold text-gray-900 font-display">1. Acceptance of Terms</h2>
               <p>
-                By creating an account or using RentMe, you agree to these Terms of Service. If you do not agree,
+                By creating an account or using Rent Mesh, you agree to these Terms of Service. If you do not agree,
                 do not use the platform.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-xl font-semibold text-gray-900 font-display">2. About RentMe</h2>
+              <h2 className="text-xl font-semibold text-gray-900 font-display">2. About Rent Mesh</h2>
               <p>
-                RentMe is an online marketplace that helps tenants find rental housing and helps landlords and
+                Rent Mesh is an online marketplace that helps tenants find rental housing and helps landlords and
                 agents list properties in Uganda. We are not a party to rental agreements between users and do not
                 guarantee that any listing, user, or transaction will meet your expectations.
               </p>
@@ -78,7 +78,7 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="text-xl font-semibold text-gray-900 font-display">7. Disclaimer and Liability</h2>
               <p>
-                RentMe is provided on an &quot;as is&quot; and &quot;as available&quot; basis. To the fullest extent
+                Rent Mesh is provided on an &quot;as is&quot; and &quot;as available&quot; basis. To the fullest extent
                 permitted by law, we are not liable for disputes between users, property condition, rental outcomes,
                 or losses arising from reliance on user-generated content.
               </p>
@@ -87,7 +87,7 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="text-xl font-semibold text-gray-900 font-display">8. Changes</h2>
               <p>
-                We may update these terms from time to time. Continued use of RentMe after changes take effect
+                We may update these terms from time to time. Continued use of Rent Mesh after changes take effect
                 means you accept the updated terms.
               </p>
             </section>

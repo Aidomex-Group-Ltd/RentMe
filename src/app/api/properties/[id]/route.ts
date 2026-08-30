@@ -148,7 +148,7 @@ export async function GET(
       },
       {
         headers: {
-          "X-RentMe-Cache": cacheStatus,
+          "X-Rent Mesh-Cache": cacheStatus,
           "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
         },
       }

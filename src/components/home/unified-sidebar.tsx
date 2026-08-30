@@ -134,7 +134,7 @@ export default function UnifiedSidebar() {
           <Building2 className="h-5 w-5 text-white" />
         </div>
         <div>
-          <p className="text-sm font-bold leading-tight text-white">RentMe TMS</p>
+          <p className="text-sm font-bold leading-tight text-white">Rent Mesh TMS</p>
           <p className="text-[10px] text-slate-400">Multi-role command center</p>
         </div>
       </div>

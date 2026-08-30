@@ -6,7 +6,7 @@ import type { Metadata } from "next";
  * guests can save and restore searches without an account.
  */
 export const metadata: Metadata = {
-  title: "Search Houses for Rent in Uganda | RentMe",
+  title: "Search Houses for Rent in Uganda | Rent Mesh",
   description:
     "Browse verified houses, apartments, and rooms for rent across Uganda. Filter by district, price, bedrooms, and amenities — no account needed to search.",
   keywords: [
@@ -14,15 +14,15 @@ export const metadata: Metadata = {
     "houses for rent Kampala",
     "apartments Uganda",
     "property search Uganda",
-    "RentMe",
+    "Rent Mesh",
   ],
   alternates: { canonical: "/search" },
   openGraph: {
-    title: "Find Houses for Rent in Uganda | RentMe",
+    title: "Find Houses for Rent in Uganda | Rent Mesh",
     description:
       "Search verified rental homes across all Ugandan districts. Filter by location, rent, bedrooms and amenities — free, no signup required.",
     url: "/search",
-    siteName: "RentMe",
+    siteName: "Rent Mesh",
     type: "website",
   },
   robots: { index: true, follow: true },

@@ -27,7 +27,7 @@ export async function generateMetadata({
     property = await getPublicProperty(params.id);
   } catch {
     return {
-      title: "Property Not Found | RentMe",
+      title: "Property Not Found | Rent Mesh",
       description:
         "This property may have been removed or is no longer available.",
     };
@@ -35,7 +35,7 @@ export async function generateMetadata({
 
   if (!property) {
     return {
-      title: "Property Not Found | RentMe",
+      title: "Property Not Found | Rent Mesh",
       description:
         "This property may have been removed or is no longer available.",
     };
@@ -51,10 +51,10 @@ export async function generateMetadata({
     .join(", ");
 
   const pageTitle = `${property.title} — ${formatUGX(property.rent || 0)}/mo in ${location}`;
-  const ogTitle = `${pageTitle} | RentMe`;
+  const ogTitle = `${pageTitle} | Rent Mesh`;
   const description =
     property.description?.slice(0, 155)?.trim() ||
-    `Rent ${property.title} in ${location} for ${formatUGX(property.rent || 0)}/month. ${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath. Verified on RentMe.`;
+    `Rent ${property.title} in ${location} for ${formatUGX(property.rent || 0)}/month. ${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath. Verified on Rent Mesh.`;
 
   const imageUrl = property.images?.[0]?.url || "/og-property-default.jpg";
   const pageUrl = `/properties/${property.slug || property.id}`;
@@ -67,7 +67,7 @@ export async function generateMetadata({
       title: ogTitle,
       description,
       url: pageUrl,
-      siteName: "RentMe",
+      siteName: "Rent Mesh",
       type: "website",
       images: [
         {
@@ -123,7 +123,7 @@ function buildJsonLd(property: PublicPropertyData): Record<string, unknown> {
       validFrom: property.listedAt?.toISOString() || new Date().toISOString(),
       seller: {
         "@type": "RealEstateAgent",
-        name: property.user?.name || "RentMe",
+        name: property.user?.name || "Rent Mesh",
         url: BASE,
       },
     },
@@ -146,7 +146,7 @@ function buildJsonLd(property: PublicPropertyData): Record<string, unknown> {
     },
     provider: {
       "@type": "Organization",
-      name: "RentMe",
+      name: "Rent Mesh",
       url: BASE,
       logo: `${BASE}/icons/icon-512.png`,
     },

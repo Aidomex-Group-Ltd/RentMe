@@ -23,7 +23,7 @@ const WELCOME_MESSAGE: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hello! 👋 Welcome to RentMe Support. How can I help you today?\n\nSelect a topic or type your question:",
+    "Hello! 👋 Welcome to Rent Mesh Support. How can I help you today?\n\nSelect a topic or type your question:",
   timestamp: new Date().toISOString(),
   quickReplies: ["Property Listing", "Payments", "Inspections", "FAQ", "Contact Support"],
 };
@@ -147,11 +147,9 @@ export default function SupportChatbot() {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-100 bg-brand-500 px-4 py-3 sm:rounded-t-2xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                <Bot className="h-4 w-4 text-white" />
-              </div>
+              <img src="/icons/rentmesh-48.png" alt="" className="h-8 w-8 rounded-full object-contain" width={32} height={32} aria-hidden />
               <div>
-                <h3 className="text-sm font-semibold text-white">RentMe Support</h3>
+                <h3 className="text-sm font-semibold text-white">Rent Mesh Support</h3>
                 <p className="text-xs text-white/80">We typically reply instantly</p>
               </div>
             </div>
@@ -280,7 +278,7 @@ export default function SupportChatbot() {
               </button>
             </form>
             <p className="mt-2 text-center text-[10px] text-gray-400">
-              Powered by RentMe Support · responses are automated
+              Powered by Rent Mesh Support · responses are automated
             </p>
           </div>
         </div>

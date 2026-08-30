@@ -35,11 +35,11 @@ const plusJakarta = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "RentMe — Find Your Next Home in Uganda",
-    template: "%s | RentMe",
+    default: "Rent Mesh — Find Your Next Home in Uganda",
+    template: "%s | Rent Mesh",
   },
   description:
-    "RentMe is Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent in Kampala, Wakiso, Mukono, and across Uganda.",
+    "Rent Mesh is Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent in Kampala, Wakiso, Mukono, and across Uganda.",
   keywords: [
     "rent house Uganda",
     "apartment Kampala",
@@ -50,34 +50,50 @@ export const metadata: Metadata = {
     "Kampala apartments",
     "Wakiso rentals",
   ],
-  authors: [{ name: "RentMe" }],
+  authors: [{ name: "Rent Mesh" }],
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
-      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/rentmesh-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/icons/rentmesh-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/rentmesh-48.png", type: "image/png", sizes: "48x48" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
+    ],
+    other: [
+      { url: "/icons/rentmesh-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/rentmesh-512.png", type: "image/png", sizes: "512x512" },
+    ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "RentMe",
+    title: "Rent Mesh",
   },
   openGraph: {
     type: "website",
     locale: "en_UG",
     url: "https://rentme.ug",
-    siteName: "RentMe",
-    title: "RentMe — Find Your Next Home in Uganda",
+    siteName: "Rent Mesh",
+    title: "Rent Mesh — Find Your Next Home in Uganda",
     description:
       "Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent.",
+    images: [
+      {
+        url: "/icons/rentmesh-512.png",
+        width: 512,
+        height: 512,
+        alt: "Rent Mesh — Uganda's Property Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "RentMe — Find Your Next Home in Uganda",
+    title: "Rent Mesh — Find Your Next Home in Uganda",
     description: "Uganda's trusted rental housing marketplace.",
+    images: ["/icons/rentmesh-512.png"],
   },
   robots: {
     index: true,
@@ -89,7 +105,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#172554",
+  themeColor: "#022b59",
   viewportFit: "cover",
 };
 

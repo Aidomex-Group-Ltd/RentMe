@@ -9,7 +9,6 @@ import {
   Heart,
   MessageSquare,
   User,
-  Home,
   Menu,
   X,
   LogOut,
@@ -29,8 +28,6 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/search", label: "Search", icon: Search },
-    // Account-bound destinations are hidden from guests so browsing never
-    // advertises an auth wall — they reappear once signed in.
     ...(session?.user
       ? [
           { href: "/saved", label: "Saved", icon: Heart },
@@ -40,17 +37,20 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/80">
       <nav className="page-container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500">
-            <Home className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-brand-700 font-display">
-            RentMe
-          </span>
-        </Link>
+        {/* Logo */}          <Link href="/" className="flex items-center gap-2.5">
+            <img
+              src="/icons/rentmesh-192.png"
+              alt="Rent Mesh"
+              className="h-9 w-9 rounded-xl object-contain"
+              width={36}
+              height={36}
+            />
+            <span className="text-xl font-bold text-slate-900 font-display">
+              Rent <span className="text-brand-500">Mesh</span>
+            </span>
+          </Link>
 
         {/* Desktop Nav */}
         <div className="hidden items-center gap-1 md:flex">
@@ -61,10 +61,10 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
                   isActive
                     ? "bg-brand-50 text-brand-600"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
                 <link.icon className="h-4 w-4" />
@@ -92,7 +92,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-gray-50"
+                  className="flex items-center gap-2 rounded-xl p-1.5 transition-colors hover:bg-slate-100"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-600 text-sm font-semibold">
                     {session.user.image ? (
@@ -105,7 +105,7 @@ export default function Navbar() {
                       getInitials(session.user.name || "U")
                     )}
                   </div>
-                  <ChevronDown className="hidden h-4 w-4 text-gray-500 sm:block" />
+                  <ChevronDown className="hidden h-4 w-4 text-slate-500 sm:block" />
                 </button>
 
                 {profileMenuOpen && (
@@ -114,15 +114,15 @@ export default function Navbar() {
                       className="fixed inset-0 z-40"
                       onClick={() => setProfileMenuOpen(false)}
                     />
-                    <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
-                      <div className="border-b border-gray-100 px-4 py-3">
-                        <p className="text-sm font-semibold text-gray-900">
+                    <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl">
+                      <div className="border-b border-slate-100 px-4 py-3">
+                        <p className="text-sm font-semibold text-slate-900">
                           {session.user.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           {session.user.email || session.user.phone}
                         </p>
-                        <span className="mt-1 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600">
+                        <span className="mt-1 inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-600">
                           {session.user.role}
                         </span>
                       </div>
@@ -130,7 +130,7 @@ export default function Navbar() {
                       <Link
                         href={dashboardPathForRole(session.user.role)}
                         onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                       >
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard
@@ -139,7 +139,7 @@ export default function Navbar() {
                       <Link
                         href="/profile"
                         onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                       >
                         <User className="h-4 w-4" />
                         Profile
@@ -148,7 +148,7 @@ export default function Navbar() {
                       <Link
                         href="/settings"
                         onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                       >
                         <Settings className="h-4 w-4" />
                         Settings
@@ -158,14 +158,14 @@ export default function Navbar() {
                         <Link
                           href="/admin"
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                         >
                           <Shield className="h-4 w-4" />
                           Admin Panel
                         </Link>
                       )}
 
-                      <div className="my-1 border-t border-gray-100" />
+                      <div className="my-1 border-t border-slate-100" />
 
                       <button
                         onClick={() => {
@@ -202,7 +202,7 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-lg p-2 text-gray-600 hover:bg-gray-50 md:hidden"
+            className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 md:hidden"
           >
             {mobileMenuOpen ? (
               <X className="h-5 w-5" />
@@ -215,7 +215,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="border-t border-gray-100 bg-white md:hidden">
+        <div className="border-t border-slate-100 bg-white md:hidden">
           <div className="page-container space-y-1 py-3">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -225,10 +225,10 @@ export default function Navbar() {
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-brand-50 text-brand-600"
-                      : "text-gray-600 hover:bg-gray-50"
+                      : "text-slate-600 hover:bg-slate-50"
                   )}
                 >
                   <link.icon className="h-5 w-5" />
@@ -241,16 +241,16 @@ export default function Navbar() {
               <Link
                 href={session.user.role === "TENANT" ? "/dashboard/tenant" : "/dashboard/landlord/create"}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
               >
                 {session.user.role === "TENANT" ? (
                   <>
-                    <Home className="h-5 w-5" />
+                    <Search className="h-5 w-5" />
                     Find a House
                   </>
                 ) : (
                   <>
-                    <Home className="h-5 w-5" />
+                    <Search className="h-5 w-5" />
                     List Property
                   </>
                 )}

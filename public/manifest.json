@@ -1,36 +1,36 @@
 {
-  "name": "RentMe — Find Your Next Home in Uganda",
-  "short_name": "RentMe",
-  "description": "Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent.",
+  "name": "Rent Mesh — Find Your Next Home in Uganda",
+  "short_name": "Rent Mesh",
+  "description": "Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent in Kampala and beyond.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#172554",
+  "theme_color": "#022b59",
   "orientation": "portrait-primary",
   "categories": ["lifestyle", "business"],
   "lang": "en",
   "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/rentmesh-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/rentmesh-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/rentmesh-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/rentmesh-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

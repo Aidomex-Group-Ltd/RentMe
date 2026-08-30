@@ -6,7 +6,7 @@ import { Check, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "RentMe pricing — list your property for free or upgrade for premium visibility.",
+    "Rent Mesh pricing — list your property for free or upgrade for premium visibility.",
 };
 
 const plans = [
@@ -14,7 +14,7 @@ const plans = [
     name: "Free",
     price: "UGX 0",
     period: "forever",
-    description: "Get started with a basic listing on RentMe.",
+    description: "Get started with a basic listing on Rent Mesh.",
     features: [
       "1 active property listing",
       "Up to 5 photos per listing",

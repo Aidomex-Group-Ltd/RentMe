@@ -4,7 +4,7 @@ import MainLayout from "@/components/layout/main-layout";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How RentMe collects, uses, and protects your personal information.",
+  description: "How Rent Mesh collects, uses, and protects your personal information.",
 };
 
 export default function PrivacyPage() {
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
             <section className="space-y-3">
               <h2 className="text-xl font-semibold text-gray-900 font-display">1. Introduction</h2>
               <p>
-                RentMe (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates a rental housing marketplace in Uganda.
+                Rent Mesh (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates a rental housing marketplace in Uganda.
                 This Privacy Policy explains how we collect, use, store, and share personal information when you
                 use our website and related services.
               </p>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
               <p>
                 We do not sell your personal information. We may share limited information with other users as
                 needed for rentals (for example, a landlord may see a tenant&apos;s name and contact details for a
-                viewing request), with service providers who help us operate RentMe, or when required by law.
+                viewing request), with service providers who help us operate Rent Mesh, or when required by law.
               </p>
             </section>
 

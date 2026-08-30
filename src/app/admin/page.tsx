@@ -147,7 +147,7 @@ export default function AdminDashboard() {
     <div>
       <AdminPageHeader
         title="Overview"
-        description="Operational snapshot of the RentMe platform"
+        description="Operational snapshot of the Rent Mesh platform"
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Overview" }]}
         actions={
           <button type="button" onClick={load} className="btn-secondary text-sm" disabled={loading}>

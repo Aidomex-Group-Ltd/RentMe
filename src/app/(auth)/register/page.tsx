@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { Home, Eye, EyeOff, Loader2, User, Building, Users } from "lucide-react";
+import { Eye, EyeOff, Loader2, User, Building, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn, dashboardPathForRole, formatPhoneNumber, isValidUgandanPhone } from "@/lib/utils";
 
@@ -123,7 +123,7 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Welcome to RentMe!");
+      toast.success("Welcome to Rent Mesh!");
       router.push(dashboardPathForRole(role));
       router.refresh();
     } catch {
@@ -139,10 +139,8 @@ export default function RegisterPage() {
       <div className="hidden flex-col items-center justify-center bg-brand-700 p-12 lg:flex lg:w-1/2">
         <div className="max-w-md text-center">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-              <Home className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white font-display">RentMe</span>
+            <img src="/icons/rentmesh-192.png" alt="Rent Mesh" className="h-12 w-12 rounded-xl object-contain" width={48} height={48} />
+            <span className="text-2xl font-bold text-white font-display">Rent Mesh</span>
           </Link>
           <h2 className="text-3xl font-bold text-white font-display">
             Join Uganda&apos;s #1 Rental Marketplace
@@ -158,10 +156,8 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500">
-                <Home className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-brand-700 font-display">RentMe</span>
+              <img src="/icons/rentmesh-192.png" alt="Rent Mesh" className="h-10 w-10 rounded-xl object-contain" width={40} height={40} />
+              <span className="text-xl font-bold text-brand-700 font-display">Rent Mesh</span>
             </Link>
           </div>
 
