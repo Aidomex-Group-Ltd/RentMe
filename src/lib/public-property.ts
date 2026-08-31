@@ -91,13 +91,13 @@ async function fetchProperty(key: string) {
   };
 
   try {
-    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_FULL });
+    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_FULL as any });
   } catch (err) {
     console.warn(
       "Full property query failed, using minimal select:",
       err instanceof Error ? err.message : err,
     );
-    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_MINIMAL });
+    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_MINIMAL as any });
   }
 }
 
