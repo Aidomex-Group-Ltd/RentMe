@@ -91,13 +91,13 @@ async function fetchProperty(key: string) {
   };
 
   try {
-    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_FULL as any });
+    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_FULL as any }) as unknown as PublicPropertyData;
   } catch (err) {
     console.warn(
       "Full property query failed, using minimal select:",
       err instanceof Error ? err.message : err,
     );
-    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_MINIMAL as any });
+    return await prisma.property.findFirst({ where, select: PROPERTY_SELECT_MINIMAL as any }) as unknown as PublicPropertyData;
   }
 }
 
@@ -172,7 +172,49 @@ export const getPublicProperty = unstable_cache(
   { revalidate: 300, tags: ["property"] }
 );
 
-export type PublicPropertyData = NonNullable<Awaited<ReturnType<typeof getPublicProperty>>>;
+/**
+ * Explicit property data type — bypasses Prisma's complex return-type
+ * inference so consumers can reliably access images, user, amenities, etc.
+ * even when the CI Prisma client is out of sync with the local schema.
+ */
+export interface PublicPropertyData {
+  id: string;
+  userId: string;
+  slug: string | null;
+  title: string;
+  description: string | null;
+  propertyType: string;
+  rent: number | null;
+  deposit: number | null;
+  agencyFee: number | null;
+  paymentFrequency: string;
+  bedrooms: number;
+  bathrooms: number;
+  district: string | null;
+  city: string | null;
+  neighborhood: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  viewCount: number;
+  isVerified: boolean;
+  isFlagged: boolean;
+  flagReason: string | null;
+  listedAt: Date | null;
+  images?: { id: string; url: string; alt: string | null; order: number; isCover: boolean }[];
+  videos?: { id: string; url: string; thumbnail: string | null; order: number }[];
+  amenities?: { amenity: { id: string; name: string; icon: string | null } }[];
+  user?: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+    phone: string | null;
+    landlord?: { verificationStatus: string; responseRate: number | null; responseTimeHours: number | null; totalListings: number; activeListings: number } | null;
+    agent?: { verificationStatus: string; responseRate: number | null; responseTimeHours: number | null; totalProperties: number; activeProperties: number } | null;
+  };
+  reviews?: { id: string; rating: number; comment: string | null; createdAt: Date; user: { name: string | null } }[];
+  units?: { id: string; unitNumber: string; status: string; rent: number | null }[];
+  [key: string]: unknown;
+}
 
 
 /**

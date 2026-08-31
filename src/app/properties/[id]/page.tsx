@@ -39,8 +39,7 @@ export default async function PropertyDetailPage({
     session = null;
   }
   const userId = session?.user?.id || null;
-  const propAny = property as any;
-  const isOwner = userId === propAny.userId;
+  const isOwner = userId === property.userId;
 
   // Check if user already reported this property
   let alreadyReported = false;
@@ -60,9 +59,8 @@ export default async function PropertyDetailPage({
 
   // Flatten amenity keys for the client component
   const propertyWithAmenities: Record<string, any> = { ...property };
-  const p = property as any;
-  if (p.amenities) {
-    for (const pa of p.amenities) {
+  if (property.amenities) {
+    for (const pa of property.amenities) {
       if (pa.amenity?.name) {
         const key = pa.amenity.name.toLowerCase().replace(/\s+/g, "");
         propertyWithAmenities[key] = true;
