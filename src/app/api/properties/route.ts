@@ -198,7 +198,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(payload, {
       headers: {
-        "X-Rent Mesh-Cache": cacheStatus,
+        "X-RentMesh-Cache": cacheStatus,
         "Cache-Control": mine ? "private, no-store" : "public, s-maxage=30, stale-while-revalidate=60",
       },
     });
