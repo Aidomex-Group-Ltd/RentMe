@@ -34,13 +34,13 @@ const FALLBACK_LISTINGS: FeaturedListing[] = [
   },
   {
     id: "2",
-    slug: "executive-apartment-naguru",
-    title: "Executive Apartment in Naguru",
-    location: "Naguru, Kampala",
-    rent: 2800000,
+    slug: "lakeside-villa-entebbe",
+    title: "Lakeside Villa in Entebbe",
+    location: "Entebbe",
+    rent: 3200000,
     bedrooms: 3,
     bathrooms: 2,
-    type: "Apartment",
+    type: "Villa",
     isVerified: true,
     image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80&auto=format",
   },
@@ -58,12 +58,12 @@ const FALLBACK_LISTINGS: FeaturedListing[] = [
   },
   {
     id: "4",
-    slug: "family-home-muyenga",
-    title: "Family Home in Muyenga",
-    location: "Muyenga, Kampala",
-    rent: 4200000,
-    bedrooms: 5,
-    bathrooms: 4,
+    slug: "riverside-home-jinja",
+    title: "Riverside Home in Jinja",
+    location: "Jinja",
+    rent: 2500000,
+    bedrooms: 4,
+    bathrooms: 3,
     type: "House",
     isVerified: true,
     image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80&auto=format",
@@ -86,7 +86,7 @@ export default function FeaturedListings({ listings }: FeaturedListingsProps) {
               Popular listings
             </h2>
             <p className="mt-2 text-lg text-slate-500">
-              Handpicked properties across Kampala.
+              Handpicked properties across Uganda.
             </p>
           </div>
           <Link

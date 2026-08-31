@@ -271,7 +271,7 @@ export default function PropertyCarousel({
         </span>
         <span className="inline-flex items-center rounded-full bg-[#e7eef3] px-4 py-1 text-[13px] text-[#3e5f6b]">
           <MapPin className="mr-1.5 h-3.5 w-3.5" />
-          Kampala · Entebbe · Jinja
+          Kampala · Entebbe · Jinja · Mbarara · Gulu
         </span>
       </div>
     </div>

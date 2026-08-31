@@ -45,13 +45,13 @@ const HERO_SLIDES: HeroSlide[] = [
   {
     id: "2",
     image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80&auto=format",
-    title: "Executive Apartment in Naguru",
-    location: "Naguru, Kampala",
-    rent: 2800000,
+    title: "Lakeside Villa in Entebbe",
+    location: "Entebbe",
+    rent: 3200000,
     bedrooms: 3,
     bathrooms: 2,
-    type: "Apartment",
-    alt: "Executive apartment with city views in Naguru, Kampala",
+    type: "Villa",
+    alt: "Lakeside villa with garden views in Entebbe, Uganda",
   },
   {
     id: "3",
@@ -67,13 +67,13 @@ const HERO_SLIDES: HeroSlide[] = [
   {
     id: "4",
     image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80&auto=format",
-    title: "Family Home in Muyenga",
-    location: "Muyenga, Kampala",
-    rent: 4200000,
-    bedrooms: 5,
-    bathrooms: 4,
+    title: "Riverside Home in Jinja",
+    location: "Jinja",
+    rent: 2500000,
+    bedrooms: 4,
+    bathrooms: 3,
     type: "House",
-    alt: "Family home with garden in Muyenga, Kampala",
+    alt: "Riverside family home with garden in Jinja, Uganda",
   },
   {
     id: "5",
@@ -89,13 +89,13 @@ const HERO_SLIDES: HeroSlide[] = [
   {
     id: "6",
     image: "https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=1920&q=80&auto=format",
-    title: "Luxury Penthouse in Kyanja",
-    location: "Kyanja, Kampala",
-    rent: 6000000,
+    title: "Modern Home in Mbarara",
+    location: "Mbarara",
+    rent: 1500000,
     bedrooms: 3,
-    bathrooms: 3,
-    type: "Penthouse",
-    alt: "Luxury penthouse in Kyanja, Kampala",
+    bathrooms: 2,
+    type: "House",
+    alt: "Modern family home in Mbarara, Uganda",
   },
 ];
 
@@ -257,14 +257,14 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
             {/* Badge */}
             <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-sm">
               <MapPin className="h-3.5 w-3.5 text-brand-400" />
-              Kampala&apos;s trusted rental platform
+              Uganda&apos;s trusted rental platform
             </div>
 
             {/* Headline */}
             <h1 className="animate-fade-in-up delay-100 text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
               Find your place{" "}
               <span className="bg-gradient-to-r from-brand-300 to-accent-300 bg-clip-text text-transparent">
-                in Kampala.
+                in Uganda.
               </span>
             </h1>
 

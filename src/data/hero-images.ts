@@ -18,12 +18,12 @@ export const IMAGE_SOURCES = [
     description: "Modern villa exterior with pool",
   },
   {
-    id: "hero-naguru-apartment",
+    id: "hero-entebbe-villa",
     url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c",
     photographer: "John_rc",
     photographerUrl: "https://unsplash.com/@jondoing",
     license: "Unsplash License",
-    description: "Modern apartment with large windows",
+    description: "Lakeside villa with garden views",
   },
   {
     id: "hero-ntinda-flat",
@@ -34,12 +34,12 @@ export const IMAGE_SOURCES = [
     description: "Furnished apartment interior",
   },
   {
-    id: "hero-muyenga-house",
+    id: "hero-jinja-house",
     url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c",
     photographer: "John_rc",
     photographerUrl: "https://unsplash.com/@jondoing",
     license: "Unsplash License",
-    description: "Family home exterior",
+    description: "Riverside family home",
   },
   {
     id: "hero-bukoto-studio",
@@ -50,12 +50,12 @@ export const IMAGE_SOURCES = [
     description: "Modern studio apartment",
   },
   {
-    id: "hero-kyanja-penthouse",
+    id: "hero-mbarara-house",
     url: "https://images.unsplash.com/photo-1600573472592-401b489a3cdc",
     photographer: "John_rc",
     photographerUrl: "https://unsplash.com/@jondoing",
     license: "Unsplash License",
-    description: "Luxury penthouse interior",
+    description: "Modern family home",
   },
 ] as const;
 

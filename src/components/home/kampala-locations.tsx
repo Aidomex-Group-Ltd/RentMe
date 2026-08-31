@@ -4,69 +4,84 @@ import Link from "next/link";
 import { MapPin, ArrowRight } from "lucide-react";
 
 const LOCATIONS = [
+  // Kampala
   {
     name: "Kololo",
     slug: "Kololo",
     district: "Kampala",
+    region: "Central",
     description: "Premium hilltop neighborhood",
     image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80&auto=format",
     count: 45,
   },
   {
-    name: "Naguru",
-    slug: "Naguru",
-    district: "Kampala",
-    description: "Quiet residential area",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80&auto=format",
-    count: 38,
-  },
-  {
     name: "Ntinda",
     slug: "Ntinda",
     district: "Kampala",
+    region: "Central",
     description: "Central and convenient",
     image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80&auto=format",
     count: 52,
   },
-  {
-    name: "Muyenga",
-    slug: "Muyenga",
-    district: "Kampala",
-    description: "Scenic hillside living",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&q=80&auto=format",
-    count: 30,
-  },
-  {
-    name: "Bukoto",
-    slug: "Bukoto",
-    district: "Kampala",
-    description: "Vibrant and accessible",
-    image: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=400&q=80&auto=format",
-    count: 42,
-  },
-  {
-    name: "Kyanja",
-    slug: "Kyanja",
-    district: "Kampala",
-    description: "Growing modern estates",
-    image: "https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=400&q=80&auto=format",
-    count: 28,
-  },
+  // Wakiso
   {
     name: "Lubowa",
     slug: "Lubowa",
     district: "Wakiso",
+    region: "Central",
     description: "Suburban family homes",
     image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&q=80&auto=format",
     count: 35,
   },
+  // Entebbe
   {
-    name: "Munyonyo",
-    slug: "Munyonyo",
-    district: "Kampala",
-    description: "Lakeside luxury",
+    name: "Entebbe",
+    slug: "Entebbe",
+    district: "Entebbe",
+    region: "Central",
+    description: "Lakeside living near the airport",
     image: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400&q=80&auto=format",
+    count: 28,
+  },
+  // Jinja
+  {
+    name: "Jinja",
+    slug: "Jinja",
+    district: "Jinja",
+    region: "Eastern",
+    description: "Adventure capital of Uganda",
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80&auto=format",
+    count: 33,
+  },
+  // Mbarara
+  {
+    name: "Mbarara",
+    slug: "Mbarara",
+    district: "Mbarara",
+    region: "Western",
+    description: "Gateway to western Uganda",
+    image: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=400&q=80&auto=format",
     count: 22,
+  },
+  // Gulu
+  {
+    name: "Gulu",
+    slug: "Gulu",
+    district: "Gulu",
+    region: "Northern",
+    description: "Northern Uganda's hub",
+    image: "https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=400&q=80&auto=format",
+    count: 18,
+  },
+  // Mukono
+  {
+    name: "Mukono",
+    slug: "Mukono",
+    district: "Mukono",
+    region: "Central",
+    description: "Growing lakeside town",
+    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&q=80&auto=format",
+    count: 26,
   },
 ];
 
@@ -81,10 +96,10 @@ export default function KampalaLocations() {
             Popular areas
           </span>
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            Explore Kampala neighborhoods
+            Explore locations across Uganda
           </h2>
           <p className="mt-3 text-lg text-slate-500">
-            From premium hills to vibrant city centers — find your ideal location.
+            From Kampala&apos;s hills to lakeside towns — find your ideal location.
           </p>
         </div>
 

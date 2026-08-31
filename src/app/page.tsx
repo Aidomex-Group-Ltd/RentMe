@@ -13,14 +13,14 @@ import prisma from "@/lib/prisma";
 import PlatformChrome from "@/components/home/platform-chrome";
 
 export const metadata: Metadata = {
-  title: "Rent Mesh — Find Your Perfect Home in Kampala",
+  title: "Rent Mesh — Find Your Perfect Home in Uganda",
   description:
-    "Discover verified houses, apartments, and rooms for rent in Kampala and across Uganda. Search, filter, and apply — free.",
+    "Discover verified houses, apartments, and rooms for rent anywhere in Uganda. Search, filter, and apply — free.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Find Your Perfect Home in Kampala | Rent Mesh",
+    title: "Find Your Perfect Home in Uganda | Rent Mesh",
     description:
-      "Verified properties from Kampala to Entebbe, Jinja, and beyond. Uganda's modern property platform.",
+      "Verified properties in Kampala, Entebbe, Jinja, Mbarara, Gulu, and beyond. Uganda's modern property platform.",
     url: "/",
     siteName: "Rent Mesh",
     type: "website",
@@ -120,6 +120,8 @@ export default async function HomePage() {
                     <option value="Mukono">Mukono</option>
                     <option value="Entebbe">Entebbe</option>
                     <option value="Jinja">Jinja</option>
+                    <option value="Mbarara">Mbarara</option>
+                    <option value="Gulu">Gulu</option>
                   </select>
                 </div>
 
@@ -161,7 +163,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 3. Popular Kampala Locations */}
+        {/* 3. Popular Locations */}
         <KampalaLocations />
 
         {/* 4. Featured Listings */}

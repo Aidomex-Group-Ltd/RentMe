@@ -56,7 +56,8 @@ export async function generateMetadata({
     property.description?.slice(0, 155)?.trim() ||
     `Rent ${property.title} in ${location} for ${formatUGX(property.rent || 0)}/month. ${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath. Verified on Rent Mesh.`;
 
-  const imageUrl = property.images?.[0]?.url || "/og-property-default.jpg";
+  const pAny = property as any;
+  const imageUrl = pAny.images?.[0]?.url || "/og-property-default.jpg";
   const pageUrl = `/properties/${property.slug || property.id}`;
 
   return {
@@ -102,8 +103,9 @@ function buildJsonLd(property: PublicPropertyData): Record<string, unknown> {
     .join(", ");
 
   const pageUrl = `${BASE}/properties/${property.slug || property.id}`;
+  const pAny = property as any;
   const imageUrl =
-    property.images?.[0]?.url || `${BASE}/og-property-default.jpg`;
+    pAny.images?.[0]?.url || `${BASE}/og-property-default.jpg`;
 
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -123,7 +125,7 @@ function buildJsonLd(property: PublicPropertyData): Record<string, unknown> {
       validFrom: property.listedAt?.toISOString() || new Date().toISOString(),
       seller: {
         "@type": "RealEstateAgent",
-        name: property.user?.name || "Rent Mesh",
+        name: pAny.user?.name || "Rent Mesh",
         url: BASE,
       },
     },
@@ -160,9 +162,9 @@ function buildJsonLd(property: PublicPropertyData): Record<string, unknown> {
     };
   }
 
-  if (property.amenities && property.amenities.length > 0) {
-    const amenityNames = property.amenities
-      .map((a) => a.amenity?.name)
+  if (pAny.amenities && pAny.amenities.length > 0) {
+    const amenityNames = pAny.amenities
+      .map((a: any) => a.amenity?.name)
       .filter(Boolean) as string[];
     if (amenityNames.length > 0) {
       (schema as any).amenityFeature = amenityNames.map((name) => ({

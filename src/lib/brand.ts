@@ -12,10 +12,10 @@ export const BRAND = {
   /** Short name for PWA manifest, mobile tabs, etc. */
   shortName: "Rent Mesh",
   /** Tagline */
-  tagline: "Find your place in Kampala.",
+  tagline: "Find your place in Uganda.",
   /** SEO description */
   description:
-    "Rent Mesh is Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent in Kampala, Wakiso, Mukono, and across Uganda.",
+    "Rent Mesh is Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent anywhere in Uganda.",
   /** OG site name */
   siteName: "Rent Mesh",
   /** Canonical domain — do NOT change for DNS */
