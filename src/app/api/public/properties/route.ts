@@ -41,6 +41,8 @@ export async function GET(req: NextRequest) {
 
     const q = searchParams.get("q") || "";
     const propertyType = searchParams.get("type") || "";
+    const subtype = searchParams.get("subtype") || "";
+    const transaction = searchParams.get("transaction") || "";
     const minRent = searchParams.get("minRent") || "";
     const maxRent = searchParams.get("maxRent") || "";
     const bedrooms = searchParams.get("bedrooms");
@@ -59,15 +61,29 @@ export async function GET(req: NextRequest) {
       status: "ACTIVE", // server-authoritative: guests only ever see live listings
     };
 
+    const orClauses: Prisma.PropertyWhereInput[] = [];
     if (q) {
-      where.OR = [
+      orClauses.push(
         { title: { contains: q, mode: "insensitive" } },
         { description: { contains: q, mode: "insensitive" } },
         { neighborhood: { contains: q, mode: "insensitive" } },
         { district: { contains: q, mode: "insensitive" } },
-        { city: { contains: q, mode: "insensitive" } },
-      ];
+        { city: { contains: q, mode: "insensitive" } }
+      );
     }
+    // Transaction type (Rent/Sale/Lease/Hire/Service/Request) is matched as a
+    // keyword against listing text until a dedicated column exists. Keeps the
+    // filter shareable and backward compatible with existing listings.
+    if (transaction) {
+      orClauses.push(
+        { title: { contains: transaction, mode: "insensitive" } },
+        { description: { contains: transaction, mode: "insensitive" } },
+        { propertyType: { contains: transaction, mode: "insensitive" } }
+      );
+    }
+    if (orClauses.length) where.OR = orClauses;
+
+    if (subtype) where.propertyType = subtype;
     if (propertyType) where.propertyType = propertyType;
     if (minRent || maxRent) {
       where.rent = {};

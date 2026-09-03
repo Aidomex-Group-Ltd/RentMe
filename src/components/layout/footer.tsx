@@ -1,22 +1,23 @@
 import Link from "next/link";
 import { Facebook, Twitter, Instagram, Mail, Phone } from "lucide-react";
+import { BRAND } from "@/lib/brand";
 
 const footerLinks = {
   "Find a Home": [
-    { label: "Search Properties", href: "/search" },
+    { label: "Search Listings", href: "/search" },
     { label: "Kampala", href: "/search?district=Kampala" },
     { label: "Wakiso", href: "/search?district=Wakiso" },
     { label: "Mukono", href: "/search?district=Mukono" },
     { label: "Entebbe", href: "/search?district=Entebbe" },
     { label: "Jinja", href: "/search?district=Jinja" },
   ],
-  "Property Types": [
-    { label: "Single Room", href: "/search?type=single_room" },
-    { label: "Bedsitter", href: "/search?type=bedsitter" },
-    { label: "1 Bedroom", href: "/search?type=1_bedroom" },
-    { label: "2 Bedroom", href: "/search?type=2_bedroom" },
-    { label: "3 Bedroom", href: "/search?type=3_bedroom" },
-    { label: "Apartment", href: "/search?type=apartment" },
+  "Categories": [
+    { label: "Residential", href: "/search?category=residential" },
+    { label: "Land & Plots", href: "/search?category=land" },
+    { label: "Commercial", href: "/search?category=commercial" },
+    { label: "Vehicles", href: "/search?category=vehicle" },
+    { label: "Farm & Agricultural", href: "/search?category=agricultural" },
+    { label: "Products & Services", href: "/search?category=product" },
   ],
   Company: [
     { label: "About Us", href: "/about" },
@@ -25,10 +26,10 @@ const footerLinks = {
     { label: "Terms of Service", href: "/terms" },
     { label: "Safety Tips", href: "/safety" },
   ],
-  "For Landlords": [
-    { label: "List Property", href: "/register" },
+  "For Owners": [
+    { label: "List an Item", href: "/register" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Landlord Guide", href: "/guides/landlord" },
+    { label: "Owner Guide", href: "/guides/landlord" },
     { label: "Success Stories", href: "/stories" },
   ],
 };
@@ -43,18 +44,18 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2.5">
               <img
                 src="/icons/rentmesh-192.png"
-                alt="Rent Mesh"
+                alt="Modern Properties"
                 className="h-9 w-9 rounded-xl object-contain"
                 width={36}
                 height={36}
               />
               <span className="text-xl font-bold text-slate-900 font-display">
-                Rent <span className="text-brand-500">Mesh</span>
+                Modern <span className="text-brand-500">Properties</span>
               </span>
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              Find your next home in Uganda. Trusted rental marketplace for
-              tenants, landlords, and agents.
+              {BRAND.tagline}. Discover property, land, vehicles, products and
+              services across Uganda — for clients, owners and agents.
             </p>
             <div className="mt-4 flex gap-3">
               <a
@@ -100,7 +101,7 @@ export default function Footer() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Rent Mesh Uganda. All rights reserved.
+            © {new Date().getFullYear()} Modern Properties Uganda. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-slate-500">
             <a href="tel:+256700000000" className="flex items-center gap-1 transition-colors hover:text-brand-600">

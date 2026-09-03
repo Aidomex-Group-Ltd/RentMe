@@ -31,7 +31,7 @@ const TRUST_ITEMS = [
   {
     icon: Users,
     title: "Trusted community",
-    description: "Over 5,000 active tenants and hundreds of verified landlords across Uganda.",
+    description: "Over 5,000 active clients and hundreds of verified owners across Uganda.",
   },
   {
     icon: CheckCircle,

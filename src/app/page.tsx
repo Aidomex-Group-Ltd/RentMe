@@ -11,18 +11,19 @@ import FinalCTA from "@/components/home/final-cta";
 import { formatUGX } from "@/lib/utils";
 import prisma from "@/lib/prisma";
 import PlatformChrome from "@/components/home/platform-chrome";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Rent Mesh — Find Your Perfect Home in Uganda",
+  title: `${BRAND.name} — Your Sure Property Solution`,
   description:
-    "Discover verified houses, apartments, and rooms for rent anywhere in Uganda. Search, filter, and apply — free.",
+    "Discover property, land, vehicles, products and services across Uganda. Search, filter, and enquire — free.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Find Your Perfect Home in Uganda | Rent Mesh",
+    title: `${BRAND.name} — Your Sure Property Solution`,
     description:
-      "Verified properties in Kampala, Entebbe, Jinja, Mbarara, Gulu, and beyond. Uganda's modern property platform.",
+      "Discover property, land, vehicles, products and services across Uganda. Uganda's modern property and dealership platform.",
     url: "/",
-    siteName: "Rent Mesh",
+    siteName: BRAND.name,
     type: "website",
   },
 };
@@ -100,9 +101,12 @@ export default async function HomePage() {
         <section className="relative z-20 -mt-16 sm:-mt-20">
           <div className="page-container">
             <div className="glass rounded-3xl p-6 shadow-2xl sm:p-8">
-              <h2 className="mb-4 text-center text-lg font-bold text-slate-900">
-                Start your search
+              <h2 className="mb-1 text-center text-lg font-bold text-slate-900">
+                Search property, land, vehicles and services
               </h2>
+              <p className="mb-4 text-center text-xs text-slate-500">
+                Choose a location in Uganda
+              </p>
               <form
                 action="/search"
                 method="GET"
@@ -110,50 +114,70 @@ export default async function HomePage() {
               >
                 <div className="relative">
                   <select
+                    name="category"
+                    aria-label="Category"
+                    className="input pl-4"
+                  >
+                    <option value="">All categories</option>
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="industrial">Industrial</option>
+                    <option value="land">Land</option>
+                    <option value="agricultural">Agricultural</option>
+                    <option value="vehicle">Vehicles</option>
+                    <option value="equipment">Equipment</option>
+                    <option value="product">Products</option>
+                    <option value="service">Services</option>
+                  </select>
+                </div>
+
+                <select
+                  name="transaction"
+                  aria-label="Transaction type"
+                  className="input"
+                >
+                  <option value="">All transactions</option>
+                  <option value="rent">Rent</option>
+                  <option value="sale">Sale</option>
+                  <option value="lease">Lease</option>
+                  <option value="hire">Hire</option>
+                  <option value="service">Service</option>
+                  <option value="request">Request</option>
+                </select>
+
+                <div className="relative">
+                  <select
                     name="district"
                     aria-label="Location"
                     className="input pl-4"
                   >
-                    <option value="">All locations</option>
+                    <option value="">All Uganda</option>
                     <option value="Kampala">Kampala</option>
                     <option value="Wakiso">Wakiso</option>
                     <option value="Mukono">Mukono</option>
                     <option value="Entebbe">Entebbe</option>
                     <option value="Jinja">Jinja</option>
                     <option value="Mbarara">Mbarara</option>
+                    <option value="Masaka">Masaka</option>
+                    <option value="Fort Portal">Fort Portal</option>
                     <option value="Gulu">Gulu</option>
+                    <option value="Lira">Lira</option>
+                    <option value="Mbale">Mbale</option>
+                    <option value="Soroti">Soroti</option>
+                    <option value="Hoima">Hoima</option>
+                    <option value="Arua">Arua</option>
+                    <option value="Kabale">Kabale</option>
+                    <option value="Kasese">Kasese</option>
+                    <option value="Busia">Busia</option>
+                    <option value="Tororo">Tororo</option>
                   </select>
                 </div>
-
-                <select
-                  name="type"
-                  aria-label="Property type"
-                  className="input"
-                >
-                  <option value="">All types</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="house">House</option>
-                  <option value="bedsitter">Bedsitter</option>
-                  <option value="villa">Villa</option>
-                  <option value="flat">Flat</option>
-                  <option value="1_bedroom">1 Bedroom</option>
-                  <option value="2_bedroom">2 Bedroom</option>
-                </select>
-
-                <input
-                  type="number"
-                  name="maxRent"
-                  min="0"
-                  placeholder="Max rent (UGX)"
-                  aria-label="Maximum rent in UGX"
-                  className="input"
-                />
 
                 <button
                   type="submit"
                   className="btn-primary w-full"
                 >
-                  Search properties
+                  Search Uganda
                 </button>
               </form>
               <p className="mt-3 text-center text-xs text-slate-400">

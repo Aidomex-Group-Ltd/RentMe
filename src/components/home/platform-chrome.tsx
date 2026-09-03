@@ -32,13 +32,13 @@ export default function PlatformChrome({
           <Link href="/" className="flex items-center gap-2.5">
             <img
               src="/icons/rentmesh-192.png"
-              alt="Rent Mesh"
+              alt="Modern Properties"
               className="h-9 w-9 rounded-xl object-contain"
               width={36}
               height={36}
             />
             <span className="text-xl font-bold text-slate-900 font-display">
-              Rent <span className="text-brand-500">Mesh</span>
+              Modern <span className="text-brand-500">Properties</span>
             </span>
           </Link>
 
@@ -72,7 +72,7 @@ export default function PlatformChrome({
               <input
                 type="text"
                 name="q"
-                placeholder="Search properties…"
+                placeholder="Search property, land, vehicles and services…"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
               />
             </form>
@@ -191,32 +191,32 @@ export default function PlatformChrome({
               <Link href="/" className="flex items-center gap-2.5">
                 <img
                   src="/icons/rentmesh-192.png"
-                  alt="Rent Mesh"
+                  alt="Modern Properties"
                   className="h-8 w-8 rounded-lg object-contain"
                   width={32}
                   height={32}
                 />
                 <span className="text-lg font-bold text-slate-900 font-display">
-                  Rent <span className="text-brand-500">Mesh</span>
+                  Modern <span className="text-brand-500">Properties</span>
                 </span>
               </Link>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
-                Uganda&apos;s trusted rental housing marketplace. Find houses,
-                apartments, and rooms for rent.
+                Your Sure Property Solution. Discover property, land, vehicles,
+                products and services across Uganda.
               </p>
             </div>
 
-            {/* Find a Home */}
+            {/* Explore */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900">
-                Find a home
+                Explore
               </h3>
               <ul className="mt-3 space-y-2">
                 {[
-                  { label: "Search Properties", href: "/search" },
-                  { label: "Kampala", href: "/search?district=Kampala" },
-                  { label: "Wakiso", href: "/search?district=Wakiso" },
-                  { label: "Entebbe", href: "/search?district=Entebbe" },
+                  { label: "Search Listings", href: "/search" },
+                  { label: "Land & Plots", href: "/search?category=land" },
+                  { label: "Vehicles", href: "/search?category=vehicle" },
+                  { label: "Services", href: "/search?category=service" },
                 ].map((l) => (
                   <li key={l.href}>
                     <Link
@@ -230,17 +230,17 @@ export default function PlatformChrome({
               </ul>
             </div>
 
-            {/* Property Types */}
+            {/* Categories */}
             <div>
               <h3 className="text-sm font-semibold text-slate-900">
-                Property types
+                Categories
               </h3>
               <ul className="mt-3 space-y-2">
                 {[
-                  { label: "Apartment", href: "/search?type=apartment" },
-                  { label: "House", href: "/search?type=house" },
-                  { label: "Bedsitter", href: "/search?type=bedsitter" },
-                  { label: "Villa", href: "/search?type=villa" },
+                  { label: "Residential", href: "/search?category=residential" },
+                  { label: "Commercial", href: "/search?category=commercial" },
+                  { label: "Vehicles", href: "/search?category=vehicle" },
+                  { label: "Products", href: "/search?category=product" },
                 ].map((l) => (
                   <li key={l.href}>
                     <Link
@@ -281,7 +281,7 @@ export default function PlatformChrome({
           {/* Bottom bar */}
           <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} Rent Mesh Uganda. All rights reserved.
+              © {new Date().getFullYear()} Modern Properties Uganda. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <a
@@ -291,10 +291,10 @@ export default function PlatformChrome({
                 +256 700 000 000
               </a>
               <a
-                href="mailto:hello@rentme.ug"
+                href="mailto:hello@rentme.rest"
                 className="transition-colors hover:text-brand-600"
               >
-                hello@rentme.ug
+                hello@rentme.rest
               </a>
             </div>
           </div>

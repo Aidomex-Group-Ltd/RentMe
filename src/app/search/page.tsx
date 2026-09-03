@@ -8,6 +8,11 @@ import PropertyCard from "@/components/property/property-card";
 import { PROPERTY_TYPES } from "@/lib/utils";
 import DistrictSelector from "@/components/ui/district-selector";
 import { ugandanRegions, type Region } from "@/lib/uganda-districts";
+import {
+  LISTING_CATEGORIES,
+  TRANSACTION_TYPES,
+  CATEGORY_SUBTYPES,
+} from "@/lib/brand";
 
 const PAGE_SIZE = 20;
 
@@ -64,6 +69,9 @@ function SearchPageContent() {
 
   // Filter state
   const [q, setQ] = useState(searchParams.get("q") || "");
+  const [category, setCategory] = useState(searchParams.get("category") || "");
+  const [subtype, setSubtype] = useState(searchParams.get("subtype") || "");
+  const [transaction, setTransaction] = useState(searchParams.get("transaction") || "");
   const [propertyType, setPropertyType] = useState(searchParams.get("type") || "");
   const [minRent, setMinRent] = useState(searchParams.get("minRent") || "");
   const [maxRent, setMaxRent] = useState(searchParams.get("maxRent") || "");
@@ -74,6 +82,9 @@ function SearchPageContent() {
   const [parking, setParking] = useState(searchParams.get("parking") || "");
   const [security, setSecurity] = useState(searchParams.get("security") || "");
   const [region, setRegion] = useState(searchParams.get("region") || "");
+
+  const subtypeOptions =
+    (category && CATEGORY_SUBTYPES[category]) || [];
 
   const fetchProperties = useCallback(async (targetPage: number, append = false) => {
     if (append) {
@@ -86,6 +97,9 @@ function SearchPageContent() {
       setError(null);
       const params = new URLSearchParams();
       if (q) params.set("q", q);
+      if (category) params.set("category", category);
+      if (subtype) params.set("subtype", subtype);
+      if (transaction) params.set("transaction", transaction);
       if (propertyType) params.set("type", propertyType);
       if (minRent) params.set("minRent", minRent);
       if (maxRent) params.set("maxRent", maxRent);
@@ -124,12 +138,12 @@ function SearchPageContent() {
       setHasMore(targetPage * PAGE_SIZE < totalResults);
     } catch (err) {
       console.error("Search error:", err);
-      setError("We couldn't load properties right now. Please try again.");
+      setError("We couldn't load listings right now. Please try again.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [q, propertyType, minRent, maxRent, bedrooms, district, region, sort, furnished, parking, security]);
+  }, [q, category, subtype, transaction, propertyType, minRent, maxRent, bedrooms, district, region, sort, furnished, parking, security]);
 
   // Reset and fetch page 1 when filters change
   useEffect(() => {

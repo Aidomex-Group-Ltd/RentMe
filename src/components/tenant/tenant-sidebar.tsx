@@ -110,7 +110,7 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
  */
 const QUICK_ACTIONS: NavItem[] = [
   {
-    label: "Find a House",
+    label: "Explore Listings",
     href: "/search",
     icon: Search,
   },
@@ -258,7 +258,7 @@ export default function TenantSidebar({
               <div className="flex items-center gap-2">
                 <img src="/icons/rentmesh-48.png" alt="" className="h-6 w-6 rounded-md object-contain" width={24} height={24} aria-hidden />
                 <span className="font-display text-base font-bold text-brand-700">
-                  Rent Mesh Tenant
+                  Modern Properties
                 </span>
               </div>
               <button

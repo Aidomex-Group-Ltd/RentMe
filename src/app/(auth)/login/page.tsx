@@ -144,23 +144,23 @@ export default function LoginPage() {
       <div className="hidden flex-col items-center justify-center bg-brand-700 p-12 lg:flex lg:w-1/2">
         <div className="max-w-md text-center">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <img src="/icons/rentmesh-192.png" alt="Rent Mesh" className="h-12 w-12 rounded-xl object-contain" width={48} height={48} />
-            <span className="text-2xl font-bold text-white font-display">Rent Mesh</span>
+            <img src="/icons/rentmesh-192.png" alt="Modern Properties" className="h-12 w-12 rounded-xl object-contain" width={48} height={48} />
+            <span className="text-2xl font-bold text-white font-display">Modern Properties</span>
           </Link>
           <h2 className="text-3xl font-bold text-white font-display">
-            Welcome back to Rent Mesh
+            Welcome back to Modern Properties
           </h2>
           <p className="mt-4 text-lg text-white/70">
-            Find your next home in Uganda. Thousands of verified properties waiting for you.
+            Discover property, land, vehicles, products and services across Uganda.
           </p>
           <div className="mt-12 grid grid-cols-3 gap-6 text-center">
             <div>
               <p className="text-3xl font-bold text-white">5K+</p>
-              <p className="text-sm text-white/60">Properties</p>
+              <p className="text-sm text-white/60">Listings</p>
             </div>
             <div>
               <p className="text-3xl font-bold text-white">12K+</p>
-              <p className="text-sm text-white/60">Tenants</p>
+              <p className="text-sm text-white/60">Clients</p>
             </div>
             <div>
               <p className="text-3xl font-bold text-white">50+</p>
@@ -174,8 +174,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <img src="/icons/rentmesh-192.png" alt="Rent Mesh" className="h-10 w-10 rounded-xl object-contain" width={40} height={40} />
-              <span className="text-xl font-bold text-brand-700 font-display">Rent Mesh</span>
+              <img src="/icons/rentmesh-192.png" alt="Modern Properties" className="h-10 w-10 rounded-xl object-contain" width={40} height={40} />
+              <span className="text-xl font-bold text-brand-700 font-display">Modern Properties</span>
             </Link>
           </div>
 

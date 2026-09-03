@@ -19,11 +19,11 @@ export default function FinalCTA() {
           </div>
 
           <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
-            Ready to find your place?
+            Ready to explore Uganda?
           </h2>
           <p className="mt-4 text-lg text-white/70">
-            Join thousands of tenants and landlords who trust Rent Mesh for
-            their rental needs.
+            Discover property, land, vehicles, products and services — the way
+            clients, owners and agents expect.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">

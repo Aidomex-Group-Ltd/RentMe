@@ -37,7 +37,7 @@ const RENTER_BENEFITS = [
   {
     icon: MessageSquare,
     title: "Direct messaging",
-    description: "Communicate with landlords through the platform.",
+    description: "Communicate with owners through the platform.",
   },
   {
     icon: FileText,
@@ -131,7 +131,7 @@ export default function BenefitsSection() {
               Manage with confidence
             </h2>
             <p className="mt-3 text-lg text-slate-500">
-              A complete toolkit for landlords and property managers.
+              A complete toolkit for owners and property managers.
             </p>
           </div>
 

@@ -39,63 +39,63 @@ const HERO_SLIDES: HeroSlide[] = [
     rent: 3500000,
     bedrooms: 4,
     bathrooms: 3,
-    type: "Villa",
+    type: "House / Apartment",
     alt: "Modern villa with pool and garden in Kololo, Kampala",
   },
   {
     id: "2",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80&auto=format",
-    title: "Lakeside Villa in Entebbe",
-    location: "Entebbe",
-    rent: 3200000,
-    bedrooms: 3,
-    bathrooms: 2,
-    type: "Villa",
-    alt: "Lakeside villa with garden views in Entebbe, Uganda",
+    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&q=80&auto=format",
+    title: "Prime Land in Wakiso",
+    location: "Wakiso",
+    rent: 0,
+    bedrooms: 0,
+    bathrooms: 0,
+    type: "Land / Plot",
+    alt: "Open land and plot for sale in Wakiso, Uganda",
   },
   {
     id: "3",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1920&q=80&auto=format",
-    title: "Furnished Flat in Ntinda",
-    location: "Ntinda, Kampala",
-    rent: 1800000,
-    bedrooms: 2,
-    bathrooms: 2,
-    type: "Flat",
-    alt: "Furnished flat in Ntinda, Kampala",
+    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80&auto=format",
+    title: "Office Block in Kampala",
+    location: "Kampala",
+    rent: 5000000,
+    bedrooms: 0,
+    bathrooms: 0,
+    type: "Commercial",
+    alt: "Commercial office building in Kampala, Uganda",
   },
   {
     id: "4",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80&auto=format",
-    title: "Riverside Home in Jinja",
+    image: "https://images.unsplash.com/photo-1565043666747-69f6646db940?w=1920&q=80&auto=format",
+    title: "Factory in Jinja",
     location: "Jinja",
-    rent: 2500000,
-    bedrooms: 4,
-    bathrooms: 3,
-    type: "House",
-    alt: "Riverside family home with garden in Jinja, Uganda",
+    rent: 9000000,
+    bedrooms: 0,
+    bathrooms: 0,
+    type: "Factory / Warehouse",
+    alt: "Factory and warehouse for lease in Jinja, Uganda",
   },
   {
     id: "5",
-    image: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1920&q=80&auto=format",
-    title: "Studio in Bukoto",
-    location: "Bukoto, Kampala",
-    rent: 800000,
-    bedrooms: 1,
-    bathrooms: 1,
-    type: "Studio",
-    alt: "Modern studio apartment in Bukoto, Kampala",
+    image: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1920&q=80&auto=format",
+    title: "Car for Hire in Entebbe",
+    location: "Entebbe",
+    rent: 250000,
+    bedrooms: 5,
+    bathrooms: 0,
+    type: "Vehicle / Car",
+    alt: "Modern car available for hire in Entebbe, Uganda",
   },
   {
     id: "6",
-    image: "https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=1920&q=80&auto=format",
-    title: "Modern Home in Mbarara",
+    image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1920&q=80&auto=format",
+    title: "Farm in Mbarara",
     location: "Mbarara",
-    rent: 1500000,
-    bedrooms: 3,
-    bathrooms: 2,
-    type: "House",
-    alt: "Modern family home in Mbarara, Uganda",
+    rent: 12000000,
+    bedrooms: 0,
+    bathrooms: 0,
+    type: "Farm / Agricultural",
+    alt: "Farm and agricultural land for sale in Mbarara, Uganda",
   },
 ];
 
@@ -126,6 +126,10 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
   const startTimer = useCallback(() => {
     clearTimer();
     if (total <= 1 || isPaused) return;
+    const reducedMotion = typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) return;
     timerRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % total);
     }, 5500);
@@ -217,7 +221,7 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
       )}
       role="region"
       aria-roledescription="carousel"
-      aria-label="Featured properties"
+      aria-label="Featured listings across Uganda"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onTouchStart={handleTouchStart}
@@ -257,21 +261,21 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
             {/* Badge */}
             <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-sm">
               <MapPin className="h-3.5 w-3.5 text-brand-400" />
-              Uganda&apos;s trusted rental platform
+              Your Sure Property Solution
             </div>
 
             {/* Headline */}
             <h1 className="animate-fade-in-up delay-100 text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Find your place{" "}
+              Modern Properties{" "}
               <span className="bg-gradient-to-r from-brand-300 to-accent-300 bg-clip-text text-transparent">
-                in Uganda.
+                across Uganda.
               </span>
             </h1>
 
             {/* Sub-headline */}
             <p className="animate-fade-in-up delay-200 mx-auto max-w-lg text-lg font-light text-slate-300 sm:text-xl lg:mx-0">
-              Discover verified homes, manage tenancies and stay
-              connected — from search to move-in.
+              Discover property, land, vehicles, products and services across
+              Uganda — from search to transaction.
             </p>
 
             {/* CTAs */}
@@ -280,14 +284,14 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
                 href="/search"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all duration-200 hover:bg-brand-400 hover:shadow-brand-400/30 hover:scale-[1.02] active:scale-[0.98]"
               >
-                Explore properties
+                Explore listings
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/20 hover:border-white/30 active:scale-[0.98]"
               >
-                List a property
+                List an item
               </Link>
             </div>
 
@@ -295,11 +299,11 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
             <div className="animate-fade-in-up delay-400 flex items-center gap-6 pt-2 text-sm text-slate-400 sm:justify-center lg:justify-start">
               <span className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                1,200+ verified
+                1,200+ verified listings
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
-                5,000+ tenants
+                All of Uganda
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
@@ -346,25 +350,33 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
                   <h3 className="truncate text-base font-bold text-white">
                     {slide.title}
                   </h3>
-                  <span className="shrink-0 rounded-full bg-brand-500/20 px-3 py-1 text-sm font-bold text-brand-300">
-                    {formatUGX(slide.rent)}
-                    <span className="text-xs font-normal text-slate-400">/mo</span>
-                  </span>
+                  {slide.rent > 0 && (
+                    <span className="shrink-0 rounded-full bg-brand-500/20 px-3 py-1 text-sm font-bold text-brand-300">
+                      {formatUGX(slide.rent)}
+                      <span className="text-xs font-normal text-slate-400">/mo</span>
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2 flex items-center gap-1 text-sm text-slate-400">
                   <MapPin className="h-3.5 w-3.5 text-brand-400" />
                   {slide.location}
                 </div>
-                <div className="mt-3 flex items-center gap-4 border-t border-white/10 pt-3 text-sm text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <BedDouble className="h-4 w-4 text-brand-400" />
-                    {slide.bedrooms} Bed
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Bath className="h-4 w-4 text-brand-400" />
-                    {slide.bathrooms} Bath
-                  </span>
-                </div>
+                {(slide.bedrooms > 0 || slide.bathrooms > 0) && (
+                  <div className="mt-3 flex items-center gap-4 border-t border-white/10 pt-3 text-sm text-slate-400">
+                    {slide.bedrooms > 0 && (
+                      <span className="flex items-center gap-1">
+                        <BedDouble className="h-4 w-4 text-brand-400" />
+                        {slide.bedrooms} Bed
+                      </span>
+                    )}
+                    {slide.bathrooms > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Bath className="h-4 w-4 text-brand-400" />
+                        {slide.bathrooms} Bath
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

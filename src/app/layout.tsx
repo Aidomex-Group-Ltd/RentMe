@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import SupportChatbot from "@/components/support/support-chatbot";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 // Self-hosted Inter + Plus Jakarta Sans (same families as before) so production
@@ -35,25 +36,26 @@ const plusJakarta = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Rent Mesh — Find Your Next Home in Uganda",
-    template: "%s | Rent Mesh",
+    default: `${BRAND.name} — Your Sure Property Solution`,
+    template: `%s | ${BRAND.name}`,
   },
-  description:
-    "Rent Mesh is Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent anywhere in Uganda.",
+  description: BRAND.description,
   keywords: [
-    "rent house Uganda",
-    "apartment Uganda",
-    "rental property Uganda",
-    "houses for rent",
-    "UGX rent",
+    "property Uganda",
+    "houses for sale Uganda",
+    "land for sale Uganda",
+    "apartments for rent Uganda",
+    "cars for hire Uganda",
+    "commercial property Uganda",
+    "UGX property",
     "Uganda real estate",
-    "Kampala apartments",
-    "Entebbe rentals",
-    "Jinja rentals",
-    "Mbarara rentals",
-    "Gulu rentals",
+    "Kampala properties",
+    "Entebbe listings",
+    "Jinja land",
+    "Mbarara farms",
+    "Gulu property",
   ],
-  authors: [{ name: "Rent Mesh" }],
+  authors: [{ name: BRAND.name }],
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -73,29 +75,28 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Rent Mesh",
+    title: BRAND.name,
   },
   openGraph: {
     type: "website",
     locale: "en_UG",
-    url: "https://rentme.ug",
-    siteName: "Rent Mesh",
-    title: "Rent Mesh — Find Your Next Home in Uganda",
-    description:
-      "Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent.",
+    url: BRAND.websiteUrl,
+    siteName: BRAND.name,
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.description,
     images: [
       {
         url: "/icons/rentmesh-512.png",
         width: 512,
         height: 512,
-        alt: "Rent Mesh — Uganda's Property Platform",
+        alt: `${BRAND.name} — Uganda's Property and Dealership Platform`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rent Mesh — Find Your Next Home in Uganda",
-    description: "Uganda's trusted rental housing marketplace.",
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.description,
     images: ["/icons/rentmesh-512.png"],
   },
   robots: {

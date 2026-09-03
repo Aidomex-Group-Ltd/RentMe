@@ -65,10 +65,11 @@ export default function HowItWorks() {
             Simple process
           </span>
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            How Rent Mesh works
+            How Modern Properties works
           </h2>
           <p className="mt-3 text-lg text-slate-500">
-            Whether you are looking for a home or listing a property.
+            Whether you are searching for a place, land, vehicle or service —
+            or listing one.
           </p>
         </div>
 
