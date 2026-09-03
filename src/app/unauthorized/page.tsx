@@ -16,7 +16,7 @@ export default function UnauthorizedPage() {
           Administrator access required
         </h1>
         <p className="mt-2 text-sm text-gray-500">
-          You do not have permission to open the Rent Mesh Admin Console. Sign in
+          You do not have permission to open the Erikot Properties Admin Console. Sign in
           with an administrator account, or return to the main site.
         </p>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

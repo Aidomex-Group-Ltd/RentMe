@@ -1,7 +1,7 @@
 {
-  "name": "Rent Mesh — Find Your Next Home in Uganda",
-  "short_name": "Rent Mesh",
-  "description": "Uganda's trusted rental housing marketplace. Find houses, apartments, and rooms for rent in Kampala and beyond.",
+  "name": "Erikot Properties — Your Sure Property Solution",
+  "short_name": "Erikot",
+  "description": "Uganda's trusted property marketplace. Find property, land, vehicles, products and services across Uganda.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -42,7 +42,7 @@
       "name": "Search Properties",
       "short_name": "Search",
       "url": "/search",
-      "description": "Search for rental properties"
+      "description": "Search for properties"
     },
     {
       "name": "Saved Properties",

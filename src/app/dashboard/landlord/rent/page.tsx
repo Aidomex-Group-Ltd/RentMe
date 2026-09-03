@@ -12,7 +12,7 @@ import prisma from "@/lib/prisma";
 import { formatUGX } from "@/lib/utils";
 import { LandlordPageLayout } from "@/components/landlord/landlord-sidebar";
 
-export const metadata = { title: "Rent & Collections | Rent Mesh" };
+export const metadata = { title: "Rent & Collections | Erikot Properties" };
 
 /**
  * Rent & Collections — landlord overview of charges across every tenancy

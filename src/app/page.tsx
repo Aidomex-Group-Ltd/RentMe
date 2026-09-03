@@ -196,7 +196,7 @@ export default async function HomePage() {
         {/* 5. Property Categories */}
         <PropertyCategories />
 
-        {/* 6. How Rent Mesh Works */}
+        {/* 6. How Erikot Properties Works */}
         <HowItWorks />
 
         {/* 7. Benefits for Renters + Owners */}

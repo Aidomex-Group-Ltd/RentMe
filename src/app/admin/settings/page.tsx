@@ -38,7 +38,7 @@ const DEFAULT_SETTINGS: SettingDef[] = [
     category: "general",
     type: "text",
     description: "Display name of the platform",
-    defaultValue: "Rent Mesh",
+    defaultValue: "Erikot Properties",
   },
   {
     key: "site_url",

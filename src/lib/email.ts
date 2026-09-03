@@ -1,5 +1,5 @@
 /**
- * Lightweight email sender for Rent Mesh notifications.
+ * Lightweight email sender for Erikot Properties notifications.
  *
  * Uses the built-in Node.js net/tls modules for direct SMTP — zero
  * external dependencies. If SMTP_HOST is not configured, emails are

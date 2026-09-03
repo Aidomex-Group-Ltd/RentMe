@@ -6,7 +6,7 @@ import { Star, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Success Stories",
   description:
-    "Read how tenants and landlords have found success through Rent Mesh Uganda.",
+    "Read how tenants and landlords have found success through Erikot Properties Uganda.",
 };
 
 const stories = [
@@ -15,7 +15,7 @@ const stories = [
     role: "Tenant",
     location: "Ntinda, Kampala",
     quote:
-      "I moved to Kampala for work and needed a place fast. Rent Mesh had dozens of options in my budget. I found my apartment in 2 days and moved in within a week.",
+      "I moved to Kampala for work and needed a place fast. Erikot Properties had dozens of options in my budget. I found my apartment in 2 days and moved in within a week.",
     rating: 5,
   },
   {
@@ -23,7 +23,7 @@ const stories = [
     role: "Landlord",
     location: "Bugolobi, Kampala",
     quote:
-      "I was struggling to find tenants for my two-bedroom flat. Within a week of listing on Rent Mesh, I had 5 viewing requests and filled the property in 10 days.",
+      "I was struggling to find tenants for my two-bedroom flat. Within a week of listing on Erikot Properties, I had 5 viewing requests and filled the property in 10 days.",
     rating: 5,
   },
   {
@@ -31,7 +31,7 @@ const stories = [
     role: "Tenant",
     location: "Entebbe",
     quote:
-      "Moving from Nairobi to Entebbe, I needed to find housing remotely. Rent Mesh's photos and direct messaging made it possible to secure a place before I even arrived.",
+      "Moving from Nairobi to Entebbe, I needed to find housing remotely. Erikot Properties's photos and direct messaging made it possible to secure a place before I even arrived.",
     rating: 5,
   },
   {
@@ -39,7 +39,7 @@ const stories = [
     role: "Landlord",
     location: "Muyenga, Kampala",
     quote:
-      "As a landlord with 4 properties, Rent Mesh's dashboard makes it easy to manage all my listings in one place. The tenant quality has been consistently good.",
+      "As a landlord with 4 properties, Erikot Properties's dashboard makes it easy to manage all my listings in one place. The tenant quality has been consistently good.",
     rating: 5,
   },
   {
@@ -47,7 +47,7 @@ const stories = [
     role: "Tenant",
     location: "Kololo, Kampala",
     quote:
-      "I was tired of dealing with agents who charged fees for nothing. Rent Mesh connected me directly with the landlord. No middlemen, no surprises.",
+      "I was tired of dealing with agents who charged fees for nothing. Erikot Properties connected me directly with the landlord. No middlemen, no surprises.",
     rating: 5,
   },
   {
@@ -55,7 +55,7 @@ const stories = [
     role: "Agent",
     location: "Wakiso",
     quote:
-      "Managing properties for multiple owners used to be chaos. Rent Mesh gives me a centralized view of all listings and tenant communications.",
+      "Managing properties for multiple owners used to be chaos. Erikot Properties gives me a centralized view of all listings and tenant communications.",
     rating: 5,
   },
 ];
@@ -70,7 +70,7 @@ export default function StoriesPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
             Real stories from tenants, landlords, and agents who found success
-            through Rent Mesh.
+            through Erikot Properties.
           </p>
         </div>
       </section>
@@ -110,7 +110,7 @@ export default function StoriesPage() {
             Join thousands of happy users
           </h2>
           <p className="mb-8 text-white/80">
-            Whether you&apos;re looking for a home or listing a property, Rent Mesh
+            Whether you&apos;re looking for a home or listing a property, Erikot Properties
             makes it simple.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

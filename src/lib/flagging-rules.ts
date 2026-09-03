@@ -176,7 +176,7 @@ export function buildPublicSafetyAlert(input: {
         level: "danger",
         title: "Your listing is suspended",
         messages: [
-          "Rent Mesh hid this listing from search after reports or a safety review.",
+          "Erikot Properties hid this listing from search after reports or a safety review.",
           "Update the listing with accurate details and contact support if you believe this was a mistake.",
         ],
         hideDirectContact: false,
@@ -228,7 +228,7 @@ export function buildPublicSafetyAlert(input: {
           ? `This listing was reported for ${reasonLabel.toLowerCase()}. Treat it with extra caution.`
           : "This listing has been reported. Treat it with extra caution.",
         "Never pay a deposit, booking fee, or agent fee before viewing the property in person.",
-        "Keep the conversation on Rent Mesh so there is a record if something goes wrong.",
+        "Keep the conversation on Erikot Properties so there is a record if something goes wrong.",
       ],
       hideDirectContact: true,
       blockInquiries: false,
@@ -241,7 +241,7 @@ export function buildPublicSafetyAlert(input: {
       title: "Stay cautious with this listing",
       messages: [
         ...signals.slice(0, 3),
-        "Visit in person before paying, and use Rent Mesh messages instead of off-platform payment requests.",
+        "Visit in person before paying, and use Erikot Properties messages instead of off-platform payment requests.",
       ],
       hideDirectContact: false,
       blockInquiries: false,

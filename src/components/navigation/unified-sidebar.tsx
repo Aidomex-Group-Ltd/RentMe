@@ -93,7 +93,7 @@ export default function UnifiedSidebar({ isOpen, onClose }: UnifiedSidebarProps)
             <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
               <img
                 src="/icons/rentmesh-192.png"
-                alt="Rent Mesh"
+                alt="Erikot Properties"
                 className="h-9 w-9 rounded-xl object-contain"
                 width={36}
                 height={36}

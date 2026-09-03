@@ -134,7 +134,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
             <div className="flex h-14 items-center justify-between border-b border-gray-200 px-4">
               <Link href="/admin" className="flex items-center gap-2 text-base font-bold text-brand-700 font-display">
                 <img src="/icons/rentmesh-48.png" alt="" className="h-7 w-7 rounded-md object-contain" width={28} height={28} aria-hidden />
-                Rent Mesh Admin
+                Erikot Properties Admin
               </Link>
               <button
                 type="button"
@@ -155,7 +155,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
         <div className="flex h-14 items-center border-b border-gray-200 px-4">
           <Link href="/admin" className="flex items-center gap-2 text-base font-bold text-brand-700 font-display">
             <img src="/icons/rentmesh-48.png" alt="" className="h-7 w-7 rounded-md object-contain" width={28} height={28} aria-hidden />
-            Rent Mesh Admin
+            Erikot Properties Admin
           </Link>
         </div>
         {navContent}

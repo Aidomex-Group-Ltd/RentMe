@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Landlord Guide",
   description:
-    "Learn how to list your property on Rent Mesh and find quality tenants in Uganda.",
+    "Learn how to list your property on Erikot Properties and find quality tenants in Uganda.",
 };
 
 const steps = [
@@ -34,7 +34,7 @@ const steps = [
     icon: DollarSign,
     title: "Set a Fair Price",
     description:
-      "Research comparable listings in your area on Rent Mesh. Overpriced properties sit empty longer. Consider including utilities in your rent for better value perception.",
+      "Research comparable listings in your area on Erikot Properties. Overpriced properties sit empty longer. Consider including utilities in your rent for better value perception.",
   },
   {
     icon: MessageSquare,
@@ -68,7 +68,7 @@ export default function LandlordGuidePage() {
             Landlord Guide
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
-            Everything you need to know about listing your property on Rent Mesh and
+            Everything you need to know about listing your property on Erikot Properties and
             finding quality tenants.
           </p>
         </div>

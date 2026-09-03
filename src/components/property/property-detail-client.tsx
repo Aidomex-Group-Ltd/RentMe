@@ -268,7 +268,7 @@ export default function PropertyDetailClient({
         toast.error(data.error || "Failed to submit report");
         return;
       }
-      toast.success("Report submitted. Thank you for helping keep Rent Mesh safe.");
+      toast.success("Report submitted. Thank you for helping keep Erikot Properties safe.");
       setShowReportModal(false);
       setReportReason("");
       setReportDescription("");
@@ -676,7 +676,7 @@ export default function PropertyDetailClient({
                 )}
                 {hidePhone && !inquiriesBlocked && (
                   <p className="mt-3 text-center text-xs text-gray-500">
-                    Phone number is hidden on reported listings. Use Rent Mesh messages instead.
+                    Phone number is hidden on reported listings. Use Erikot Properties messages instead.
                   </p>
                 )}
               </div>
@@ -726,7 +726,7 @@ export default function PropertyDetailClient({
                   <li>• Meet in a public place first</li>
                   <li>• Visit the property before paying</li>
                   <li>• Never pay before seeing the house</li>
-                  <li>• Use Rent Mesh messaging for records</li>
+                  <li>• Use Erikot Properties messaging for records</li>
                   <li>• Report suspicious listings</li>
                 </ul>
               </div>
@@ -837,7 +837,7 @@ export default function PropertyDetailClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="card w-full max-w-md p-6">
             <h2 className="text-lg font-semibold text-gray-900">Report This Listing</h2>
-            <p className="mt-1 text-sm text-gray-500">Flags are reviewed by Rent Mesh. Scam reports also warn other tenants.</p>
+            <p className="mt-1 text-sm text-gray-500">Flags are reviewed by Erikot Properties. Scam reports also warn other tenants.</p>
             <select value={reportReason} onChange={(e) => setReportReason(e.target.value)} className="input mt-4">
               <option value="">Select a reason</option>
               {REPORT_REASONS.map((reason) => (

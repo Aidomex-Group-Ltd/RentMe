@@ -129,7 +129,7 @@ const QUICK_ACTIONS: NavItem[] = [
  * - Mobile: collapsed behind a hamburger menu with an overlay drawer
  * - Active state highlighting based on current route
  * - Optional badge counts for pending items
- * - Consistent with Rent Mesh design system
+ * - Consistent with Erikot Properties design system
  * - Mirrors LandlordSidebar architecture
  *
  * @example
