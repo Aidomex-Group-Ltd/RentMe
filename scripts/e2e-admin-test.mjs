@@ -30,7 +30,7 @@ function fail(label, err) {
 }
 
 async function run() {
-  console.log("\n🧪 RentMe Admin E2E Test Suite\n");
+  console.log("\n🧪 Erikot Properties Admin E2E Test Suite\n");
 
   // ── 1. Database connectivity ────────────────────────────
   console.log("📦 1. Database Connectivity");

@@ -1,4 +1,4 @@
-# Production k3s notes for RentMe
+# Production k3s notes for Erikot Properties
 #
 # Prerequisites:
 #   - k3s installed (Traefik ingress included)
@@ -17,7 +17,7 @@
 # Optional HTTP→HTTPS redirect (after TLS cert is Issued):
 #   kubectl apply -f k8s/base/ingress-redirect.yaml.example
 #
-# Domain: defaults to rentme.ug. Override hosts in base/ingress.yaml and
+# Domain: defaults to erikot.site. Override hosts in base/ingress.yaml and
 # ConfigMap NEXT_PUBLIC_SITE_URL / NEXTAUTH_URL / PRODUCTION_DOMAIN before apply.
 #
 # Redis: not deployed — NextAuth uses JWT sessions.

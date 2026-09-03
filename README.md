@@ -1,6 +1,6 @@
-# Rent Mesh
+# Erikot Properties
 
-Next.js 14 rental marketplace for Uganda. **UI is unchanged** by infrastructure work.
+Next.js 14 property and dealership marketplace for Uganda. **UI is unchanged** by infrastructure work.
 
 ## Local development
 
@@ -48,7 +48,7 @@ make k3s-health
 make k3s-rollback   # if needed
 ```
 
-Domain defaults to `rentme.ug` (override in ConfigMap / Ingress if DNS differs). Current Vercel preview remains `rent-me-seven.vercel.app` and is separate from k3s.
+Domain defaults to `erikot.site` (override in ConfigMap / Ingress if DNS differs). Current Vercel preview remains `rent-me-seven.vercel.app` and is separate from k3s.
 
 Docker Compose (`make prod`) remains available for single-node / lab use; **production deploy defaults to k3s**.
 
@@ -58,7 +58,7 @@ Docker Compose (`make prod`) remains available for single-node / lab use; **prod
 npm ci
 npm test
 npm run build
-docker build -t rentme:local .
+docker build -t erikot:local .
 docker compose config
 kubectl kustomize k8s/overlays/production
 ```

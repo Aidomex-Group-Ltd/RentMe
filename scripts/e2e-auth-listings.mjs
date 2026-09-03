@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * E2E persistence checks against a live RentMe deployment.
+ * E2E persistence checks against a live Erikot Properties deployment.
  * Usage: node scripts/e2e-auth-listings.mjs [baseUrl]
  */
 const BASE = (process.argv[2] || process.env.E2E_BASE_URL || "http://localhost:3000").replace(

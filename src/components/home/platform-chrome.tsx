@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Search, Bell, Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, dashboardPathForRole } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -32,13 +32,13 @@ export default function PlatformChrome({
           <Link href="/" className="flex items-center gap-2.5">
             <img
               src="/icons/rentmesh-192.png"
-              alt="Modern Properties"
+              alt="Erikot Properties"
               className="h-9 w-9 rounded-xl object-contain"
               width={36}
               height={36}
             />
             <span className="text-xl font-bold text-slate-900 font-display">
-              Modern <span className="text-brand-500">Properties</span>
+              Erikot <span className="text-brand-500">Properties</span>
             </span>
           </Link>
 
@@ -80,7 +80,7 @@ export default function PlatformChrome({
             {session?.user ? (
               <>
                 <Link
-                  href="/dashboard/tenant/notices"
+                  href={`${dashboardPathForRole(session.user.role)}/notices`}
                   aria-label="Notifications"
                   className="relative rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
                 >
@@ -99,7 +99,7 @@ export default function PlatformChrome({
                       {session.user.name}
                     </p>
                     <p className="mt-0.5 text-[10px] font-medium text-brand-500">
-                      {session.user.role} Account
+                      {session.user.role.charAt(0) + session.user.role.slice(1).toLowerCase()} Account
                     </p>
                   </div>
                 </Link>
@@ -191,13 +191,13 @@ export default function PlatformChrome({
               <Link href="/" className="flex items-center gap-2.5">
                 <img
                   src="/icons/rentmesh-192.png"
-                  alt="Modern Properties"
+                  alt="Erikot Properties"
                   className="h-8 w-8 rounded-lg object-contain"
                   width={32}
                   height={32}
                 />
                 <span className="text-lg font-bold text-slate-900 font-display">
-                  Modern <span className="text-brand-500">Properties</span>
+                  Erikot <span className="text-brand-500">Properties</span>
                 </span>
               </Link>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
@@ -281,7 +281,7 @@ export default function PlatformChrome({
           {/* Bottom bar */}
           <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} Modern Properties Uganda. All rights reserved.
+              © {new Date().getFullYear()} Erikot Properties Uganda. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <a
@@ -291,10 +291,10 @@ export default function PlatformChrome({
                 +256 700 000 000
               </a>
               <a
-                href="mailto:hello@rentme.rest"
+                href="mailto:business@erikot.site"
                 className="transition-colors hover:text-brand-600"
               >
-                hello@rentme.rest
+                business@erikot.site
               </a>
             </div>
           </div>

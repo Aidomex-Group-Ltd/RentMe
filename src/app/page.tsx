@@ -98,7 +98,7 @@ export default async function HomePage() {
         <HeroCarousel />
 
         {/* 2. Floating Search */}
-        <section className="relative z-20 -mt-16 sm:-mt-20">
+        <section className="relative z-20 -mt-24 sm:-mt-28 lg:-mt-32">
           <div className="page-container">
             <div className="glass rounded-3xl p-6 shadow-2xl sm:p-8">
               <h2 className="mb-1 text-center text-lg font-bold text-slate-900">

@@ -5,7 +5,7 @@
 # On failure: roll back to the previously tagged image.
 set -eu
 
-DOMAIN="${1:-${PROD_DOMAIN:-rentme.ug}}"
+DOMAIN="${1:-${PROD_DOMAIN:-erikot.site}}"
 DEPLOY_TAG="deploy-$(date +%Y%m%d_%H%M%S)"
 PREVIOUS_TAG="rentme:previous"
 CURRENT_TAG="${RENTME_IMAGE:-rentme:local}"

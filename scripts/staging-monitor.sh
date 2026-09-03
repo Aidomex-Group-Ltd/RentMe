@@ -1,5 +1,5 @@
 #!/bin/sh
-# ─── RentMe Staging Monitor (Stage 15) ────────────────────
+# ─── Erikot Properties Staging Monitor (Stage 15) ───────────
 # Post-deployment monitoring: 5xx errors, 4xx spikes, API latency,
 # upload/auth/chatbot/geolocation failure paths, database verification,
 # notification/analytics record checks.
@@ -19,7 +19,7 @@ ISSUES=0
 code() { curl -sm15 -o /dev/null -w '%{http_code}' "$@" || echo 000; }
 
 echo "╔══════════════════════════════════════════════════╗"
-echo "║       RentMe Staging Monitor Report              ║"
+echo "║       Erikot Properties Staging Monitor Report   ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo "Base: ${BASE_URL}   Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo ""

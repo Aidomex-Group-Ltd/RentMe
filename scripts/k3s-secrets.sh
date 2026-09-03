@@ -30,7 +30,7 @@ ${KUBECTL} -n "${NS}" create secret generic rentme-secrets \
   --from-literal=SMTP_PORT="${SMTP_PORT:-587}" \
   --from-literal=SMTP_USER="${SMTP_USER:-}" \
   --from-literal=SMTP_PASS="${SMTP_PASS:-}" \
-  --from-literal=SMTP_FROM="${SMTP_FROM:-noreply@rentme.ug}" \
+  --from-literal=SMTP_FROM="${SMTP_FROM:-business@erikot.site}" \
   --from-literal=ADMIN_EMAIL="${ADMIN_EMAIL:-}" \
   --dry-run=client -o yaml | ${KUBECTL} apply -f -
 

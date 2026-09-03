@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://rentme.ug}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://erikot.site}
     image: ${RENTME_IMAGE:-rentme:local}
     restart: unless-stopped
     depends_on:
@@ -38,8 +38,8 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-rentme}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-rentme}?schema=public
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in .env}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://rentme.ug}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://rentme.ug}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://erikot.site}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://erikot.site}
       CLOUDFLARE_R2_ENDPOINT: ${CLOUDFLARE_R2_ENDPOINT:-}
       CLOUDFLARE_S3_ACCESS_KEY_ID: ${CLOUDFLARE_S3_ACCESS_KEY_ID:-}
       CLOUDFLARE_S3_SECRET_ACCESS_KEY: ${CLOUDFLARE_S3_SECRET_ACCESS_KEY:-}

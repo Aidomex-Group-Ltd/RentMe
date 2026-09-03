@@ -1,19 +1,19 @@
 # Enable AFTER certificates exist:
-#   make ssl-init DOMAIN=rentme.ug EMAIL=admin@rentme.ug
+#   make ssl-init DOMAIN=erikot.site EMAIL=admin@erikot.site
 #   cp nginx/conf.d/ssl.conf.example nginx/conf.d/ssl.conf
 #   # Update HTTP location / in default.conf to redirect to HTTPS
 #   docker compose exec nginx nginx -s reload
 #
-# Or: make ssl-enable DOMAIN=rentme.ug
+# Or: make ssl-enable DOMAIN=erikot.site
 
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
     http2 on;
-    server_name rentme.ug www.rentme.ug;
+    server_name erikot.site www.erikot.site;
 
-    ssl_certificate /etc/letsencrypt/live/rentme.ug/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/rentme.ug/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/erikot.site/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/erikot.site/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;

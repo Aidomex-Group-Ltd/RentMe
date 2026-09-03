@@ -1,10 +1,10 @@
 #!/bin/sh
-# ─── RentMe Production Monitor ───────────────────────────
+# ─── Erikot Properties Production Monitor ──────────────────
 # Usage: ./scripts/monitor.sh [base_url]
 set -eu
 
 BASE_URL="${1:-http://127.0.0.1:3000}"
-PROD_URL="${PROD_URL:-https://rentme.ug}"
+PROD_URL="${PROD_URL:-https://erikot.site}"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -17,7 +17,7 @@ warn() { echo "${YELLOW}⚠${NC} $1"; }
 ISSUES=0
 
 echo "╔══════════════════════════════════════════════════╗"
-echo "║       RentMe Production Monitor Report          ║"
+echo "║       Erikot Properties Production Monitor Report ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"

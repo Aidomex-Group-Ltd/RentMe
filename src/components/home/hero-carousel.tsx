@@ -254,7 +254,7 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-16 pb-32 sm:px-6 sm:pt-20 sm:pb-40 lg:pt-28 lg:pb-48">
         <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-center lg:gap-12">
           {/* Text side */}
           <div className="flex-1 space-y-6 text-center lg:text-left">
@@ -266,7 +266,7 @@ export default function HeroCarousel({ className }: HeroCarouselProps) {
 
             {/* Headline */}
             <h1 className="animate-fade-in-up delay-100 text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Modern Properties{" "}
+              Erikot Properties{" "}
               <span className="bg-gradient-to-r from-brand-300 to-accent-300 bg-clip-text text-transparent">
                 across Uganda.
               </span>

@@ -123,7 +123,7 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Welcome to Modern Properties!");
+      toast.success("Welcome to Erikot Properties!");
       router.push(dashboardPathForRole(role));
       router.refresh();
     } catch {
@@ -139,8 +139,8 @@ export default function RegisterPage() {
       <div className="hidden flex-col items-center justify-center bg-brand-700 p-12 lg:flex lg:w-1/2">
         <div className="max-w-md text-center">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <img src="/icons/rentmesh-192.png" alt="Modern Properties" className="h-12 w-12 rounded-xl object-contain" width={48} height={48} />
-            <span className="text-2xl font-bold text-white font-display">Modern Properties</span>
+            <img src="/icons/rentmesh-192.png" alt="Erikot Properties" className="h-12 w-12 rounded-xl object-contain" width={48} height={48} />
+            <span className="text-2xl font-bold text-white font-display">Erikot Properties</span>
           </Link>
           <h2 className="text-3xl font-bold text-white font-display">
             Join Uganda&apos;s property and dealership marketplace
@@ -156,8 +156,8 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <Link href="/" className="inline-flex items-center gap-2">
-              <img src="/icons/rentmesh-192.png" alt="Modern Properties" className="h-10 w-10 rounded-xl object-contain" width={40} height={40} />
-              <span className="text-xl font-bold text-brand-700 font-display">Modern Properties</span>
+              <img src="/icons/rentmesh-192.png" alt="Erikot Properties" className="h-10 w-10 rounded-xl object-contain" width={40} height={40} />
+              <span className="text-xl font-bold text-brand-700 font-display">Erikot Properties</span>
             </Link>
           </div>
 

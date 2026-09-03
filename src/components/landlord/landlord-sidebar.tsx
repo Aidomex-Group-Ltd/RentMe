@@ -228,7 +228,7 @@ export default function LandlordSidebar({
               <div className="flex items-center gap-2">
                 <img src="/icons/rentmesh-48.png" alt="" className="h-6 w-6 rounded-md object-contain" width={24} height={24} aria-hidden />
                 <span className="font-display text-base font-bold text-brand-700">
-                  Modern Properties
+                  Erikot Properties
                 </span>
               </div>
               <button

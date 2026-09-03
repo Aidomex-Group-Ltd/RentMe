@@ -11,7 +11,7 @@ OVERLAY="${RENTME_OVERLAY:-k8s/overlays/production}"
 IMAGE_REPO="${RENTME_IMAGE_REPO:-ghcr.io/aidomex-group-ltd/rentme}"
 TAG="${1:-${RENTME_IMAGE_TAG:-latest}}"
 IMAGE="${IMAGE_REPO}:${TAG}"
-DOMAIN="${PROD_DOMAIN:-rentme.ug}"
+DOMAIN="${PROD_DOMAIN:-erikot.site}"
 HEALTH_PATH="/api/health"
 MAX_WAIT=300
 

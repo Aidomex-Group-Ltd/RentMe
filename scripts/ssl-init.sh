@@ -1,7 +1,7 @@
 #!/bin/sh
 # ─── SSL Certificate Initialization ──────────────────────
 # Usage: ./scripts/ssl-init.sh <domain> <email>
-# Example: ./scripts/ssl-init.sh rentme.ug admin@rentme.ug
+# Example: ./scripts/ssl-init.sh erikot.site admin@erikot.site
 set -eu
 
 DOMAIN="${1:?Usage: $0 <domain> <email>}"
@@ -32,7 +32,7 @@ docker compose run --rm --entrypoint certbot certbot ${CERTBOT_ARGS}
 
 echo "==> Enabling HTTPS nginx config..."
 if [ -f "nginx/conf.d/ssl.conf.example" ]; then
-  sed "s/rentme.ug/${DOMAIN}/g" nginx/conf.d/ssl.conf.example > nginx/conf.d/ssl.conf
+  sed "s/erikot\.site/${DOMAIN}/g" nginx/conf.d/ssl.conf.example > nginx/conf.d/ssl.conf
 fi
 
 # Switch HTTP to redirect once certificates exist

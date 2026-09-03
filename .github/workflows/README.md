@@ -51,8 +51,8 @@ Set these in **GitHub → Settings → Secrets and variables → Actions → Var
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXT_PUBLIC_SITE_URL` | `https://rentme.ug` | Public site URL baked into the Docker build |
-| `PRODUCTION_DOMAIN` | `rentme.ug` | Domain used by deploy-k3s for health checks |
+| `NEXT_PUBLIC_SITE_URL` | `https://erikot.site` | Public site URL baked into the Docker build |
+| `PRODUCTION_DOMAIN` | `erikot.site` | Domain used by deploy-k3s for health checks |
 
 ---
 

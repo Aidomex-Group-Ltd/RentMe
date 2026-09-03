@@ -1,5 +1,5 @@
 /**
- * Notification templates for Rent Mesh property events.
+ * Notification templates for Erikot Properties.
  *
  * Each function builds an EmailMessage for the sendEmail() utility.
  * Notifications are fire-and-forget: if SMTP is not configured,
@@ -8,9 +8,10 @@
  */
 
 import { sendEmail, type EmailMessage } from "@/lib/email";
+import { BRAND } from "@/lib/brand";
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://rentme.ug";
+  process.env.NEXT_PUBLIC_SITE_URL || BRAND.websiteUrl;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.SMTP_FROM;
 
 interface PropertyNotificationData {
@@ -58,13 +59,13 @@ export async function notifyLandlordListingSubmitted(
       "Our team will review your listing and publish it within 24 hours.",
       "",
       "Best regards,",
-      "Rent Mesh Team",
+      "Erikot Properties Team",
     ].join("\n"),
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
         <div style="background: #1a4d42; border-radius: 12px 12px 0 0; padding: 24px; text-align: center;">
-          <img src="${SITE_URL}/icons/rentmesh-192.png" alt="Rent Mesh" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain;" />
-          <h1 style="color: white; margin: 8px 0 0; font-size: 20px;">Rent Mesh</h1>
+          <img src="${SITE_URL}/icons/rentmesh-192.png" alt="Erikot Properties" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain;" />
+          <h1 style="color: white; margin: 8px 0 0; font-size: 20px;">Erikot Properties</h1>
         </div>
         <div style="background: #f9fafb; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
           <h2 style="margin: 0 0 16px; color: #111827;">Listing Submitted ✓</h2>
@@ -89,7 +90,7 @@ export async function notifyLandlordListingSubmitted(
 
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
           <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-            © ${new Date().getFullYear()} Rent Mesh Uganda · <a href="${SITE_URL}" style="color: #1a4d42;">rentme.ug</a>
+            © ${new Date().getFullYear()} Erikot Properties Uganda · <a href="${SITE_URL}" style="color: #1a4d42;">erikot.site</a>
           </p>
         </div>
       </div>
@@ -125,8 +126,8 @@ export async function notifyAdminNewListing(
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
         <div style="background: #1a4d42; border-radius: 12px 12px 0 0; padding: 24px; text-align: center;">
-          <img src="${SITE_URL}/icons/rentmesh-192.png" alt="Rent Mesh" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain;" />
-          <h1 style="color: white; margin: 8px 0 0; font-size: 20px;">Rent Mesh Admin</h1>
+          <img src="${SITE_URL}/icons/rentmesh-192.png" alt="Erikot Properties" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain;" />
+          <h1 style="color: white; margin: 8px 0 0; font-size: 20px;">Erikot Properties Admin</h1>
         </div>
         <div style="background: #f9fafb; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
           <h2 style="margin: 0 0 16px; color: #111827;">📋 New Listing to Review</h2>

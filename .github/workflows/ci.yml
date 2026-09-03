@@ -176,7 +176,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://rentme.ug' }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://erikot.site' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -303,7 +303,7 @@ jobs:
         env:
           RENTME_IMAGE_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           RENTME_IMAGE_TAG: ${{ github.sha }}
-          PROD_DOMAIN: ${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}
+          PROD_DOMAIN: ${{ vars.PRODUCTION_DOMAIN || 'erikot.site' }}
           KUBECTL: kubectl
         run: ./scripts/k3s-deploy.sh "${GITHUB_SHA}"
 
@@ -381,7 +381,7 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}"
+          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'erikot.site' }}"
 
           echo "→ Public health check: https://${DOMAIN}/api/health"
           RESP=$(curl -sf "https://${DOMAIN}/api/health" 2>/dev/null || echo '{"status":"unreachable"}')
@@ -397,7 +397,7 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'rentme.ug' }}"
+          DOMAIN="${{ vars.PRODUCTION_DOMAIN || 'erikot.site' }}"
 
           echo "→ Checking key endpoints"
           FAILURES=0

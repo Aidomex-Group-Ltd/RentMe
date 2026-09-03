@@ -3,13 +3,13 @@
  * Ensure a production ADMIN user exists.
  * Usage:
  *   DATABASE_URL=... node scripts/ensure-admin.mjs [email] [password]
- * Defaults: admin@rentme.ug / password123
+ * Defaults: admin@erikot.site / password123
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 async function main() {
-  const email = (process.argv[2] || "admin@rentme.ug").toLowerCase();
+  const email = (process.argv[2] || "admin@erikot.site").toLowerCase();
   const password = process.argv[3] || "password123";
   const phone = process.argv[4] || "+256700000000";
 

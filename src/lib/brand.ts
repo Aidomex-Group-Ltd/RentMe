@@ -1,5 +1,5 @@
 /**
- * Centralized brand constants for Modern Properties.
+ * Centralized brand constants for Erikot Properties.
  *
  * All customer-facing strings live here so a single edit propagates everywhere.
  * Internal identifiers (env vars, database columns, API namespaces, role
@@ -7,13 +7,13 @@
  */
 
 export const brand = {
-  name: "Modern Properties",
-  shortName: "Modern Properties",
+  name: "Erikot Properties",
+  shortName: "Erikot Properties",
   tagline: "Your Sure Property Solution",
   description:
     "Discover property, land, vehicles, products and services across Uganda.",
-  currentDomain: "rentme.rest",
-  websiteUrl: "https://rentme.rest",
+  currentDomain: "erikot.site",
+  websiteUrl: "https://erikot.site",
 } as const;
 
 /**
@@ -38,7 +38,7 @@ export const BRAND = {
   /** Website URL */
   websiteUrl: brand.websiteUrl,
   /** Copyright holder line */
-  copyright: "Modern Properties Uganda",
+  copyright: "Erikot Properties Uganda",
   /** Support chatbot welcome */
   chatbotWelcome: `Hello! 👋 Welcome to ${brand.name} Support. How can I help you today?`,
   /** Safe mode label used in flagging messages */

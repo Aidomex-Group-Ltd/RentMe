@@ -23,7 +23,7 @@ const WELCOME_MESSAGE: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hello! 👋 Welcome to Rent Mesh Support. How can I help you today?\n\nSelect a topic or type your question:",
+    "Hello! 👋 Welcome to Erikot Properties Support. How can I help you today?\n\nSelect a topic or type your question:",
   timestamp: new Date().toISOString(),
   quickReplies: ["Property Listing", "Payments", "Inspections", "FAQ", "Contact Support"],
 };
@@ -59,7 +59,7 @@ export default function SupportChatbot() {
           id: `offline-${Date.now()}`,
           role: "assistant",
           content:
-            "You appear to be offline. Please check your connection and try again — or reach us at support@rentme.ug.",
+            "You appear to be offline. Please check your connection and try again — or reach us at business@erikot.site.",
           timestamp: new Date().toISOString(),
           quickReplies: ["Contact Support", "FAQ"],
         } as ChatMessage,
@@ -104,7 +104,7 @@ export default function SupportChatbot() {
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         role: "assistant",
-        content: "I'm sorry, something went wrong. Please try again or contact support at support@rentme.ug.",
+        content: "I'm sorry, something went wrong. Please try again or contact support at business@erikot.site.",
         timestamp: new Date().toISOString(),
         quickReplies: ["Contact Support", "FAQ"],
       };
@@ -149,7 +149,7 @@ export default function SupportChatbot() {
             <div className="flex items-center gap-3">
               <img src="/icons/rentmesh-48.png" alt="" className="h-8 w-8 rounded-full object-contain" width={32} height={32} aria-hidden />
               <div>
-                <h3 className="text-sm font-semibold text-white">Rent Mesh Support</h3>
+                <h3 className="text-sm font-semibold text-white">Erikot Properties Support</h3>
                 <p className="text-xs text-white/80">We typically reply instantly</p>
               </div>
             </div>
@@ -278,7 +278,7 @@ export default function SupportChatbot() {
               </button>
             </form>
             <p className="mt-2 text-center text-[10px] text-gray-400">
-              Powered by Rent Mesh Support · responses are automated
+              Powered by Erikot Properties Support · responses are automated
             </p>
           </div>
         </div>

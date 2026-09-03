@@ -11,7 +11,7 @@ RENTME_NAMESPACE ?= rentme
 
 # ─── Default ─────────────────────────────────────────────
 help: ## Show this help message
-	@echo "RentMe Operations (Docker Compose + k3s)"
+	@echo "Erikot Properties Operations (Docker Compose + k3s)"
 	@echo "========================================"
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
@@ -153,19 +153,19 @@ backup-restore: ## Restore DB from file (compose): make backup-restore FILE=back
 	@echo "Restore complete"
 
 # ─── SSL (compose path; k3s uses cert-manager) ───────────
-ssl-init: ## Compose Certbot init (usage: make ssl-init DOMAIN=rentme.ug EMAIL=admin@rentme.ug)
+ssl-init: ## Compose Certbot init (usage: make ssl-init DOMAIN=erikot.site EMAIL=admin@erikot.site)
 	./scripts/ssl-init.sh $(DOMAIN) $(EMAIL)
 
 ssl-enable: ## Enable HTTPS nginx config after certificates exist
-	@test -n "$(DOMAIN)" || (echo "Usage: make ssl-enable DOMAIN=rentme.ug" && exit 1)
-	sed "s/rentme.ug/$(DOMAIN)/g" nginx/conf.d/ssl.conf.example > nginx/conf.d/ssl.conf
+	@test -n "$(DOMAIN)" || (echo "Usage: make ssl-enable DOMAIN=erikot.site" && exit 1)
+	sed "s/erikot\.site/$(DOMAIN)/g" nginx/conf.d/ssl.conf.example > nginx/conf.d/ssl.conf
 	@echo "Wrote nginx/conf.d/ssl.conf"
 
 ssl-renew: ## Manually renew SSL (compose certbot)
 	./scripts/ssl-renew.sh
 
 ssl-check: ## Check SSL certificate expiry
-	@DOMAIN=$${PROD_DOMAIN:-rentme.ug}; \
+	@DOMAIN=$${PROD_DOMAIN:-erikot.site}; \
 	echo "Checking SSL for $$DOMAIN..."; \
 	echo | openssl s_client -servername $$DOMAIN -connect $$DOMAIN:443 2>/dev/null | \
 		openssl x509 -noout -dates 2>/dev/null || echo "Could not check SSL"

@@ -44,13 +44,13 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2.5">
               <img
                 src="/icons/rentmesh-192.png"
-                alt="Modern Properties"
+                alt="Erikot Properties"
                 className="h-9 w-9 rounded-xl object-contain"
                 width={36}
                 height={36}
               />
               <span className="text-xl font-bold text-slate-900 font-display">
-                Modern <span className="text-brand-500">Properties</span>
+                Erikot <span className="text-brand-500">Properties</span>
               </span>
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
@@ -101,7 +101,7 @@ export default function Footer() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Modern Properties Uganda. All rights reserved.
+            © {new Date().getFullYear()} Erikot Properties Uganda. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-slate-500">
             <a href="tel:+256700000000" className="flex items-center gap-1 transition-colors hover:text-brand-600">

@@ -18,6 +18,13 @@ import {
   ChevronDown,
   Shield,
   Bell,
+  Building2,
+  Key,
+  ScrollText,
+  ClipboardList,
+  DollarSign,
+  Wrench,
+  FileText,
 } from "lucide-react";
 import { cn, getInitials, dashboardPathForRole } from "@/lib/utils";
 import { BRAND } from "@/lib/brand";
@@ -76,13 +83,13 @@ export default function Navbar() {
         {/* Logo */}          <Link href="/" className="flex items-center gap-2.5">
             <img
               src="/icons/rentmesh-192.png"
-              alt="Modern Properties"
+              alt="Erikot Properties"
               className="h-9 w-9 rounded-xl object-contain"
               width={36}
               height={36}
             />
             <span className="text-xl font-bold text-slate-900 font-display">
-              Modern <span className="text-brand-500">Properties</span>
+              Erikot <span className="text-brand-500">Properties</span>
             </span>
           </Link>
 
@@ -273,7 +280,7 @@ export default function Navbar() {
               </div>
             )}
 
-            {navLinks.map((link) => {
+            {(!session?.user || session.user.role !== "TENANT") && navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
@@ -293,7 +300,79 @@ export default function Navbar() {
               );
             })}
 
-            {session?.user && (
+            {session?.user && session.user.role === "TENANT" && (
+              <>
+                {[
+                  { href: "/dashboard/tenant", label: "Overview", icon: LayoutDashboard },
+                  { href: "/dashboard/tenant/tenancy", label: "My Home", icon: Building2 },
+                  { href: "/dashboard/tenant/move-in", label: "Move In", icon: Key },
+                  { href: "/dashboard/tenant/lease", label: "Lease", icon: ScrollText },
+                  { href: "/dashboard/tenant/applications", label: "Applications", icon: ClipboardList },
+                  { href: "/dashboard/tenant/payments", label: "Payments", icon: DollarSign },
+                  { href: "/dashboard/tenant/maintenance", label: "Maintenance", icon: Wrench },
+                  { href: "/dashboard/tenant/notices", label: "Notices", icon: Bell },
+                  { href: "/dashboard/tenant/documents", label: "Documents", icon: FileText },
+                  { href: "/dashboard/tenant/move-out", label: "Move Out", icon: LogOut },
+                  { href: "/dashboard/tenant/profile", label: "Profile", icon: User },
+                ].map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        "flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-brand-50 text-brand-600"
+                          : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      <link.icon className="h-5 w-5" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
+                <div className="my-1 border-t border-slate-100" />
+                <Link
+                  href="/messages"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  Messages
+                </Link>
+                <Link
+                  href="/notifications"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <Bell className="h-5 w-5" />
+                  Notifications
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <Settings className="h-5 w-5" />
+                  Settings
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Sign out
+                </button>
+              </>
+            )}
+
+            {session?.user && session.user.role !== "TENANT" && (
               <>
                 <Link
                   href={dashboardPathForRole(session.user.role)}

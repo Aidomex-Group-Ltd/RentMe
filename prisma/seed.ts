@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding RentMe database...");
+  console.log("🌱 Seeding Erikot Properties database...");
 
   // Clean existing data
   await prisma.auditLog.deleteMany();
@@ -77,7 +77,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       name: "Admin User",
-      email: "admin@rentme.ug",
+      email: "admin@erikot.site",
       phone: "+256700000000",
       passwordHash: password,
       role: "ADMIN",
@@ -90,11 +90,11 @@ async function main() {
   // Create landlord users
   const landlords = [];
   const landlordData = [
-    { name: "James Okello", email: "james@rentme.ug", phone: "+256701234567" },
-    { name: "Sarah Nambi", email: "sarah@rentme.ug", phone: "+256702345678" },
-    { name: "Peter Ssemwanga", email: "peter@rentme.ug", phone: "+256703456789" },
-    { name: "Grace Nakamya", email: "grace@rentme.ug", phone: "+256704567890" },
-    { name: "David Mugisha", email: "david@rentme.ug", phone: "+256705678901" },
+    { name: "James Okello", email: "james@erikot.site", phone: "+256701234567" },
+    { name: "Sarah Nambi", email: "sarah@erikot.site", phone: "+256702345678" },
+    { name: "Peter Ssemwanga", email: "peter@erikot.site", phone: "+256703456789" },
+    { name: "Grace Nakamya", email: "grace@erikot.site", phone: "+256704567890" },
+    { name: "David Mugisha", email: "david@erikot.site", phone: "+256705678901" },
   ];
 
   for (const ld of landlordData) {
@@ -119,9 +119,9 @@ async function main() {
   // Create tenant users
   const tenants = [];
   const tenantData = [
-    { name: "Alice Achieng", email: "alice@rentme.ug", phone: "+256706789012" },
-    { name: "Brian Ochieng", email: "brian@rentme.ug", phone: "+256707890123" },
-    { name: "Catherine Auma", email: "catherine@rentme.ug", phone: "+256708901234" },
+    { name: "Alice Achieng", email: "alice@erikot.site", phone: "+256706789012" },
+    { name: "Brian Ochieng", email: "brian@erikot.site", phone: "+256707890123" },
+    { name: "Catherine Auma", email: "catherine@erikot.site", phone: "+256708901234" },
   ];
 
   for (const td of tenantData) {
@@ -520,7 +520,7 @@ async function main() {
   console.log(`   - ${properties.length} properties`);
   console.log(`   - ${amenities.length} amenities`);
   console.log(`   - 1 admin`);
-  console.log("\n📧 Demo login: admin@rentme.ug / password123");
+  console.log("\n📧 Demo login: admin@erikot.site / password123");
 }
 
 main()

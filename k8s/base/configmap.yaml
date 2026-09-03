@@ -11,8 +11,8 @@ data:
   PORT: "3000"
   HOSTNAME: "0.0.0.0"
   # Override in overlays/production if DNS differs
-  NEXT_PUBLIC_SITE_URL: "https://rentme.ug"
-  NEXTAUTH_URL: "https://rentme.ug"
-  PRODUCTION_DOMAIN: "rentme.ug"
+  NEXT_PUBLIC_SITE_URL: "https://erikot.site"
+  NEXTAUTH_URL: "https://erikot.site"
+  PRODUCTION_DOMAIN: "erikot.site"
   POSTGRES_DB: "rentme"
   POSTGRES_USER: "rentme"

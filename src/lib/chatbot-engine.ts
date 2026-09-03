@@ -24,13 +24,13 @@ export const QUICK_REPLIES: Record<
   "Property Listing": {
     label: "Property Listing",
     response:
-      'To list a property on Rent Mesh:\n\n1. Create an account as a landlord or agent\n2. Go to your dashboard and click "List Property"\n3. Fill in property details, photos, and pricing\n4. Submit for review — it typically takes 24 hours\n\nNeed help with a specific step?',
+      'To list a property on Erikot Properties:\n\n1. Create an account as a landlord or agent\n2. Go to your dashboard and click "List Property"\n3. Fill in property details, photos, and pricing\n4. Submit for review — it typically takes 24 hours\n\nNeed help with a specific step?',
     followUp: ["How to add photos?", "Pricing guidelines", "Verification status"],
   },
   Payments: {
     label: "Payments",
     response:
-      "Rent Mesh supports multiple payment methods:\n\n• MTN Mobile Money\n• Airtel Money\n• Bank Transfer\n• Cash\n\nPayment details are agreed between tenant and landlord. Rent Mesh does not process rental payments directly.",
+      "Erikot Properties supports multiple payment methods:\n\n• MTN Mobile Money\n• Airtel Money\n• Bank Transfer\n• Cash\n\nPayment details are agreed between tenant and landlord. Erikot Properties does not process rental payments directly.",
     followUp: ["Security deposit", "Service charges", "Agency fees"],
   },
   Inspections: {
@@ -42,7 +42,7 @@ export const QUICK_REPLIES: Record<
   "Rental Process": {
     label: "Rental Process",
     response:
-      "The typical rental process on Rent Mesh:\n\n1. Search for properties\n2. Contact the landlord via messaging\n3. Schedule a viewing\n4. Visit the property in person\n5. Agree on terms and payment\n6. Move in!\n\nAlways visit in person before making any payments.",
+      "The typical rental process on Erikot Properties:\n\n1. Search for properties\n2. Contact the landlord via messaging\n3. Schedule a viewing\n4. Visit the property in person\n5. Agree on terms and payment\n6. Move in!\n\nAlways visit in person before making any payments.",
     followUp: ["Application process", "What to bring to viewing", "Safety tips"],
   },
   FAQ: {
@@ -54,7 +54,7 @@ export const QUICK_REPLIES: Record<
   "Contact Support": {
     label: "Contact Support",
     response:
-      "You can reach our support team through:\n\n• In-app messaging (you're here!)\n• Email: support@rentme.ug\n\nOur team typically responds within 24 hours during business days.",
+      "You can reach our support team through:\n\n• In-app messaging (you're here!)\n• Email: business@erikot.site\n\nOur team typically responds within 24 hours during business days.",
     followUp: ["Report urgent issue", "Feedback"],
   },
 };
@@ -97,7 +97,7 @@ export function generateResponse(message: string): Generated {
     case "GREETING":
       return {
         content:
-          "Hello! 👋 Welcome to Rent Mesh Support. I'm here to help you with:\n\n• Finding properties\n• Listing your property\n• Scheduling inspections\n• Payment questions\n• Reporting issues\n\nHow can I assist you today?",
+          "Hello! 👋 Welcome to Erikot Properties Support. I'm here to help you with:\n\n• Finding properties\n• Listing your property\n• Scheduling inspections\n• Payment questions\n• Reporting issues\n\nHow can I assist you today?",
         quickReplies: ["Property Listing", "Payments", "Inspections", "FAQ"],
       };
 
@@ -119,7 +119,7 @@ export function generateResponse(message: string): Generated {
     case "PRICING":
       return {
         content:
-          "Pricing on Rent Mesh:\n\n• Set your own monthly rent in UGX\n• Security deposit is optional\n• Agency fee applies only for agent listings\n• Service charge is 5% of monthly rent\n\nAll fees are calculated on the backend — you can review the breakdown before submitting.",
+          "Pricing on Erikot Properties:\n\n• Set your own monthly rent in UGX\n• Security deposit is optional\n• Agency fee applies only for agent listings\n• Service charge is 5% of monthly rent\n\nAll fees are calculated on the backend — you can review the breakdown before submitting.",
         quickReplies: ["Security deposit", "Service charges", "Agency fees"],
       };
 
@@ -133,7 +133,7 @@ export function generateResponse(message: string): Generated {
     case "PAYMENT":
       return {
         content:
-          "Payment methods on Rent Mesh:\n\n• MTN Mobile Money\n• Airtel Money\n• Bank Transfer\n• Cash\n\n⚠️ Important: Never pay before viewing the property in person. Use Rent Mesh messaging so there's a record.",
+          "Payment methods on Erikot Properties:\n\n• MTN Mobile Money\n• Airtel Money\n• Bank Transfer\n• Cash\n\n⚠️ Important: Never pay before viewing the property in person. Use Erikot Properties messaging so there's a record.",
         quickReplies: ["Security deposit", "Service charges", "Report scam payment request"],
       };
 
@@ -202,7 +202,7 @@ export function fallbackMessage(): ChatMessage {
     id: `bot-error-${Date.now()}`,
     role: "assistant",
     content:
-      "I'm sorry, something went wrong. Please try again or contact support at support@rentme.ug.",
+      "I'm sorry, something went wrong. Please try again or contact support at business@erikot.site.",
     timestamp: new Date().toISOString(),
     quickReplies: ["Contact Support", "FAQ"],
   };
